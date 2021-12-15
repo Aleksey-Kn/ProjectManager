@@ -1,9 +1,8 @@
 package ru.manager.ProgectManager.entitys;
 
-import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import ru.manager.ProgectManager.DTO.UserDTO;
@@ -14,8 +13,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Entity
-@Getter
-@NoArgsConstructor
+@Data
 public class User implements UserDetails {
     @Id
     @GeneratedValue( strategy = GenerationType.AUTO)
@@ -26,11 +24,6 @@ public class User implements UserDetails {
 
     @Column
     private String password;
-
-    public User(UserDTO userDTO){
-        username = userDTO.getUsername();
-        password = userDTO.getPassword();
-    }
 
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
     private List<UserWithRoleConnector> userWithRoleConnectors;

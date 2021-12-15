@@ -1,11 +1,11 @@
 package ru.manager.ProgectManager.entitys;
 
-import lombok.Getter;
+import lombok.Data;
 
 import javax.persistence.*;
 
 @Entity
-@Getter
+@Data
 @Table(name = "userWithRoleConnector")
 public class UserWithRoleConnector {
     @Id

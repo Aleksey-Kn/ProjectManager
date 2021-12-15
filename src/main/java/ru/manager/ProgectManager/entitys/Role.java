@@ -14,13 +14,13 @@ public class Role implements GrantedAuthority {
     private int id;
 
     @Column
-    private String authority;
+    private String name;
 
     @OneToMany(mappedBy = "role", fetch = FetchType.EAGER)
     private List<UserWithRoleConnector> userWithRoleConnectors;
 
     @Override
     public String getAuthority() {
-        return authority;
+        return name;
     }
 }
