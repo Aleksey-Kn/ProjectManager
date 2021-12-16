@@ -14,7 +14,7 @@ public class ProjectManagerApplication {
 	}
 
 	@Bean
-	public PasswordEncoder passwordEncoder(){
+	public PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
 	}
 }

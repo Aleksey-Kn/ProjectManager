@@ -1,6 +1,7 @@
 package ru.manager.ProgectManager.services;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.UserDTO;
@@ -15,19 +16,37 @@ import java.util.Collections;
 import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
 public class UserService {
-    private final RoleRepository roleRepository;
-    private final UserRepository userRepository;
-    private final UserWithRoleConnectorRepository connectorRepository;
-    private final PasswordEncoder passwordEncoder;
+    private RoleRepository roleRepository;
+    @Autowired
+    private void setRoleRepository(RoleRepository r){
+        roleRepository = r;
+    }
+
+    private UserRepository userRepository;
+    @Autowired
+    private void setUserRepository(UserRepository u){
+        userRepository = u;
+    }
+
+    private UserWithRoleConnectorRepository connectorRepository;
+    @Autowired
+    private void setConnectorRepository(UserWithRoleConnectorRepository u){
+        connectorRepository = u;
+    }
+
+    private PasswordEncoder passwordEncoder;
+    @Autowired
+    private void setPasswordEncoder(PasswordEncoder p){
+        passwordEncoder = p;
+    }
 
     public void saveUser(UserDTO userDTO){
         if(userRepository.findByUsername(userDTO.getUsername()) == null) {
             Role role = roleRepository.findByName("ROLE_USER");
             User user = new User();
-            user.setUsername(user.getUsername());
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
+            user.setUsername(userDTO.getUsername());
+            user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
             UserWithRoleConnector userWithRoleConnector = new UserWithRoleConnector();
             userWithRoleConnector.setUser(user);
             userWithRoleConnector.setRole(role);

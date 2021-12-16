@@ -2,6 +2,7 @@ package ru.manager.ProgectManager.components;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,14 +20,23 @@ import static org.springframework.util.StringUtils.hasText;
 
 @Component
 @Log
-@RequiredArgsConstructor
 public class JwtFilter extends GenericFilterBean {
 
     public static final String AUTHORIZATION = "Authorization";
 
-    private final JwtProvider jwtProvider;
+    private JwtProvider jwtProvider;
 
-    private final CustomUserDetailsService customUserDetailsService;
+    @Autowired
+    private void setJwtProvider(JwtProvider j){
+        jwtProvider = j;
+    }
+
+    private CustomUserDetailsService customUserDetailsService;
+
+    @Autowired
+    private void setCustomUserDetailsService(CustomUserDetailsService c){
+        customUserDetailsService = c;
+    }
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {

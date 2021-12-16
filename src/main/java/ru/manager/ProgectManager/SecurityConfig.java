@@ -15,10 +15,13 @@ import ru.manager.ProgectManager.components.JwtFilter;
 
 @Configuration
 @EnableWebSecurity
-@RequiredArgsConstructor
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
+    private JwtFilter jwtFilter;
 
-    private final JwtFilter jwtFilter;
+    @Autowired
+    private void setJwtFilter(JwtFilter j){
+        jwtFilter = j;
+    }
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -33,10 +36,5 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/register", "/auth").permitAll()
                 .and()
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
     }
 }
