@@ -19,10 +19,10 @@ public class User implements UserDetails {
     @GeneratedValue( strategy = GenerationType.AUTO)
     private int userId;
 
-    @Column
+    @Column(nullable = false, unique = true)
     private String username;
 
-    @Column
+    @Column(nullable = false)
     private String password;
 
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
