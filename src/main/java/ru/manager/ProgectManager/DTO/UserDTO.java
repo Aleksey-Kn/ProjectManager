@@ -9,9 +9,9 @@ import javax.validation.constraints.Size;
 @Getter
 @Validated
 public class UserDTO {
-    @NotBlank(message = "Имя пользователя должно содержать видимые символы")
-    private String username;
-    @NotBlank(message = "Пароль должен содержать видимые символы")
-    @Size(min = 3, message = "Пароль болжен быть длиннее трёх символов")
+    @NotBlank(message = "Name of user must contains visible symbols")
+    private String login;
+    @NotBlank(message = "Password must contains visible symbols")
+    @Size(min = 3, message = "Password must be longer 3 symbols")
     private String password;
 }

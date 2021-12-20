@@ -28,7 +28,7 @@ public class AuthController {
             if (userService.saveUser(userDTO)) {
                 return ResponseEntity.ok("OK");
             } else {
-                return new ResponseEntity<>("Пользователь с таким именем уже существует", HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>("User with this username already created", HttpStatus.BAD_REQUEST);
             }
         } else {
             StringBuilder stringBuilder = new StringBuilder();
@@ -40,11 +40,11 @@ public class AuthController {
     @PostMapping("/auth")
     public ResponseEntity<?> auth(@RequestBody UserDTO request) {
         try {
-            User userEntity = userService.findByUsernameAndPassword(request.getUsername(), request.getPassword()).orElseThrow();
+            User userEntity = userService.findByUsernameAndPassword(request.getLogin(), request.getPassword()).orElseThrow();
             String token = jwtProvider.generateToken(userEntity.getUsername());
             return ResponseEntity.ok(new AuthResponse(token));
         } catch (NoSuchElementException e) {
-            return new ResponseEntity<>("Некорректный логин или пароль", HttpStatus.UNAUTHORIZED);
+            return new ResponseEntity<>("Incorrect login or password", HttpStatus.UNAUTHORIZED);
         }
     }
 }
