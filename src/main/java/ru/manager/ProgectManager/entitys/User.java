@@ -1,19 +1,21 @@
 package ru.manager.ProgectManager.entitys;
 
-import lombok.Data;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.hibernate.Hibernate;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import ru.manager.ProgectManager.DTO.UserDTO;
 
 import javax.persistence.*;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Entity
-@Data
+@Getter
+@Setter
+@ToString
+@RequiredArgsConstructor
 public class User implements UserDetails {
     @Id
     @GeneratedValue( strategy = GenerationType.AUTO)
@@ -24,6 +26,12 @@ public class User implements UserDetails {
 
     @Column(nullable = false)
     private String password;
+
+    @Column(nullable = false)
+    private String email;
+
+    @Column(nullable = false)
+    private String nickname;
 
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
     private List<UserWithRoleConnector> userWithRoleConnectors;
@@ -61,5 +69,18 @@ public class User implements UserDetails {
     @Override
     public boolean isEnabled() {
         return true;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
+        User user = (User) o;
+        return Objects.equals(userId, user.userId);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

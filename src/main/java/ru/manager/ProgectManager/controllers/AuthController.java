@@ -40,7 +40,7 @@ public class AuthController {
     @PostMapping("/auth")
     public ResponseEntity<?> auth(@RequestBody UserDTO request) {
         try {
-            User userEntity = userService.findByUsernameAndPassword(request.getLogin(), request.getPassword()).orElseThrow();
+            User userEntity = userService.findByUsernameOrEmailAndPassword(request.getLogin(), request.getPassword()).orElseThrow();
             String token = jwtProvider.generateToken(userEntity.getUsername());
             return ResponseEntity.ok(new AuthResponse(token));
         } catch (NoSuchElementException e) {

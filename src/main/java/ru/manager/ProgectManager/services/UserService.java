@@ -62,7 +62,7 @@ public class UserService {
         return Optional.ofNullable(userRepository.findByUsername(username));
     }
 
-    public Optional<User> findByUsernameAndPassword(String username, String password){
+    public Optional<User> findByUsernameOrEmailAndPassword(String username, String password){
         User user = userRepository.findByUsername(username);
         if(user != null){
             if(passwordEncoder.matches(password, user.getPassword())){
