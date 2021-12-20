@@ -42,10 +42,10 @@ public class UserService {
     }
 
     public boolean saveUser(UserDTO userDTO){
-        if(userRepository.findByUsername(userDTO.getUsername()) == null) {
+        if(userRepository.findByUsername(userDTO.getLogin()) == null) {
             Role role = roleRepository.findByName("ROLE_USER");
             User user = new User();
-            user.setUsername(userDTO.getUsername());
+            user.setUsername(userDTO.getLogin());
             user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
             UserWithRoleConnector userWithRoleConnector = new UserWithRoleConnector();
             userWithRoleConnector.setUser(user);
