@@ -4,6 +4,7 @@ import lombok.*;
 import org.hibernate.Hibernate;
 
 import javax.persistence.*;
+import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -11,22 +12,30 @@ import java.util.Objects;
 @Setter
 @ToString
 @RequiredArgsConstructor
-public class StatisticsUsing {
+@Table(name = "kanban_column")
+public class KanbanColumn {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 
-    @Column(nullable = false, unique = true)
-    private String type;
+    @Column(nullable = false)
+    private int serialNumber;
 
-    @Column
-    private int count;
+    @Column(nullable = false)
+    private String name;
+
+    @OneToMany(fetch = FetchType.EAGER)
+    private List<KanbanElement> elements;
+
+    @ManyToOne
+    @JoinColumn(name = "project_id")
+    private Project project;
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
-        StatisticsUsing that = (StatisticsUsing) o;
+        KanbanColumn that = (KanbanColumn) o;
         return Objects.equals(id, that.id);
     }
 

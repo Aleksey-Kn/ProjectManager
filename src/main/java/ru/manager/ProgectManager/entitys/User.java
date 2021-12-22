@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 public class User implements UserDetails {
     @Id
     @GeneratedValue( strategy = GenerationType.AUTO)
-    private int userId;
+    private long userId;
 
     @Column(nullable = false, unique = true)
     private String username;
@@ -33,8 +33,17 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String nickname;
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
+    @OneToMany(fetch = FetchType.EAGER)
     private List<UserWithRoleConnector> userWithRoleConnectors;
+
+    @OneToMany(mappedBy = "owner", fetch = FetchType.EAGER)
+    private List<KanbanElement> elementsForOwner;
+
+    @OneToMany(mappedBy = "lastRedactor", fetch = FetchType.EAGER)
+    private List<KanbanElement> elementsLastRedacted;
+
+    @OneToMany(fetch = FetchType.EAGER)
+    private List<UserWithProjectConnector> userWithProjectConnectors;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

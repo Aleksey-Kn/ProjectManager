@@ -16,7 +16,7 @@ import java.util.Optional;
 public class StatisticsController {
     private final StatisticsRepository statisticsRepository;
 
-    @PostMapping("/user/setstatistics")
+    @PostMapping("/user/set_statistics")
     public ResponseEntity<?> setStatistics(@RequestBody UserTargetRequest request){
         Optional<StatisticsUsing> statisticsUsing = Optional.
                 ofNullable(statisticsRepository.findByType(request.getTarget()));

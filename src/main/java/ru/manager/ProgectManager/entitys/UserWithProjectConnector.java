@@ -1,13 +1,12 @@
 package ru.manager.ProgectManager.entitys;
 
-import lombok.Data;
+import lombok.Getter;
 
 import javax.persistence.*;
 
 @Entity
-@Data
-@Table(name = "userWithRoleConnector")
-public class UserWithRoleConnector {
+@Getter
+public class UserWithProjectConnector {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
@@ -17,6 +16,6 @@ public class UserWithRoleConnector {
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "role_id")
-    private Role role;
+    @JoinColumn(name = "project_id")
+    private Project project;
 }
