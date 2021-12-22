@@ -1,10 +1,13 @@
 package ru.manager.ProgectManager.controllers;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.KanbanResponse;
 import ru.manager.ProgectManager.services.ProjectService;
+
+import java.util.NoSuchElementException;
 
 @RestController(value = "/user/kanban")
 @RequiredArgsConstructor
@@ -12,8 +15,12 @@ public class KanbanController {
     private final ProjectService projectService;
 
     @GetMapping("/get")
-    public KanbanResponse getKanban(@RequestParam long projectId){
-        return new KanbanResponse(projectService.findKanban(projectId));
+    public ResponseEntity<?> getKanban(@RequestParam long projectId){
+        try {
+            return ResponseEntity.ok(new KanbanResponse(projectService.findKanbans(projectId)));
+        } catch (NoSuchElementException e){
+            return new ResponseEntity<>("No such specified project", HttpStatus.BAD_REQUEST);
+        }
     }
 
     @GetMapping("/get_content")

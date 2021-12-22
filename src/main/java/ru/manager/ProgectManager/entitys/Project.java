@@ -14,6 +14,10 @@ public class Project {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 
+    @OneToOne(optional = false)
+    @JoinColumn(name = "user_id")
+    private User admin;
+
     @Column(nullable = false)
     private String name;
 

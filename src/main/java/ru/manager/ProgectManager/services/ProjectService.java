@@ -14,7 +14,7 @@ import java.util.List;
 public class ProjectService {
     private final ProjectRepository projectRepository;
 
-    public List<KanbanColumn> findKanban(long id){
+    public List<KanbanColumn> findKanbans(long id){
         List<KanbanColumn> result = projectRepository.findById(id).get().getKanbanColumns();
         result.sort(Comparator.comparing(KanbanColumn::getSerialNumber));
         for(KanbanColumn column: result){

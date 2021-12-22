@@ -45,6 +45,9 @@ public class User implements UserDetails {
     @OneToMany(fetch = FetchType.EAGER)
     private List<UserWithProjectConnector> userWithProjectConnectors;
 
+    @OneToOne
+    private Project projectForAdministrated;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return userWithRoleConnectors.stream().map(UserWithRoleConnector::getRole).collect(Collectors.toSet());
