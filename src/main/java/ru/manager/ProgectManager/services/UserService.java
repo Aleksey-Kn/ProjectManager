@@ -47,6 +47,9 @@ public class UserService {
             User user = new User();
             user.setUsername(userDTO.getLogin());
             user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+            user.setEmail(userDTO.getEmail());
+            user.setNickname(userDTO.getNickname());
+
             UserWithRoleConnector userWithRoleConnector = new UserWithRoleConnector();
             userWithRoleConnector.setUser(user);
             userWithRoleConnector.setRole(role);
@@ -62,8 +65,14 @@ public class UserService {
         return Optional.ofNullable(userRepository.findByUsername(username));
     }
 
-    public Optional<User> findByUsernameOrEmailAndPassword(String username, String password){
-        User user = userRepository.findByUsername(username);
+    public Optional<User> findByUsernameOrEmailAndPassword(String loginOrEmail, String password){
+        User user = userRepository.findByUsername(loginOrEmail);
+        if(user != null){
+            if(passwordEncoder.matches(password, user.getPassword())){
+                return Optional.of(user);
+            }
+        }
+        user = userRepository.findByEmail(loginOrEmail);
         if(user != null){
             if(passwordEncoder.matches(password, user.getPassword())){
                 return Optional.of(user);
