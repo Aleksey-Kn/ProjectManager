@@ -4,12 +4,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.manager.ProgectManager.DTO.KanbanResponse;
+import ru.manager.ProgectManager.DTO.response.KanbanResponse;
 import ru.manager.ProgectManager.services.ProjectService;
 
 import java.util.NoSuchElementException;
 
-@RestController(value = "/user/kanban")
+@RestController(value = "/users/kanban")
 @RequiredArgsConstructor
 public class KanbanController {
     private final ProjectService projectService;

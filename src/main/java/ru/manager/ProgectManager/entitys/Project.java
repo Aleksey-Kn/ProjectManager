@@ -1,5 +1,6 @@
 package ru.manager.ProgectManager.entitys;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,16 +15,14 @@ public class Project {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 
-    @OneToOne(optional = false)
-    @JoinColumn(name = "user_id")
-    private User admin;
-
     @Column(nullable = false)
     private String name;
 
+    @JsonIgnore
     @OneToMany(fetch = FetchType.EAGER)
     private List<UserWithProjectConnector> connectors;
 
+    @JsonIgnore
     @OneToMany(fetch = FetchType.EAGER)
     private List<KanbanColumn> kanbanColumns;
 }

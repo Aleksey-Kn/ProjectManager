@@ -1,4 +1,4 @@
-package ru.manager.ProgectManager.DTO;
+package ru.manager.ProgectManager.DTO.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
