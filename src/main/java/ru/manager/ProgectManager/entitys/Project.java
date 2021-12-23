@@ -19,10 +19,10 @@ public class Project {
     private String name;
 
     @JsonIgnore
-    @OneToMany(fetch = FetchType.EAGER)
+    @OneToMany
     private List<UserWithProjectConnector> connectors;
 
     @JsonIgnore
-    @OneToMany(fetch = FetchType.EAGER)
+    @OneToMany
     private List<KanbanColumn> kanbanColumns;
 }

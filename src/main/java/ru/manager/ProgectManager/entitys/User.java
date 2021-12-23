@@ -33,21 +33,27 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String nickname;
 
-    @OneToMany(fetch = FetchType.EAGER)
+    @OneToMany(cascade = CascadeType.ALL)
+    @ToString.Exclude
     private List<UserWithRoleConnector> userWithRoleConnectors;
 
-    @OneToMany(mappedBy = "owner", fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "owner")
+    @ToString.Exclude
     private List<KanbanElement> elementsForOwner;
 
-    @OneToMany(mappedBy = "lastRedactor", fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "lastRedactor")
+    @ToString.Exclude
     private List<KanbanElement> elementsLastRedacted;
 
-    @OneToMany(fetch = FetchType.EAGER)
+    @OneToMany
+    @ToString.Exclude
     private List<UserWithProjectConnector> userWithProjectConnectors;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return userWithRoleConnectors.stream().map(UserWithRoleConnector::getRole).collect(Collectors.toSet());
+        return userWithRoleConnectors.stream()
+                .map(UserWithRoleConnector::getRole)
+                .collect(Collectors.toSet());
     }
 
     @Override

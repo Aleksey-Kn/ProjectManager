@@ -1,5 +1,7 @@
 package ru.manager.ProgectManager.DTO.response;
 
+import lombok.Data;
+import lombok.Getter;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.User;
 import ru.manager.ProgectManager.entitys.UserWithProjectConnector;
@@ -7,6 +9,7 @@ import ru.manager.ProgectManager.entitys.UserWithProjectConnector;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Getter
 public class AllUserDataResponse {
     private final String username;
     private final String email;
