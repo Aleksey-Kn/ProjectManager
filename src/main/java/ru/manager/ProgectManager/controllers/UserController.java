@@ -47,7 +47,7 @@ public class UserController {
     }
 
     @PostMapping("users/user/photo")
-    public ResponseEntity<?> postPhoto(@RequestBody PhotoDTO photoDTO){
+    public ResponseEntity<?> setPhoto(@RequestBody PhotoDTO photoDTO){
         try {
             if (photoDTO.getFile().getBytes().length > 6_291_456){
                 return new ResponseEntity<>("File too big", HttpStatus.NOT_ACCEPTABLE);
@@ -58,7 +58,7 @@ public class UserController {
                     return new ResponseEntity<>("No such specified user", HttpStatus.BAD_REQUEST);
                 }
             }
-        } catch (IOException e){
+        } catch (IOException | AssertionError e ){
             return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_ACCEPTABLE);
         }
     }

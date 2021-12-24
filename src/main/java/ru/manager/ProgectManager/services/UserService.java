@@ -98,6 +98,9 @@ public class UserService {
     public boolean setPhoto(String login, MultipartFile file) throws IOException {
         User user = userRepository.findByUsername(login);
         if(user != null){
+            String filename = file.getOriginalFilename();
+            assert filename != null;
+            user.setFileExpansion(filename.substring(filename.indexOf('.')));
             user.setPhoto(file.getBytes());
             return true;
         }
