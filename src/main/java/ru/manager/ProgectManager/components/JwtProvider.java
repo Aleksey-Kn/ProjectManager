@@ -10,10 +10,13 @@ import io.jsonwebtoken.UnsupportedJwtException;
 import lombok.extern.java.Log;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.Objects;
 
 @Component
 @Log
@@ -52,5 +55,17 @@ public class JwtProvider {
     public String getLoginFromToken(String token) {
         Claims claims = Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token).getBody();
         return claims.getSubject();
+    }
+
+    public String getLoginFromToken(){
+        Claims claims = Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(getBearerTokenHeader()).getBody();
+        return claims.getSubject();
+    }
+
+    private static String getBearerTokenHeader() {
+        return ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
+                .getRequest()
+                .getHeader("Authorization")
+                .substring(7);
     }
 }

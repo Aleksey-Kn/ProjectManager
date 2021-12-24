@@ -4,33 +4,25 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import ru.manager.ProgectManager.DTO.response.KanbanResponse;
+import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.UserWithProjectConnector;
 import ru.manager.ProgectManager.services.ProjectService;
 import ru.manager.ProgectManager.services.UserService;
 
 import java.util.NoSuchElementException;
-import java.util.Objects;
 
 @RestController
 @RequiredArgsConstructor
 public class KanbanController {
     private final ProjectService projectService;
     private final UserService userService;
-
-    public static String getBearerTokenHeader() {
-        return ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
-                .getRequest()
-                .getHeader("Authorization")
-                .substring(7);
-    }
+    private final JwtProvider provider;
 
     @GetMapping("/users/kanban/get")
     public ResponseEntity<?> getKanban(@RequestParam long projectId){
         try {
-            if(userService.findByUsername(getBearerTokenHeader()).get().getUserWithProjectConnectors().stream()
+            if(userService.findByUsername(provider.getLoginFromToken()).get().getUserWithProjectConnectors().stream()
                     .map(UserWithProjectConnector::getProject)
                     .anyMatch(p -> p.getId() == projectId)) {
                 return ResponseEntity.ok(new KanbanResponse(projectService.findKanbans(projectId)));
