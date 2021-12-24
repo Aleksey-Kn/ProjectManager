@@ -3,6 +3,8 @@ package ru.manager.ProgectManager.services;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import ru.manager.ProgectManager.DTO.request.RefreshUserDTO;
 import ru.manager.ProgectManager.DTO.request.UserDTO;
 import ru.manager.ProgectManager.entitys.Role;
 import ru.manager.ProgectManager.entitys.User;
@@ -11,6 +13,7 @@ import ru.manager.ProgectManager.repositories.RoleRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
 import ru.manager.ProgectManager.repositories.UserWithRoleConnectorRepository;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Optional;
 
@@ -78,5 +81,26 @@ public class UserService {
             }
         }
         return Optional.empty();
+    }
+
+    public boolean refreshUserData(String login, RefreshUserDTO userDTO){
+        User user = userRepository.findByUsername(login);
+        if(user != null){
+            user.setNickname(userDTO.getNickname());
+            user.setEmail(userDTO.getEmail());
+            user.setNickname(userDTO.getNickname());
+            userRepository.save(user);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean setPhoto(String login, MultipartFile file) throws IOException {
+        User user = userRepository.findByUsername(login);
+        if(user != null){
+            user.setPhoto(file.getBytes());
+            return true;
+        }
+        return false;
     }
 }

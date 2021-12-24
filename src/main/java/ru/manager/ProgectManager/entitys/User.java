@@ -33,6 +33,10 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String nickname;
 
+    @Column(length = 6_291_456)
+    @Lob
+    private byte[] photo;
+
     @OneToMany(cascade = CascadeType.ALL)
     @ToString.Exclude
     private List<UserWithRoleConnector> userWithRoleConnectors;
