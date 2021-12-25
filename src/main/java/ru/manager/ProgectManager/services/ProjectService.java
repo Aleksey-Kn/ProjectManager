@@ -33,16 +33,17 @@ public class ProjectService {
         project.setName(requestDTO.getName());
 
         UserWithProjectConnector connector = new UserWithProjectConnector();
-        connector.setProject(project);
-        connector.setUser(owner);
         connector.setAdmin(true);
+        connector = connectorRepository.save(connector);
+
+        project.setConnectors(Collections.singletonList(connector));
+        project = projectRepository.save(project);
 
         owner.getUserWithProjectConnectors().add(connector);
         userRepository.save(owner);
 
-        project.setConnectors(Collections.singletonList(connector));
-        projectRepository.save(project);
-
+        connector.setProject(project);
+        connector.setUser(owner);
         connectorRepository.save(connector);
         return project;
     }
