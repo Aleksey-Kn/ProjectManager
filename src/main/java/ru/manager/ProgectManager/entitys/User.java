@@ -33,9 +33,6 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String nickname;
 
-    @Column
-    private String fileExpansion;
-
     @Column(length = 6_291_456)
     @Lob
     private byte[] photo;

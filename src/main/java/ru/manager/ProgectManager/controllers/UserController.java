@@ -58,7 +58,7 @@ public class UserController {
                     return new ResponseEntity<>("No such specified user", HttpStatus.BAD_REQUEST);
                 }
             }
-        } catch (IOException | AssertionError e ){
+        } catch (IOException e){
             return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_ACCEPTABLE);
         }
     }
