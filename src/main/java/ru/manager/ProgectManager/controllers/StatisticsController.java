@@ -1,6 +1,7 @@
 package ru.manager.ProgectManager.controllers;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -31,6 +32,6 @@ public class StatisticsController {
                 statisticsRepository.save(su);
             });
         }
-        return ResponseEntity.ok("OK");
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 }

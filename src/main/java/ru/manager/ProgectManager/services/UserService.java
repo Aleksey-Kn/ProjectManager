@@ -67,6 +67,10 @@ public class UserService {
         return Optional.ofNullable(userRepository.findByUsername(username));
     }
 
+    public Optional<User> findById(long id){
+        return userRepository.findById(id);
+    }
+
     public Optional<User> findByUsernameOrEmailAndPassword(String loginOrEmail, String password){
         User user = userRepository.findByUsername(loginOrEmail);
         if(user != null){
@@ -83,24 +87,20 @@ public class UserService {
         return Optional.empty();
     }
 
-    public boolean refreshUserData(String login, RefreshUserDTO userDTO){
+    public void refreshUserData(String login, RefreshUserDTO userDTO){
         User user = userRepository.findByUsername(login);
         if(user != null){
             user.setNickname(userDTO.getNickname());
             user.setEmail(userDTO.getEmail());
             user.setNickname(userDTO.getNickname());
             userRepository.save(user);
-            return true;
         }
-        return false;
     }
 
-    public boolean setPhoto(String login, MultipartFile file) throws IOException {
+    public void setPhoto(String login, MultipartFile file) throws IOException {
         User user = userRepository.findByUsername(login);
         if(user != null){
             user.setPhoto(file.getBytes());
-            return true;
         }
-        return false;
     }
 }

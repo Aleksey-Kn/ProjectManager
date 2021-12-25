@@ -23,42 +23,41 @@ public class UserController {
     private final JwtProvider jwtProvider;
 
     @GetMapping("/users/user")
-    public ResponseEntity<?> findAllData(){
-        Optional<User> user = userService.findByUsername(jwtProvider.getLoginFromToken());
-        if(user.isPresent()){
+    public ResponseEntity<?> findAllData(@RequestParam long id) {
+        Optional<User> user;
+        if (id == -1) { //about yourself
+            user = userService.findByUsername(jwtProvider.getLoginFromToken());
+        } else {
+            user = userService.findById(id);
+        }
+        if (user.isPresent()) {
             return ResponseEntity.ok(new AllUserDataResponse(user.get()));
-        } else{
+        } else {
             return new ResponseEntity<>("No such specified user", HttpStatus.BAD_REQUEST);
         }
     }
 
     @PutMapping("users/user")
-    public ResponseEntity<?> refreshMainData(@RequestBody @Valid RefreshUserDTO userDTO, BindingResult bindingResult){
-        if(bindingResult.hasErrors()){
+    public ResponseEntity<?> refreshMainData(@RequestBody @Valid RefreshUserDTO userDTO, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
             StringBuilder stringBuilder = new StringBuilder();
             bindingResult.getAllErrors().forEach(e -> stringBuilder.append(e.getDefaultMessage()).append("; "));
             return new ResponseEntity<>(stringBuilder.toString(), HttpStatus.NOT_ACCEPTABLE);
         }
-        if(userService.refreshUserData(jwtProvider.getLoginFromToken(), userDTO)){
-            return ResponseEntity.ok("All update");
-        } else{
-            return new ResponseEntity<>("No such specified user", HttpStatus.BAD_REQUEST);
-        }
+        userService.refreshUserData(jwtProvider.getLoginFromToken(), userDTO);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @PostMapping("users/user/photo")
-    public ResponseEntity<?> setPhoto(@RequestBody PhotoDTO photoDTO){
+    public ResponseEntity<?> setPhoto(@RequestBody PhotoDTO photoDTO) {
         try {
-            if (photoDTO.getFile().getBytes().length > 6_291_456){
+            if (photoDTO.getFile().getBytes().length > 6_291_456) {
                 return new ResponseEntity<>("File too big", HttpStatus.NOT_ACCEPTABLE);
             } else {
-                if(userService.setPhoto(jwtProvider.getLoginFromToken(), photoDTO.getFile())){
-                    return ResponseEntity.ok("OK");
-                } else {
-                    return new ResponseEntity<>("No such specified user", HttpStatus.BAD_REQUEST);
-                }
+                userService.setPhoto(jwtProvider.getLoginFromToken(), photoDTO.getFile());
+                return new ResponseEntity<>(HttpStatus.OK);
             }
-        } catch (IOException e){
+        } catch (IOException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_ACCEPTABLE);
         }
     }

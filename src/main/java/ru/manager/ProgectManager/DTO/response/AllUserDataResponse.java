@@ -11,10 +11,12 @@ import java.util.stream.Collectors;
 
 @Getter
 public class AllUserDataResponse {
+    private final long id;
     private final String username;
     private final String email;
     private final String nickname;
     private final List<Project> userProjects;
+    private final byte[] photo;
 
     public AllUserDataResponse(User user){
         username = user.getUsername();
@@ -23,5 +25,7 @@ public class AllUserDataResponse {
         userProjects = user.getUserWithProjectConnectors().stream()
                 .map(UserWithProjectConnector::getProject)
                 .collect(Collectors.toList());
+        id = user.getUserId();
+        photo = user.getPhoto();
     }
 }

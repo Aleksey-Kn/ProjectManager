@@ -18,6 +18,10 @@ public class Project {
     @Column(nullable = false)
     private String name;
 
+    @Column(length = 6_291_456)
+    @Lob
+    private byte[] photo;
+
     @JsonIgnore
     @OneToMany
     private List<UserWithProjectConnector> connectors;

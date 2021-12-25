@@ -26,7 +26,7 @@ public class AuthController {
     public ResponseEntity<?> registerUser(@Valid @RequestBody UserDTO userDTO, BindingResult bindingResult) {
         if (!bindingResult.hasErrors()) {
             if (userService.saveUser(userDTO)) {
-                return ResponseEntity.ok("OK");
+                return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>("User with this username already created", HttpStatus.BAD_REQUEST);
             }
