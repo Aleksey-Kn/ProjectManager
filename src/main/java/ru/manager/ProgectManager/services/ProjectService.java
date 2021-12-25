@@ -57,6 +57,16 @@ public class ProjectService {
         return false;
     }
 
+    public boolean setName(long id, NameRequestDTO name){
+        Optional<Project> project = projectRepository.findById(id);
+        if(project.isPresent()) {
+            project.get().setName(name.getName());
+            projectRepository.save(project.get());
+            return true;
+        }
+        return false;
+    }
+
     public List<KanbanColumn> findKanbans(long id){
         List<KanbanColumn> result = projectRepository.findById(id).get().getKanbanColumns();
         result.sort(Comparator.comparing(KanbanColumn::getSerialNumber));

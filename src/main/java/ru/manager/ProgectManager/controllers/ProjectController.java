@@ -5,15 +5,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-import ru.manager.ProgectManager.DTO.request.PhotoDTO;
 import ru.manager.ProgectManager.DTO.request.NameRequestDTO;
+import ru.manager.ProgectManager.DTO.request.PhotoDTO;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.services.ProjectService;
 
 import javax.validation.Valid;
 import java.io.IOException;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @RestController
@@ -38,6 +37,16 @@ public class ProjectController {
             return ResponseEntity.ok(project);
         } else{
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PutMapping("/users/project")
+    public ResponseEntity<?> setName(@RequestParam long id, @RequestBody @Valid NameRequestDTO requestDTO,
+                                     BindingResult bindingResult){
+        if(bindingResult.hasErrors()){
+            return new ResponseEntity<>(bindingResult.getAllErrors().get(0), HttpStatus.NOT_ACCEPTABLE);
+        } else{
+            return ResponseEntity.ok(projectService.setName(id, requestDTO));
         }
     }
 
