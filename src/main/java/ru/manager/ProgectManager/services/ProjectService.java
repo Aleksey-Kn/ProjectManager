@@ -2,15 +2,18 @@ package ru.manager.ProgectManager.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.manager.ProgectManager.DTO.request.ProjectRequestDTO;
+import org.springframework.web.multipart.MultipartFile;
+import ru.manager.ProgectManager.DTO.request.NameRequestDTO;
 import ru.manager.ProgectManager.entitys.*;
 import ru.manager.ProgectManager.repositories.ProjectRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
 import ru.manager.ProgectManager.repositories.UserWithProjectConnectorRepository;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -19,7 +22,11 @@ public class ProjectService {
     private final UserRepository userRepository;
     private final UserWithProjectConnectorRepository connectorRepository;
 
-    public void addProject(ProjectRequestDTO requestDTO, String userLogin){
+    public Optional<Project> findProject(long id){
+        return projectRepository.findById(id);
+    }
+
+    public Project addProject(NameRequestDTO requestDTO, String userLogin){
         User owner = userRepository.findByUsername(userLogin);
 
         Project project = new Project();
@@ -37,6 +44,17 @@ public class ProjectService {
         projectRepository.save(project);
 
         connectorRepository.save(connector);
+        return project;
+    }
+
+    public boolean setPhoto(long id, MultipartFile photo) throws IOException {
+        Optional<Project> project = projectRepository.findById(id);
+        if(project.isPresent()) {
+            project.get().setPhoto(photo.getBytes());
+            projectRepository.save(project.get());
+            return true;
+        }
+        return false;
     }
 
     public List<KanbanColumn> findKanbans(long id){

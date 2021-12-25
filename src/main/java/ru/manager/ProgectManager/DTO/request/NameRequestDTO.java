@@ -7,7 +7,7 @@ import javax.validation.constraints.NotBlank;
 
 @Validated
 @Getter
-public class ProjectRequestDTO {
+public class NameRequestDTO {
     @NotBlank(message = "Name must contains visible symbols")
     private String name;
 }
