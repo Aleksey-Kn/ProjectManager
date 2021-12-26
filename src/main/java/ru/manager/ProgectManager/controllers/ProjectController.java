@@ -7,6 +7,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.NameRequestDTO;
 import ru.manager.ProgectManager.DTO.request.PhotoDTO;
+import ru.manager.ProgectManager.DTO.response.ProjectResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.services.ProjectService;
@@ -34,7 +35,7 @@ public class ProjectController {
     public ResponseEntity<?> findProject(@RequestParam long id){
         Optional<Project> project = projectService.findProject(id);
         if(project.isPresent()){
-            return ResponseEntity.ok(project);
+            return ResponseEntity.ok(new ProjectResponse(project.get()));
         } else{
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
