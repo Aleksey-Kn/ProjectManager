@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.PhotoDTO;
 import ru.manager.ProgectManager.DTO.request.RefreshUserDTO;
 import ru.manager.ProgectManager.DTO.response.AllUserDataResponse;
+import ru.manager.ProgectManager.DTO.response.PublicUserDataResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.User;
 import ru.manager.ProgectManager.services.UserService;
@@ -31,7 +32,7 @@ public class UserController {
             user = userService.findById(id);
         }
         if (user.isPresent()) {
-            return ResponseEntity.ok(new AllUserDataResponse(user.get()));
+            return ResponseEntity.ok(new PublicUserDataResponse(user.get()));
         } else {
             return new ResponseEntity<>("No such specified user", HttpStatus.BAD_REQUEST);
         }
@@ -49,7 +50,7 @@ public class UserController {
     }
 
     @PostMapping("users/user/photo")
-    public ResponseEntity<?> setPhoto(@RequestBody PhotoDTO photoDTO) {
+    public ResponseEntity<?> setPhoto(@ModelAttribute PhotoDTO photoDTO) {
         try {
             if (photoDTO.getFile().getBytes().length > 6_291_456) {
                 return new ResponseEntity<>("File too big", HttpStatus.NOT_ACCEPTABLE);

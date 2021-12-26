@@ -1,9 +1,9 @@
 package ru.manager.ProgectManager.DTO.request;
 
-import lombok.Getter;
+import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
 
-@Getter
+@Data
 public class PhotoDTO {
     private MultipartFile file;
 }

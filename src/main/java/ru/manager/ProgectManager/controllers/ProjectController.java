@@ -53,7 +53,7 @@ public class ProjectController {
     }
 
     @PostMapping("/users/project/photo")
-    public ResponseEntity<?> setPhoto(@RequestParam long id, @RequestBody PhotoDTO photoDTO){
+    public ResponseEntity<?> setPhoto(@RequestParam long id, @ModelAttribute PhotoDTO photoDTO){
         try{
             if(projectService.setPhoto(id, photoDTO.getFile())) {
                 return new ResponseEntity<>(HttpStatus.OK);

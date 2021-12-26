@@ -12,7 +12,7 @@ public class ProjectResponse {
     private final String name;
     private final long id;
     private final byte[] photo;
-    private final List<AllUserDataResponse> participants;
+    private final List<PublicUserDataResponse> participants;
 
     public ProjectResponse(Project project){
         name = project.getName();
@@ -20,7 +20,7 @@ public class ProjectResponse {
         photo = project.getPhoto();
         participants = project.getConnectors().stream()
                 .map(UserWithProjectConnector::getUser)
-                .map(AllUserDataResponse::new)
+                .map(PublicUserDataResponse::new)
                 .collect(Collectors.toList());
     }
 }

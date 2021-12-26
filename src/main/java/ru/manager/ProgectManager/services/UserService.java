@@ -92,7 +92,7 @@ public class UserService {
         if(user != null){
             user.setNickname(userDTO.getNickname());
             user.setEmail(userDTO.getEmail());
-            user.setNickname(userDTO.getNickname());
+            user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
             userRepository.save(user);
         }
     }
