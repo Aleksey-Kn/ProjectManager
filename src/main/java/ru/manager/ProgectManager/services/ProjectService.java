@@ -22,8 +22,13 @@ public class ProjectService {
     private final UserRepository userRepository;
     private final UserWithProjectConnectorRepository connectorRepository;
 
-    public Optional<Project> findProject(long id){
-        return projectRepository.findById(id);
+    public Optional<Project> findProject(long id, String login){
+        User user = userRepository.findByUsername(login);
+        Project project = projectRepository.findById(id).get();
+        if(project.getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
+            return Optional.of(project);
+        }
+        return Optional.empty();
     }
 
     public Project addProject(NameRequestDTO requestDTO, String userLogin){

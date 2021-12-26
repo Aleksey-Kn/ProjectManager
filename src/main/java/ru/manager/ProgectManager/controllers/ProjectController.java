@@ -34,11 +34,15 @@ public class ProjectController {
 
     @GetMapping("/users/project")
     public ResponseEntity<?> findProject(@RequestParam long id){
-        Optional<Project> project = projectService.findProject(id);
-        if(project.isPresent()){
-            return ResponseEntity.ok(new ProjectResponse(project.get()));
-        } else{
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        try {
+            Optional<Project> project = projectService.findProject(id, provider.getLoginFromToken());
+            if (project.isPresent()) {
+                return ResponseEntity.ok(new ProjectResponse(project.get()));
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e){
+            return new ResponseEntity<>("No such specified project", HttpStatus.BAD_REQUEST);
         }
     }
 
