@@ -28,13 +28,18 @@ public class UserController {
         Optional<User> user;
         if (id == -1) { //about yourself
             user = userService.findByUsername(jwtProvider.getLoginFromToken());
+            if (user.isPresent()) {
+                return ResponseEntity.ok(new AllUserDataResponse(user.get()));
+            } else {
+                return new ResponseEntity<>("No such specified user", HttpStatus.BAD_REQUEST);
+            }
         } else {
             user = userService.findById(id);
-        }
-        if (user.isPresent()) {
-            return ResponseEntity.ok(new PublicUserDataResponse(user.get()));
-        } else {
-            return new ResponseEntity<>("No such specified user", HttpStatus.BAD_REQUEST);
+            if (user.isPresent()) {
+                return ResponseEntity.ok(new PublicUserDataResponse(user.get()));
+            } else {
+                return new ResponseEntity<>("No such specified user", HttpStatus.BAD_REQUEST);
+            }
         }
     }
 

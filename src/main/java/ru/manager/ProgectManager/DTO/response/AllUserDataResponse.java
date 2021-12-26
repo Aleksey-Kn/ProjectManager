@@ -1,6 +1,5 @@
 package ru.manager.ProgectManager.DTO.response;
 
-import lombok.Data;
 import lombok.Getter;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.User;
