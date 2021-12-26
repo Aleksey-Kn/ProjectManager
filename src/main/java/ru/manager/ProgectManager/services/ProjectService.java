@@ -68,6 +68,20 @@ public class ProjectService {
         return false;
     }
 
+    public boolean deleteProject(long id, String adminLogin){
+        User admin = userRepository.findByUsername(adminLogin);
+        assert admin != null;
+        Project project = projectRepository.findById(id).get();
+        if(project.getConnectors().stream()
+                .filter(UserWithProjectConnector::isAdmin)
+                .anyMatch(c -> c.getUser().equals(admin))){
+            connectorRepository.deleteAll(project.getConnectors());
+            projectRepository.delete(project);
+            return true;
+        }
+        return false;
+    }
+
     public List<KanbanColumn> findKanbans(long id){
         List<KanbanColumn> result = projectRepository.findById(id).get().getKanbanColumns();
         result.sort(Comparator.comparing(KanbanColumn::getSerialNumber));

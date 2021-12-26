@@ -14,6 +14,7 @@ import ru.manager.ProgectManager.services.ProjectService;
 
 import javax.validation.Valid;
 import java.io.IOException;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @RestController
@@ -61,6 +62,20 @@ public class ProjectController {
             }
         } catch (IOException e){
             return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_ACCEPTABLE);
+        }
+    }
+
+    @DeleteMapping("/users/project")
+    public ResponseEntity<?> deleteProject(@RequestParam long id){
+        try {
+            if(projectService.deleteProject(id, provider.getLoginFromToken())){
+                return new ResponseEntity<>(HttpStatus.OK);
+            }
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        } catch (NoSuchElementException e){
+            return new ResponseEntity<>("Not such specified project", HttpStatus.BAD_REQUEST);
+        } catch (AssertionError e){
+            return new ResponseEntity<>("Not such specified user", HttpStatus.BAD_REQUEST);
         }
     }
 }

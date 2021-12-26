@@ -3,6 +3,7 @@ package ru.manager.ProgectManager.entitys;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Cascade;
 
 import javax.persistence.*;
 import java.util.List;
@@ -23,10 +24,10 @@ public class Project {
     private byte[] photo;
 
     @JsonIgnore
-    @OneToMany
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserWithProjectConnector> connectors;
 
     @JsonIgnore
-    @OneToMany
+    @OneToMany(cascade = CascadeType.ALL)
     private List<KanbanColumn> kanbanColumns;
 }
