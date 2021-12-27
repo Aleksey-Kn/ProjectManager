@@ -1,6 +1,5 @@
 package ru.manager.ProgectManager.entitys;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -35,7 +34,10 @@ public class KanbanElement {
     @Column
     private String content;
 
-    @JsonIgnore
+    @Column(length = 6_291_456)
+    @Lob
+    private byte[] photo;
+
     @ManyToOne
     @JoinColumn(name = "kanban_column_id")
     private KanbanColumn kanbanColumn;

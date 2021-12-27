@@ -1,13 +1,16 @@
 package ru.manager.ProgectManager.DTO.response;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import ru.manager.ProgectManager.entitys.KanbanColumn;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
-@AllArgsConstructor
 public class KanbanResponse {
-    private List<KanbanColumn> kanbanColumns;
+    private final List<KanbanColumnResponse> kanbanColumns;
+
+    public KanbanResponse(List<KanbanColumn> data){
+        kanbanColumns = data.stream().map(KanbanColumnResponse::new).collect(Collectors.toList());
+    }
 }
