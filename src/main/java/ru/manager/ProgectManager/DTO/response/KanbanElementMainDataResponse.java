@@ -9,7 +9,6 @@ public class KanbanElementMainDataResponse {
     private final int serialNumber;
     private final String name;
     private final String tag;
-    private final String content;
     private final byte[] photo;
     private final PublicUserDataResponse creator;
     private final PublicUserDataResponse lastRedactor;
@@ -19,7 +18,6 @@ public class KanbanElementMainDataResponse {
         serialNumber = kanbanElement.getSerialNumber();
         name = kanbanElement.getName();
         tag = kanbanElement.getTag();
-        content = kanbanElement.getContent();
         photo = kanbanElement.getPhoto();
         creator = new PublicUserDataResponse(kanbanElement.getOwner());
         lastRedactor = new PublicUserDataResponse(kanbanElement.getLastRedactor());

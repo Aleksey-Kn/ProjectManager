@@ -4,9 +4,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.manager.ProgectManager.DTO.ContentDTO;
 import ru.manager.ProgectManager.DTO.response.KanbanResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.KanbanColumn;
+import ru.manager.ProgectManager.services.KanbanService;
 import ru.manager.ProgectManager.services.ProjectService;
 
 import java.util.List;
@@ -17,6 +19,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class KanbanController {
     private final ProjectService projectService;
+    private final KanbanService kanbanService;
     private final JwtProvider provider;
 
     @GetMapping("/users/kanban/get")
@@ -34,8 +37,17 @@ public class KanbanController {
     }
 
     @GetMapping("/users/kanban/get_content")
-    public String getContent(@RequestParam long elementId){
-        return null; //TODO
+    public ResponseEntity<?> getContent(@RequestParam long elementId){
+        try {
+            Optional<String> content = kanbanService
+                    .getContentFromElement(elementId, provider.getLoginFromToken());
+            if(content.isPresent()){
+                return ResponseEntity.ok(new ContentDTO(content.get()));
+            }
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        } catch (NoSuchElementException e){
+            return new ResponseEntity<>("No such specified element", HttpStatus.BAD_REQUEST);
+        }
     }
 
     @PutMapping("/users/kanban/transport_element")
@@ -60,6 +72,16 @@ public class KanbanController {
 
     @PostMapping("/users/kanban/column")
     public ResponseEntity<?> addColumn(){
+        return ResponseEntity.ok("OK"); //TODO
+    }
+
+    @DeleteMapping("/users/kanban/element")
+    public ResponseEntity<?> removeElement(){
+        return ResponseEntity.ok("OK"); //TODO
+    }
+
+    @DeleteMapping("/users/kanban/column")
+    public ResponseEntity<?> removeColumn(){
         return ResponseEntity.ok("OK"); //TODO
     }
 }
