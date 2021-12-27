@@ -6,26 +6,25 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.response.KanbanResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
-import ru.manager.ProgectManager.entitys.UserWithProjectConnector;
+import ru.manager.ProgectManager.entitys.KanbanColumn;
 import ru.manager.ProgectManager.services.ProjectService;
-import ru.manager.ProgectManager.services.UserService;
 
+import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
 public class KanbanController {
     private final ProjectService projectService;
-    private final UserService userService;
     private final JwtProvider provider;
 
     @GetMapping("/users/kanban/get")
     public ResponseEntity<?> getKanban(@RequestParam long projectId){
         try {
-            if(userService.findByUsername(provider.getLoginFromToken()).get().getUserWithProjectConnectors().stream()
-                    .map(UserWithProjectConnector::getProject)
-                    .anyMatch(p -> p.getId() == projectId)) {
-                return ResponseEntity.ok(new KanbanResponse(projectService.findKanbans(projectId)));
+            Optional<List<KanbanColumn>> result = projectService.findKanbans(projectId, provider.getLoginFromToken());
+            if(result.isPresent()) {
+                return ResponseEntity.ok(new KanbanResponse(result.get()));
             } else{
                 return new ResponseEntity<>("The user does not have access to this project", HttpStatus.FORBIDDEN);
             }

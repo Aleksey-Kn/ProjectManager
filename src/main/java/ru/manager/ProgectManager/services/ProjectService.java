@@ -90,12 +90,17 @@ public class ProjectService {
         return false;
     }
 
-    public List<KanbanColumn> findKanbans(long id){
-        List<KanbanColumn> result = projectRepository.findById(id).get().getKanbanColumns();
-        result.sort(Comparator.comparing(KanbanColumn::getSerialNumber));
-        for(KanbanColumn column: result){
-            column.getElements().sort(Comparator.comparing(KanbanElement::getSerialNumber));
+    public Optional<List<KanbanColumn>> findKanbans(long id, String userLogin){
+        if(userRepository.findByUsername(userLogin).getUserWithProjectConnectors().stream()
+                .map(UserWithProjectConnector::getProject)
+                .anyMatch(p -> p.getId() == id)) {
+            List<KanbanColumn> result = projectRepository.findById(id).get().getKanbanColumns();
+            result.sort(Comparator.comparing(KanbanColumn::getSerialNumber));
+            for (KanbanColumn column : result) {
+                column.getElements().sort(Comparator.comparing(KanbanElement::getSerialNumber));
+            }
+            return Optional.of(result);
         }
-        return result;
+        return Optional.empty();
     }
 }
