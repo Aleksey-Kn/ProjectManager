@@ -82,7 +82,9 @@ public class ProjectService {
                 .anyMatch(c -> c.getUser().equals(admin))){
             List<UserWithProjectConnector> removable = project.getConnectors();
             project.getConnectors().clear();
-            admin.getUserWithProjectConnectors().removeIf(c -> c.getProject().equals(project));
+            removable.stream()
+                    .map(UserWithProjectConnector::getUser)
+                    .forEach(u -> u.getUserWithProjectConnectors().removeIf(c -> c.getProject().equals(project)));
             connectorRepository.deleteAll(removable);
             projectRepository.delete(project);
             return true;
