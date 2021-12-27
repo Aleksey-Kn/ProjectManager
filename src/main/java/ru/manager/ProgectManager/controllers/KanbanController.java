@@ -76,12 +76,26 @@ public class KanbanController {
     }
 
     @DeleteMapping("/users/kanban/element")
-    public ResponseEntity<?> removeElement(){
-        return ResponseEntity.ok("OK"); //TODO
+    public ResponseEntity<?> removeElement(@RequestParam long elementId){
+        try{
+            if(kanbanService.deleteElement(elementId, provider.getLoginFromToken())){
+                return new ResponseEntity<>(HttpStatus.OK);
+            }
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        } catch (NoSuchElementException e){
+            return new ResponseEntity<>("No such specified element", HttpStatus.BAD_REQUEST);
+        }
     }
 
     @DeleteMapping("/users/kanban/column")
-    public ResponseEntity<?> removeColumn(){
-        return ResponseEntity.ok("OK"); //TODO
+    public ResponseEntity<?> removeColumn(@RequestParam long columnId){
+        try{
+            if(kanbanService.deleteColumn(columnId, provider.getLoginFromToken())){
+                return new ResponseEntity<>(HttpStatus.OK);
+            }
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        } catch (NoSuchElementException e){
+            return new ResponseEntity<>("No such specified element", HttpStatus.BAD_REQUEST);
+        }
     }
 }
