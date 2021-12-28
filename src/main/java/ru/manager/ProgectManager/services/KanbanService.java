@@ -36,6 +36,9 @@ public class KanbanService {
         KanbanColumn column = columnRepository.findById(id).get();
         Project project = column.getProject();
         if (project.getConnectors().stream().anyMatch(c -> c.getUser().equals(user))) {
+            project.getKanbanColumns().stream()
+                    .filter(kanbanColumn -> kanbanColumn.getSerialNumber() > column.getSerialNumber())
+                            .forEach(kanbanColumn -> kanbanColumn.setSerialNumber(kanbanColumn.getSerialNumber() - 1));
             project.getKanbanColumns().remove(column);
             columnRepository.delete(column);
             return true;
@@ -47,6 +50,9 @@ public class KanbanService {
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(id).get();
         if(element.getKanbanColumn().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
+            element.getKanbanColumn().getElements().stream()
+                    .filter(kanbanElement -> kanbanElement.getSerialNumber() > element.getSerialNumber())
+                            .forEach(kanbanElement -> kanbanElement.setSerialNumber(kanbanElement.getSerialNumber() - 1));
             elementRepository.delete(element);
             return true;
         }
