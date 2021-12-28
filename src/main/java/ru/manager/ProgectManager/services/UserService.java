@@ -97,10 +97,11 @@ public class UserService {
         }
     }
 
-    public void setPhoto(String login, MultipartFile file) throws IOException {
+    public void setPhoto(String login, byte[] file) throws IOException {
         User user = userRepository.findByUsername(login);
         if(user != null){
-            user.setPhoto(file.getBytes());
+            user.setPhoto(file);
+            userRepository.save(user);
         }
     }
 }

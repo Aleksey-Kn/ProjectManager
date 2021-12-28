@@ -57,7 +57,7 @@ public class ProjectController {
     }
 
     @PostMapping("/users/project/photo")
-    public ResponseEntity<?> setPhoto(@RequestParam long id, @ModelAttribute PhotoDTO photoDTO){
+    public ResponseEntity<?> setPhoto(@RequestParam long id, @ModelAttribute PhotoDTO photoDTO){ // TODO: add check photo size
         try{
             if(projectService.setPhoto(id, photoDTO.getFile())) {
                 return new ResponseEntity<>(HttpStatus.OK);

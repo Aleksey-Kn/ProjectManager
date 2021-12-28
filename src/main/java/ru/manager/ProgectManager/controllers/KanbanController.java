@@ -110,6 +110,11 @@ public class KanbanController {
         return ResponseEntity.ok("OK"); //TODO
     }
 
+    @PostMapping("users/kanban/photo")
+    public ResponseEntity<?> addPhoto(){
+        return ResponseEntity.ok("OK"); // TODO
+    }
+
     @DeleteMapping("/users/kanban/element")
     public ResponseEntity<?> removeElement(@RequestParam long elementId){
         try{
