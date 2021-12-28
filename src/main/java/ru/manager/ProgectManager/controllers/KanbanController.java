@@ -3,14 +3,17 @@ package ru.manager.ProgectManager.controllers;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.ContentDTO;
+import ru.manager.ProgectManager.DTO.request.TransportRequest;
 import ru.manager.ProgectManager.DTO.response.KanbanResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.KanbanColumn;
 import ru.manager.ProgectManager.services.KanbanService;
 import ru.manager.ProgectManager.services.ProjectService;
 
+import javax.validation.Valid;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -51,13 +54,45 @@ public class KanbanController {
     }
 
     @PutMapping("/users/kanban/transport_element")
-    public ResponseEntity<?> transportElement(){
-        return ResponseEntity.ok("OK"); //TODO
+    public ResponseEntity<?> transportElement(@RequestBody @Valid TransportRequest transportRequest,
+                                              BindingResult bindingResult){
+        if(bindingResult.hasErrors()){
+            return new ResponseEntity<>(bindingResult.getAllErrors().get(0), HttpStatus.NOT_ACCEPTABLE);
+        } else {
+            try{
+                if(kanbanService.transportElement(transportRequest, provider.getLoginFromToken())){
+                    return ResponseEntity.ok(
+                            new KanbanResponse(kanbanService.findProjectFromElement(transportRequest.getId())
+                                    .getKanbanColumns()));
+                }
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            } catch (NoSuchElementException e){
+                return new ResponseEntity<>("No such specified element", HttpStatus.BAD_REQUEST);
+            } catch (IllegalArgumentException e){
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_ACCEPTABLE);
+            }
+        }
     }
 
     @PutMapping("/users/kanban/transport_column")
-    public ResponseEntity<?> transportColumn(){
-        return ResponseEntity.ok("OK"); //TODO
+    public ResponseEntity<?> transportColumn(@RequestBody @Valid TransportRequest transportRequest,
+                                             BindingResult bindingResult){
+        if(bindingResult.hasErrors()){
+            return new ResponseEntity<>(bindingResult.getAllErrors().get(0), HttpStatus.NOT_ACCEPTABLE);
+        } else {
+            try{
+                if(kanbanService.transportColumn(transportRequest, provider.getLoginFromToken())){
+                    return ResponseEntity.ok(
+                            new KanbanResponse(kanbanService.findProjectFromColumn(transportRequest.getId())
+                                    .getKanbanColumns()));
+                }
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            } catch (NoSuchElementException e){
+                return new ResponseEntity<>("No such specified column", HttpStatus.BAD_REQUEST);
+            } catch (IllegalArgumentException e){
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_ACCEPTABLE);
+            }
+        }
     }
 
     @PutMapping("/users/kanban/element")

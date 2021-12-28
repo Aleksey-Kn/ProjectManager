@@ -2,6 +2,7 @@ package ru.manager.ProgectManager.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import ru.manager.ProgectManager.DTO.request.TransportRequest;
 import ru.manager.ProgectManager.entitys.KanbanColumn;
 import ru.manager.ProgectManager.entitys.KanbanElement;
 import ru.manager.ProgectManager.entitys.Project;
@@ -10,6 +11,7 @@ import ru.manager.ProgectManager.repositories.KanbanColumnRepository;
 import ru.manager.ProgectManager.repositories.KanbanElementRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -29,6 +31,54 @@ public class KanbanService {
             return Optional.of(kanbanElement.getContent());
         }
         return Optional.empty();
+    }
+
+    public boolean transportColumn(TransportRequest request, String userLogin){
+        User user = userRepository.findByUsername(userLogin);
+        KanbanColumn column = columnRepository.findById(request.getId()).get();
+        if (column.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))) {
+            List<KanbanColumn> allColumns = column.getProject().getKanbanColumns();
+            if(request.getFrom() >= allColumns.size() || request.getTo() >= allColumns.size())
+                throw new IllegalArgumentException("Index more collection size");
+            if(request.getTo() > request.getFrom()) {
+                allColumns.stream()
+                        .filter(kanbanColumn -> kanbanColumn.getSerialNumber() > request.getFrom())
+                        .filter(kanbanColumn -> kanbanColumn.getSerialNumber() < request.getTo())
+                        .forEach(kanbanColumn -> kanbanColumn.setSerialNumber(kanbanColumn.getSerialNumber() - 1));
+            } else{
+                allColumns.stream()
+                        .filter(kanbanColumn -> kanbanColumn.getSerialNumber() < request.getFrom())
+                        .filter(kanbanColumn -> kanbanColumn.getSerialNumber() > request.getTo())
+                        .forEach(kanbanColumn -> kanbanColumn.setSerialNumber(kanbanColumn.getSerialNumber() + 1));
+            }
+            column.setSerialNumber(request.getTo());
+            return true;
+        }
+        return false;
+    }
+
+    public boolean transportElement(TransportRequest request, String userLogin){
+        User user = userRepository.findByUsername(userLogin);
+        KanbanElement element = elementRepository.findById(request.getId()).get();
+        if(element.getKanbanColumn().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
+            List<KanbanElement> allElements = element.getKanbanColumn().getElements();
+            if(request.getFrom() >= allElements.size() || request.getTo() >= allElements.size())
+                throw new IllegalArgumentException("Index more collection size");
+            if(request.getTo() > request.getFrom()) {
+                allElements.stream()
+                        .filter(kanbanElement -> kanbanElement.getSerialNumber() > request.getFrom())
+                        .filter(kanbanElement -> kanbanElement.getSerialNumber() < request.getTo())
+                        .forEach(kanbanElement -> kanbanElement.setSerialNumber(kanbanElement.getSerialNumber() - 1));
+            } else{
+                allElements.stream()
+                        .filter(kanbanElement -> kanbanElement.getSerialNumber() < request.getFrom())
+                        .filter(kanbanElement -> kanbanElement.getSerialNumber() > request.getTo())
+                        .forEach(kanbanElement -> kanbanElement.setSerialNumber(kanbanElement.getSerialNumber() + 1));
+            }
+            element.setSerialNumber(request.getTo());
+            return true;
+        }
+        return false;
     }
 
     public boolean deleteColumn(long id, String userLogin){
@@ -57,5 +107,13 @@ public class KanbanService {
             return true;
         }
         return false;
+    }
+
+    public Project findProjectFromElement(long id){
+        return elementRepository.findById(id).get().getKanbanColumn().getProject();
+    }
+
+    public Project findProjectFromColumn(long id){
+        return columnRepository.findById(id).get().getProject();
     }
 }
