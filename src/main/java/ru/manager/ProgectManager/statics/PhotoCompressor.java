@@ -1,6 +1,5 @@
-package ru.manager.ProgectManager.components;
+package ru.manager.ProgectManager.statics;
 
-import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.IIOImage;
@@ -14,9 +13,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-@Component
 public class PhotoCompressor {
-    public byte[] compress(MultipartFile input) throws IOException {
+    public static byte[] compress(MultipartFile input) throws IOException {
         InputStream inputStream = new ByteArrayInputStream(input.getBytes());
         BufferedImage image = ImageIO.read(inputStream);
         ByteArrayOutputStream os = new ByteArrayOutputStream();
