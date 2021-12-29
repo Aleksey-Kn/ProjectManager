@@ -63,10 +63,11 @@ public class ProjectService {
             KanbanColumn kanbanColumn = new KanbanColumn();
             kanbanColumn.setName(request.getName());
             kanbanColumn.setProject(project);
-            kanbanColumnRepository
-                    .findLastSerialNumber()
-                    .ifPresentOrElse(e -> kanbanColumn.setSerialNumber(e + 1),
-                            () -> kanbanColumn.setSerialNumber(0));
+            Optional<KanbanColumn> lastColumn = project.getKanbanColumns().stream()
+                    .max(Comparator.comparing(KanbanColumn::getSerialNumber));
+            lastColumn.ifPresentOrElse(c -> kanbanColumn.setSerialNumber(c.getSerialNumber() + 1),
+                    () -> kanbanColumn.setSerialNumber(0));
+
             project.getKanbanColumns().add(kanbanColumn);
             kanbanColumnRepository.save(kanbanColumn);
             projectRepository.save(project);
