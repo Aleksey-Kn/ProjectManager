@@ -14,13 +14,13 @@ import java.io.IOException;
 import java.io.InputStream;
 
 public class PhotoCompressor {
-    public static byte[] compress(MultipartFile input) throws IOException {
-        InputStream inputStream = new ByteArrayInputStream(input.getBytes());
+    public static byte[] compress(byte[] input, String extension) throws IOException {
+        InputStream inputStream = new ByteArrayInputStream(input);
         BufferedImage image = ImageIO.read(inputStream);
         ByteArrayOutputStream os = new ByteArrayOutputStream();
 
         ImageWriter writer = ImageIO
-                .getImageWritersByFormatName(input.getName().substring(input.getName().indexOf('.')))
+                .getImageWritersByFormatName(extension.substring(extension.indexOf('.')))
                 .next();
 
         ImageOutputStream ios = ImageIO.createImageOutputStream(os);
