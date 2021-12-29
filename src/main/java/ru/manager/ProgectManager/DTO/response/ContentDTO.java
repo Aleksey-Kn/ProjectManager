@@ -1,4 +1,4 @@
-package ru.manager.ProgectManager.DTO;
+package ru.manager.ProgectManager.DTO.response;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -7,4 +7,5 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ContentDTO {
     private final String content;
+    private final byte[] photo;
 }

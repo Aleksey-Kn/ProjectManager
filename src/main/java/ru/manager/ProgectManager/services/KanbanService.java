@@ -21,14 +21,14 @@ public class KanbanService {
     private final KanbanElementRepository elementRepository;
     private final UserRepository userRepository;
 
-    public Optional<String> getContentFromElement(long id, String userLogin){
+    public Optional<KanbanElement> getContentFromElement(long id, String userLogin){
         KanbanElement kanbanElement = elementRepository.findById(id).get();
         User user = userRepository.findByUsername(userLogin);
         if(kanbanElement
                 .getKanbanColumn()
                 .getProject()
                 .getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
-            return Optional.of(kanbanElement.getContent());
+            return Optional.of(kanbanElement);
         }
         return Optional.empty();
     }
