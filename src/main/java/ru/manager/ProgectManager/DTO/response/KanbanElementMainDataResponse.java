@@ -2,7 +2,6 @@ package ru.manager.ProgectManager.DTO.response;
 
 import lombok.Getter;
 import ru.manager.ProgectManager.entitys.KanbanElement;
-import ru.manager.ProgectManager.statics.PhotoCompressor;
 
 @Getter
 public class KanbanElementMainDataResponse {
@@ -19,7 +18,7 @@ public class KanbanElementMainDataResponse {
         serialNumber = kanbanElement.getSerialNumber();
         name = kanbanElement.getName();
         tag = kanbanElement.getTag();
-        photo = PhotoCompressor.compress(kanbanElement.getPhoto(), kanbanElement.getExtension());
+        photo = kanbanElement.getPhoto();
         creator = new PublicUserDataResponse(kanbanElement.getOwner());
         lastRedactor = new PublicUserDataResponse(kanbanElement.getLastRedactor());
     }
