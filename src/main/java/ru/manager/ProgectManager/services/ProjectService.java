@@ -3,8 +3,10 @@ package ru.manager.ProgectManager.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import ru.manager.ProgectManager.DTO.request.KanbanColumnRequest;
 import ru.manager.ProgectManager.DTO.request.NameRequestDTO;
 import ru.manager.ProgectManager.entitys.*;
+import ru.manager.ProgectManager.repositories.KanbanColumnRepository;
 import ru.manager.ProgectManager.repositories.ProjectRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
 import ru.manager.ProgectManager.repositories.UserWithProjectConnectorRepository;
@@ -21,6 +23,7 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final UserWithProjectConnectorRepository connectorRepository;
+    private final KanbanColumnRepository kanbanColumnRepository;
 
     public Optional<Project> findProject(long id, String login){
         User user = userRepository.findByUsername(login);
@@ -51,6 +54,25 @@ public class ProjectService {
         connector.setUser(owner);
         connectorRepository.save(connector);
         return project;
+    }
+
+    public boolean addColumn(KanbanColumnRequest request, String userLogin){
+        User user = userRepository.findByUsername(userLogin);
+        Project project = projectRepository.findById(request.getProjectId()).get();
+        if(user.getUserWithProjectConnectors().stream().anyMatch(c -> c.getProject().equals(project))) {
+            KanbanColumn kanbanColumn = new KanbanColumn();
+            kanbanColumn.setName(request.getName());
+            kanbanColumn.setProject(project);
+            kanbanColumnRepository
+                    .findLastSerialNumber()
+                    .ifPresentOrElse(e -> kanbanColumn.setSerialNumber(e + 1),
+                            () -> kanbanColumn.setSerialNumber(0));
+            project.getKanbanColumns().add(kanbanColumn);
+            kanbanColumnRepository.save(kanbanColumn);
+            projectRepository.save(project);
+            return true;
+        }
+        return false;
     }
 
     public boolean setPhoto(long id, MultipartFile photo) throws IOException {

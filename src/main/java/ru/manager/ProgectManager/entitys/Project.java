@@ -29,7 +29,7 @@ public class Project {
     private List<UserWithProjectConnector> connectors;
 
     @JsonIgnore
-    @OneToMany
+    @OneToMany(cascade = CascadeType.ALL)
     private List<KanbanColumn> kanbanColumns;
 
     @Override

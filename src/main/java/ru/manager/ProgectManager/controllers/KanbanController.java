@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import ru.manager.ProgectManager.DTO.request.KanbanColumnRequest;
 import ru.manager.ProgectManager.DTO.response.ContentDTO;
 import ru.manager.ProgectManager.DTO.request.TransportRequest;
 import ru.manager.ProgectManager.DTO.response.KanbanResponse;
@@ -107,8 +108,14 @@ public class KanbanController {
     }
 
     @PostMapping("/users/kanban/column")
-    public ResponseEntity<?> addColumn(){
-        return ResponseEntity.ok("OK"); //TODO
+    public ResponseEntity<?> addColumn(@RequestBody KanbanColumnRequest kanbanColumnRequest){
+        try {
+            if(projectService.addColumn(kanbanColumnRequest, provider.getLoginFromToken()))
+                return new ResponseEntity<>(HttpStatus.OK);
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        } catch (NoSuchElementException e){
+            return new ResponseEntity<>("No such specified project", HttpStatus.BAD_REQUEST);
+        }
     }
 
     @PostMapping("users/kanban/photo")
