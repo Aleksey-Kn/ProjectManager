@@ -6,6 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.KanbanColumnRequest;
+import ru.manager.ProgectManager.DTO.request.KanbanElementRequest;
+import ru.manager.ProgectManager.DTO.request.PhotoDTO;
 import ru.manager.ProgectManager.DTO.response.ContentDTO;
 import ru.manager.ProgectManager.DTO.request.TransportRequest;
 import ru.manager.ProgectManager.DTO.response.KanbanResponse;
@@ -100,17 +102,46 @@ public class KanbanController {
     }
 
     @PutMapping("/users/kanban/element")
-    public ResponseEntity<?> editElement(@RequestBody KanbanColumnRequest request, BindingResult bindingResult){
-        return ResponseEntity.ok("OK"); //TODO
+    public ResponseEntity<?> editElement(@RequestBody @Valid KanbanElementRequest request, BindingResult bindingResult){
+        if(bindingResult.hasErrors()){
+            return new ResponseEntity<>(bindingResult.getAllErrors().get(0), HttpStatus.NOT_ACCEPTABLE);
+        } else {
+            try {
+                if (kanbanService.addElement(request, provider.getLoginFromToken())) {
+                    return new ResponseEntity<>(HttpStatus.OK);
+                }
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            } catch (NoSuchElementException e){
+                return new ResponseEntity<>("No such specified column", HttpStatus.BAD_REQUEST);
+            }
+        }
     }
 
     @PostMapping("/users/kanban/element")
-    public ResponseEntity<?> addElement(@RequestBody KanbanColumnRequest request, BindingResult bindingResult){
-        return ResponseEntity.ok("OK"); //TODO
+    public ResponseEntity<?> addElement(@RequestParam long id, @RequestBody @Valid KanbanElementRequest request,
+                                        BindingResult bindingResult){
+        if(bindingResult.hasErrors()){
+            return new ResponseEntity<>(bindingResult.getAllErrors().get(0), HttpStatus.NOT_ACCEPTABLE);
+        } else {
+            try {
+                if (kanbanService.setElement(id, request, provider.getLoginFromToken())) {
+                    return new ResponseEntity<>(HttpStatus.OK);
+                }
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            } catch (NoSuchElementException e){
+                return new ResponseEntity<>("No such specified column or element", HttpStatus.BAD_REQUEST);
+            }
+        }
     }
 
     @PostMapping("/users/kanban/column")
-    public ResponseEntity<?> addColumn(@RequestBody KanbanColumnRequest kanbanColumnRequest){
+    public ResponseEntity<?> addColumn(@RequestBody @Valid KanbanColumnRequest kanbanColumnRequest,
+                                       BindingResult bindingResult){
+        if(bindingResult.hasErrors()){
+            StringBuilder stringBuilder = new StringBuilder();
+            bindingResult.getAllErrors().forEach(e -> stringBuilder.append(e.getDefaultMessage()).append("; "));
+            return new ResponseEntity<>(stringBuilder.toString(), HttpStatus.NOT_ACCEPTABLE);
+        }
         try {
             if(projectService.addColumn(kanbanColumnRequest, provider.getLoginFromToken()))
                 return new ResponseEntity<>(HttpStatus.OK);
@@ -121,8 +152,15 @@ public class KanbanController {
     }
 
     @PostMapping("users/kanban/photo")
-    public ResponseEntity<?> addPhoto(){
-        return ResponseEntity.ok("OK"); // TODO
+    public ResponseEntity<?> addPhoto(@RequestParam long id, @ModelAttribute PhotoDTO photoDTO){
+        try {
+            if(kanbanService.setPhoto(id, provider.getLoginFromToken(), compressor.compress(photoDTO.getFile()))){
+                return new ResponseEntity<>(HttpStatus.OK);
+            }
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        } catch (NoSuchElementException e){
+            return new ResponseEntity<>("No such specified element", HttpStatus.BAD_REQUEST);
+        }
     }
 
     @DeleteMapping("/users/kanban/element")

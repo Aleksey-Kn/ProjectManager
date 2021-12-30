@@ -46,6 +46,33 @@ public class KanbanService {
         return false;
     }
 
+    public boolean setElement(long id, KanbanElementRequest request, String userLogin){
+        KanbanColumn column = columnRepository.findById(request.getColumnId()).get();
+        User user = userRepository.findByUsername(userLogin);
+        if(column.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
+            KanbanElement element = elementRepository.findById(id).get();
+            element.setContent(request.getContent());
+            element.setName(request.getName());
+            element.setTag(request.getTag());
+
+            element.setLastRedactor(user);
+            elementRepository.save(element);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean setPhoto(long id, String userLogin, byte[] photo){
+        User user = userRepository.findByUsername(userLogin);
+        KanbanElement element = elementRepository.findById(id).get();
+        if(element.getKanbanColumn().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
+            element.setPhoto(photo);
+            elementRepository.save(element);
+            return true;
+        }
+        return false;
+    }
+
     public Optional<KanbanElement> getContentFromElement(long id, String userLogin){
         KanbanElement kanbanElement = elementRepository.findById(id).get();
         User user = userRepository.findByUsername(userLogin);
