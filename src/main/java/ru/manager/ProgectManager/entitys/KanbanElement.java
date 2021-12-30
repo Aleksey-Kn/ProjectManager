@@ -34,12 +34,9 @@ public class KanbanElement {
     @Column
     private String content;
 
-    @Column(length = 4_194_304)
+    @Column(length = 524_288)
     @Lob
     private byte[] photo;
-
-    @Column
-    private String extension;
 
     @ManyToOne
     @JoinColumn(name = "kanban_column_id")

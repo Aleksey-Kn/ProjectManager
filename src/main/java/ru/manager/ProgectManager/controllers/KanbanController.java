@@ -10,6 +10,7 @@ import ru.manager.ProgectManager.DTO.response.ContentDTO;
 import ru.manager.ProgectManager.DTO.request.TransportRequest;
 import ru.manager.ProgectManager.DTO.response.KanbanResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
+import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.entitys.KanbanColumn;
 import ru.manager.ProgectManager.entitys.KanbanElement;
 import ru.manager.ProgectManager.services.KanbanService;
@@ -26,6 +27,7 @@ public class KanbanController {
     private final ProjectService projectService;
     private final KanbanService kanbanService;
     private final JwtProvider provider;
+    private final PhotoCompressor compressor;
 
     @GetMapping("/users/kanban/get")
     public ResponseEntity<?> getKanban(@RequestParam long projectId){
@@ -41,13 +43,13 @@ public class KanbanController {
         }
     }
 
-    @GetMapping("/users/kanban/get_content")
+    @GetMapping("/users/kanban/content")
     public ResponseEntity<?> getContent(@RequestParam long elementId){
         try {
             Optional<KanbanElement> content = kanbanService
                     .getContentFromElement(elementId, provider.getLoginFromToken());
             if(content.isPresent()){
-                return ResponseEntity.ok(new ContentDTO(content.get().getContent(), content.get().getPhoto()));
+                return ResponseEntity.ok(new ContentDTO(content.get()));
             }
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (NoSuchElementException e){

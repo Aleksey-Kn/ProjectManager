@@ -36,7 +36,7 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String nickname;
 
-    @Column(length = 4_194_304)
+    @Column(length = 524_288)
     @Lob
     private byte[] photo;
 

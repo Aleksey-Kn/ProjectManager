@@ -20,8 +20,10 @@ public class PhotoCompressor {
             return null;
         }
         try {
-            InputStream inputStream = file.getInputStream();
-            BufferedImage image = ImageIO.read(inputStream);
+            if(file.getSize() < 524_288){
+                return file.getBytes();
+            }
+            BufferedImage image = ImageIO.read(file.getInputStream());
             ByteArrayOutputStream os = new ByteArrayOutputStream();
 
             ImageWriter writer = ImageIO

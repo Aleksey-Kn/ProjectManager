@@ -20,7 +20,7 @@ public class Project {
     @Column(nullable = false)
     private String name;
 
-    @Column(length = 4_194_304)
+    @Column(length = 524_288)
     @Lob
     private byte[] photo;
 

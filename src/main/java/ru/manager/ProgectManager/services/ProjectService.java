@@ -76,10 +76,10 @@ public class ProjectService {
         return false;
     }
 
-    public boolean setPhoto(long id, MultipartFile photo) throws IOException {
+    public boolean setPhoto(long id, byte[] photo) throws IOException {
         Optional<Project> project = projectRepository.findById(id);
         if(project.isPresent()) {
-            project.get().setPhoto(photo.getBytes());
+            project.get().setPhoto(photo);
             projectRepository.save(project.get());
             return true;
         }

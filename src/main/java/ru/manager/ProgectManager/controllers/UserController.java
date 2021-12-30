@@ -10,6 +10,7 @@ import ru.manager.ProgectManager.DTO.request.RefreshUserDTO;
 import ru.manager.ProgectManager.DTO.response.AllUserDataResponse;
 import ru.manager.ProgectManager.DTO.response.PublicUserDataResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
+import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.entitys.User;
 import ru.manager.ProgectManager.services.UserService;
 
@@ -22,6 +23,7 @@ import java.util.Optional;
 public class UserController {
     private final UserService userService;
     private final JwtProvider jwtProvider;
+    private final PhotoCompressor compressor;
 
     @GetMapping("/users/user")
     public ResponseEntity<?> findAllData(@RequestParam long id) {
@@ -57,7 +59,7 @@ public class UserController {
     @PostMapping("users/user/photo")
     public ResponseEntity<?> setPhoto(@ModelAttribute PhotoDTO photoDTO) {
         try {
-            userService.setPhoto(jwtProvider.getLoginFromToken(), photoDTO.getFile());
+            userService.setPhoto(jwtProvider.getLoginFromToken(), compressor.compress(photoDTO.getFile()));
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (IOException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_ACCEPTABLE);

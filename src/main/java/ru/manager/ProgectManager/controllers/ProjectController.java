@@ -9,6 +9,7 @@ import ru.manager.ProgectManager.DTO.request.NameRequestDTO;
 import ru.manager.ProgectManager.DTO.request.PhotoDTO;
 import ru.manager.ProgectManager.DTO.response.ProjectResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
+import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.services.ProjectService;
 
@@ -22,6 +23,7 @@ import java.util.Optional;
 public class ProjectController {
     private final ProjectService projectService;
     private final JwtProvider provider;
+    private final PhotoCompressor compressor;
 
     @PostMapping("/users/project")
     public ResponseEntity<?> addProject(@RequestBody @Valid NameRequestDTO requestDTO, BindingResult bindingResult){
@@ -59,7 +61,7 @@ public class ProjectController {
     @PostMapping("/users/project/photo")
     public ResponseEntity<?> setPhoto(@RequestParam long id, @ModelAttribute PhotoDTO photoDTO){
         try{
-            if(projectService.setPhoto(id, photoDTO.getFile())) {
+            if(projectService.setPhoto(id, compressor.compress(photoDTO.getFile()))) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else{
                 return new ResponseEntity<>("No such specified project", HttpStatus.BAD_REQUEST);
