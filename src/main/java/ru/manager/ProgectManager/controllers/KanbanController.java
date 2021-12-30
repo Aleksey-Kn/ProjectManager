@@ -45,7 +45,7 @@ public class KanbanController {
         }
     }
 
-    @GetMapping("/users/kanban/content")
+    @GetMapping("/users/kanban/element")
     public ResponseEntity<?> getContent(@RequestParam long elementId){
         try {
             Optional<KanbanElement> content = kanbanService
@@ -67,9 +67,9 @@ public class KanbanController {
         } else {
             try{
                 if(kanbanService.transportElement(transportRequest, provider.getLoginFromToken())){
-                    return ResponseEntity.ok(
-                            new KanbanResponse(kanbanService.findProjectFromElement(transportRequest.getId())
-                                    .getKanbanColumns()));
+                    return ResponseEntity.ok(new KanbanResponse(projectService
+                                    .findKanbans(kanbanService.findProjectFromElement(transportRequest.getId()).getId(),
+                                            provider.getLoginFromToken()).get()));
                 }
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             } catch (NoSuchElementException e){
@@ -86,11 +86,12 @@ public class KanbanController {
         if(bindingResult.hasErrors()){
             return new ResponseEntity<>(bindingResult.getAllErrors().get(0), HttpStatus.NOT_ACCEPTABLE);
         } else {
+            String login = provider.getLoginFromToken();
             try{
-                if(kanbanService.transportColumn(transportRequest, provider.getLoginFromToken())){
-                    return ResponseEntity.ok(
-                            new KanbanResponse(kanbanService.findProjectFromColumn(transportRequest.getId())
-                                    .getKanbanColumns()));
+                if(kanbanService.transportColumn(transportRequest, login)){
+                    return ResponseEntity.ok(new KanbanResponse(projectService
+                            .findKanbans(kanbanService
+                                    .findProjectFromColumn(transportRequest.getId()).getId(), login).get()));
                 }
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             } catch (NoSuchElementException e){
@@ -101,14 +102,17 @@ public class KanbanController {
         }
     }
 
-    @PutMapping("/users/kanban/element")
+    @PostMapping("/users/kanban/element")
     public ResponseEntity<?> editElement(@RequestBody @Valid KanbanElementRequest request, BindingResult bindingResult){
         if(bindingResult.hasErrors()){
             return new ResponseEntity<>(bindingResult.getAllErrors().get(0), HttpStatus.NOT_ACCEPTABLE);
         } else {
             try {
-                if (kanbanService.addElement(request, provider.getLoginFromToken())) {
-                    return new ResponseEntity<>(HttpStatus.OK);
+                String login = provider.getLoginFromToken();
+                if (kanbanService.addElement(request, login)) {
+                    return ResponseEntity.ok(new KanbanResponse(projectService
+                            .findKanbans(kanbanService.findProjectFromColumn(request.getColumnId()).getId(), login)
+                            .get()));
                 }
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             } catch (NoSuchElementException e){
@@ -117,15 +121,18 @@ public class KanbanController {
         }
     }
 
-    @PostMapping("/users/kanban/element")
+    @PutMapping("/users/kanban/element")
     public ResponseEntity<?> addElement(@RequestParam long id, @RequestBody @Valid KanbanElementRequest request,
                                         BindingResult bindingResult){
         if(bindingResult.hasErrors()){
             return new ResponseEntity<>(bindingResult.getAllErrors().get(0), HttpStatus.NOT_ACCEPTABLE);
         } else {
             try {
-                if (kanbanService.setElement(id, request, provider.getLoginFromToken())) {
-                    return new ResponseEntity<>(HttpStatus.OK);
+                String login = provider.getLoginFromToken();
+                if (kanbanService.setElement(id, request, login)) {
+                    return ResponseEntity.ok(new KanbanResponse(projectService
+                            .findKanbans(kanbanService.findProjectFromColumn(request.getColumnId()).getId(), login)
+                            .get()));
                 }
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             } catch (NoSuchElementException e){
@@ -143,8 +150,10 @@ public class KanbanController {
             return new ResponseEntity<>(stringBuilder.toString(), HttpStatus.NOT_ACCEPTABLE);
         }
         try {
-            if(projectService.addColumn(kanbanColumnRequest, provider.getLoginFromToken()))
-                return new ResponseEntity<>(HttpStatus.OK);
+            String login = provider.getLoginFromToken();
+            if(projectService.addColumn(kanbanColumnRequest, login))
+                return ResponseEntity.ok(new KanbanResponse(projectService
+                        .findKanbans(kanbanColumnRequest.getProjectId(), login).get()));
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (NoSuchElementException e){
             return new ResponseEntity<>("No such specified project", HttpStatus.BAD_REQUEST);
@@ -164,10 +173,12 @@ public class KanbanController {
     }
 
     @DeleteMapping("/users/kanban/element")
-    public ResponseEntity<?> removeElement(@RequestParam long elementId){
+    public ResponseEntity<?> removeElement(@RequestParam long id){
         try{
-            if(kanbanService.deleteElement(elementId, provider.getLoginFromToken())){
-                return new ResponseEntity<>(HttpStatus.OK);
+            String login = provider.getLoginFromToken();
+            if(kanbanService.deleteElement(id, login)){
+                return ResponseEntity.ok(new KanbanResponse(projectService
+                        .findKanbans(kanbanService.findProjectFromElement(id).getId(), login).get()));
             }
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (NoSuchElementException e){
@@ -176,10 +187,12 @@ public class KanbanController {
     }
 
     @DeleteMapping("/users/kanban/column")
-    public ResponseEntity<?> removeColumn(@RequestParam long columnId){
+    public ResponseEntity<?> removeColumn(@RequestParam long id){
         try{
-            if(kanbanService.deleteColumn(columnId, provider.getLoginFromToken())){
-                return new ResponseEntity<>(HttpStatus.OK);
+            String login = provider.getLoginFromToken();
+            if(kanbanService.deleteColumn(id, login)){
+                return ResponseEntity.ok(new KanbanResponse(projectService
+                        .findKanbans(kanbanService.findProjectFromColumn(id).getId(), login).get()));
             }
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (NoSuchElementException e){

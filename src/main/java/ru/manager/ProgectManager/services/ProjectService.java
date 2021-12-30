@@ -121,8 +121,12 @@ public class ProjectService {
                 .anyMatch(p -> p.getId() == id)) {
             List<KanbanColumn> result = projectRepository.findById(id).get().getKanbanColumns();
             result.sort(Comparator.comparing(KanbanColumn::getSerialNumber));
+            List<KanbanElement> kanbanElements;
             for (KanbanColumn column : result) {
-                column.getElements().sort(Comparator.comparing(KanbanElement::getSerialNumber));
+                kanbanElements = column.getElements();
+                if(kanbanElements != null){
+                    kanbanElements.sort(Comparator.comparing(KanbanElement::getSerialNumber));
+                }
             }
             return Optional.of(result);
         }

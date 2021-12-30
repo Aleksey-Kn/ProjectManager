@@ -20,6 +20,7 @@ public class PhotoCompressor {
             return null;
         }
         try {
+            String filename = file.getOriginalFilename().substring(file.getOriginalFilename().indexOf('.') + 1);
             if(file.getSize() < 524_288){
                 return file.getBytes();
             }
@@ -27,8 +28,7 @@ public class PhotoCompressor {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
 
             ImageWriter writer = ImageIO
-                    .getImageWritersByFormatName(file.getOriginalFilename()
-                    .substring(file.getOriginalFilename().indexOf('.')))
+                    .getImageWritersByFormatName(filename)
                     .next();
 
             ImageOutputStream ios = ImageIO.createImageOutputStream(os);

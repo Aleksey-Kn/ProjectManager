@@ -17,8 +17,10 @@ public class KanbanColumnResponse {
         id = kanbanColumn.getId();
         serialNumber = kanbanColumn.getSerialNumber();
         name = kanbanColumn.getName();
-        kanbanElements = kanbanColumn.getElements().stream()
+        kanbanElements = (kanbanColumn.getElements() == null
+                ? List.of()
+                : kanbanColumn.getElements().stream()
                 .map(KanbanElementMainDataResponse::new)
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()));
     }
 }

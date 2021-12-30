@@ -88,19 +88,20 @@ public class KanbanService {
     public boolean transportColumn(TransportRequest request, String userLogin){
         User user = userRepository.findByUsername(userLogin);
         KanbanColumn column = columnRepository.findById(request.getId()).get();
+        int from = column.getSerialNumber();
         if (column.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))) {
             List<KanbanColumn> allColumns = column.getProject().getKanbanColumns();
-            if(request.getFrom() >= allColumns.size() || request.getTo() >= allColumns.size())
+            if(from >= allColumns.size() || request.getTo() >= allColumns.size())
                 throw new IllegalArgumentException("Index more collection size");
-            if(request.getTo() > request.getFrom()) {
+            if(request.getTo() > from) {
                 allColumns.stream()
-                        .filter(kanbanColumn -> kanbanColumn.getSerialNumber() > request.getFrom())
-                        .filter(kanbanColumn -> kanbanColumn.getSerialNumber() < request.getTo())
+                        .filter(kanbanColumn -> kanbanColumn.getSerialNumber() > from)
+                        .filter(kanbanColumn -> kanbanColumn.getSerialNumber() <= request.getTo())
                         .forEach(kanbanColumn -> kanbanColumn.setSerialNumber(kanbanColumn.getSerialNumber() - 1));
             } else{
                 allColumns.stream()
-                        .filter(kanbanColumn -> kanbanColumn.getSerialNumber() < request.getFrom())
-                        .filter(kanbanColumn -> kanbanColumn.getSerialNumber() > request.getTo())
+                        .filter(kanbanColumn -> kanbanColumn.getSerialNumber() < from)
+                        .filter(kanbanColumn -> kanbanColumn.getSerialNumber() >= request.getTo())
                         .forEach(kanbanColumn -> kanbanColumn.setSerialNumber(kanbanColumn.getSerialNumber() + 1));
             }
             column.setSerialNumber(request.getTo());
@@ -112,19 +113,20 @@ public class KanbanService {
     public boolean transportElement(TransportRequest request, String userLogin){
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(request.getId()).get();
+        int from = element.getSerialNumber();
         if(element.getKanbanColumn().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
             List<KanbanElement> allElements = element.getKanbanColumn().getElements();
-            if(request.getFrom() >= allElements.size() || request.getTo() >= allElements.size())
+            if(from >= allElements.size() || request.getTo() >= allElements.size())
                 throw new IllegalArgumentException("Index more collection size");
-            if(request.getTo() > request.getFrom()) {
+            if(request.getTo() > from) {
                 allElements.stream()
-                        .filter(kanbanElement -> kanbanElement.getSerialNumber() > request.getFrom())
-                        .filter(kanbanElement -> kanbanElement.getSerialNumber() < request.getTo())
+                        .filter(kanbanElement -> kanbanElement.getSerialNumber() > from)
+                        .filter(kanbanElement -> kanbanElement.getSerialNumber() <= request.getTo())
                         .forEach(kanbanElement -> kanbanElement.setSerialNumber(kanbanElement.getSerialNumber() - 1));
             } else{
                 allElements.stream()
-                        .filter(kanbanElement -> kanbanElement.getSerialNumber() < request.getFrom())
-                        .filter(kanbanElement -> kanbanElement.getSerialNumber() > request.getTo())
+                        .filter(kanbanElement -> kanbanElement.getSerialNumber() < from)
+                        .filter(kanbanElement -> kanbanElement.getSerialNumber() >= request.getTo())
                         .forEach(kanbanElement -> kanbanElement.setSerialNumber(kanbanElement.getSerialNumber() + 1));
             }
             element.setSerialNumber(request.getTo());
@@ -155,6 +157,11 @@ public class KanbanService {
             element.getKanbanColumn().getElements().stream()
                     .filter(kanbanElement -> kanbanElement.getSerialNumber() > element.getSerialNumber())
                             .forEach(kanbanElement -> kanbanElement.setSerialNumber(kanbanElement.getSerialNumber() - 1));
+
+            KanbanColumn column = element.getKanbanColumn();
+            column.getElements().remove(element);
+            columnRepository.save(column);
+
             elementRepository.delete(element);
             return true;
         }
