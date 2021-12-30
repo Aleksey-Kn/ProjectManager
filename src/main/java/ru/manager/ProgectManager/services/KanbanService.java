@@ -2,6 +2,7 @@ package ru.manager.ProgectManager.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import ru.manager.ProgectManager.DTO.request.KanbanElementRequest;
 import ru.manager.ProgectManager.DTO.request.TransportRequest;
 import ru.manager.ProgectManager.entitys.KanbanColumn;
 import ru.manager.ProgectManager.entitys.KanbanElement;
@@ -11,6 +12,7 @@ import ru.manager.ProgectManager.repositories.KanbanColumnRepository;
 import ru.manager.ProgectManager.repositories.KanbanElementRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,6 +22,29 @@ public class KanbanService {
     private final KanbanColumnRepository columnRepository;
     private final KanbanElementRepository elementRepository;
     private final UserRepository userRepository;
+
+    public boolean addElement(KanbanElementRequest request, String userLogin){
+        KanbanColumn column = columnRepository.findById(request.getColumnId()).get();
+        User user = userRepository.findByUsername(userLogin);
+        if(column.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
+            KanbanElement element = new KanbanElement();
+            element.setContent(request.getContent());
+            element.setName(request.getName());
+            element.setTag(request.getTag());
+
+            element.setOwner(user);
+            element.setLastRedactor(user);
+            column.getElements().stream().max(Comparator.comparing(KanbanElement::getSerialNumber))
+                    .ifPresentOrElse(e -> element.setSerialNumber(e.getSerialNumber() + 1),
+                            () -> element.setSerialNumber(0));
+            column.getElements().add(element);
+            element.setKanbanColumn(column);
+            elementRepository.save(element);
+            columnRepository.save(column);
+            return true;
+        }
+        return false;
+    }
 
     public Optional<KanbanElement> getContentFromElement(long id, String userLogin){
         KanbanElement kanbanElement = elementRepository.findById(id).get();

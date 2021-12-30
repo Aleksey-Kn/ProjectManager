@@ -100,12 +100,12 @@ public class KanbanController {
     }
 
     @PutMapping("/users/kanban/element")
-    public ResponseEntity<?> editElement(){
+    public ResponseEntity<?> editElement(@RequestBody KanbanColumnRequest request, BindingResult bindingResult){
         return ResponseEntity.ok("OK"); //TODO
     }
 
     @PostMapping("/users/kanban/element")
-    public ResponseEntity<?> addElement(){
+    public ResponseEntity<?> addElement(@RequestBody KanbanColumnRequest request, BindingResult bindingResult){
         return ResponseEntity.ok("OK"); //TODO
     }
 
