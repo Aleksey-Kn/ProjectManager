@@ -50,7 +50,7 @@ public class AccessService {
 
     public boolean createAccessForUser(String token, String toUser) {
         AccessProject accessProject = accessProjectRepository.findById(token).get();
-        if(accessProject.isDisposable()) {
+        if(accessProject.isDisposable() || LocalDate.ofEpochDay(accessProject.getTimeForDie()).isBefore(LocalDate.now())){
             accessProjectRepository.delete(accessProject);
         }
         if(LocalDate.ofEpochDay(accessProject.getTimeForDie()).isAfter(LocalDate.now())) {
