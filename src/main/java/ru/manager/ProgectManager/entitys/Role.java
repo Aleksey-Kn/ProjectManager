@@ -16,9 +16,6 @@ public class Role implements GrantedAuthority {
     @Column(nullable = false, unique = true)
     private String name;
 
-    @OneToMany(mappedBy = "role", fetch = FetchType.EAGER)
-    private List<UserWithRoleConnector> userWithRoleConnectors;
-
     @Override
     public String getAuthority() {
         return name;

@@ -3,7 +3,6 @@ package ru.manager.ProgectManager.entitys;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
 import org.hibernate.Hibernate;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,11 +16,10 @@ import java.util.stream.Collectors;
 @Entity
 @Getter
 @Setter
-@ToString
 @RequiredArgsConstructor
 public class User implements UserDetails {
     @Id
-    @GeneratedValue( strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private long userId;
 
     @Column(nullable = false, unique = true)
@@ -41,19 +39,9 @@ public class User implements UserDetails {
     private byte[] photo;
 
     @OneToMany(cascade = CascadeType.ALL)
-    @ToString.Exclude
     private List<UserWithRoleConnector> userWithRoleConnectors;
 
-    @OneToMany(mappedBy = "owner")
-    @ToString.Exclude
-    private List<KanbanElement> elementsForOwner;
-
-    @OneToMany(mappedBy = "lastRedactor")
-    @ToString.Exclude
-    private List<KanbanElement> elementsLastRedacted;
-
     @OneToMany
-    @ToString.Exclude
     private List<UserWithProjectConnector> userWithProjectConnectors;
 
     @Override
