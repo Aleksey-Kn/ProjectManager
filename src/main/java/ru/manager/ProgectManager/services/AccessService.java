@@ -50,6 +50,9 @@ public class AccessService {
 
     public boolean createAccessForUser(String token, String toUser) {
         AccessProject accessProject = accessProjectRepository.findById(token).get();
+        if(accessProject.isDisposable()) {
+            accessProjectRepository.delete(accessProject);
+        }
         if(LocalDate.ofEpochDay(accessProject.getTimeForDie()).isAfter(LocalDate.now())) {
             User user = userRepository.findByUsername(toUser);
             Project project = accessProject.getProject();
@@ -63,8 +66,7 @@ public class AccessService {
             user.getUserWithProjectConnectors().add(connector);
             projectRepository.save(project);
             userRepository.save(user);
-        } else {
-            accessProjectRepository.delete(accessProject);
+            return true;
         }
         return false;
     }

@@ -30,7 +30,7 @@ public class AccessController {
             }
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (NoSuchElementException e){
-            return new ResponseEntity<>("No such specified token", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("The link is invalid or no longer available", HttpStatus.BAD_REQUEST);
         }
     }
 
