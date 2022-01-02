@@ -20,6 +20,9 @@ public class AccessProject {
     @Column
     private boolean disposable;
 
+    @Column
+    private long timeForDie; // in days
+
     @ManyToOne
     @JoinColumn(name = "project_id")
     private Project project;
