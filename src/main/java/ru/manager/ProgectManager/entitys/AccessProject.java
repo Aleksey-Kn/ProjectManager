@@ -18,7 +18,11 @@ public class AccessProject {
     private boolean isAdmin;
 
     @Column
-    private boolean eternal;
+    private boolean disposable;
+
+    @ManyToOne
+    @JoinColumn(name = "project_id")
+    private Project project;
 
     @Override
     public boolean equals(Object o) {
