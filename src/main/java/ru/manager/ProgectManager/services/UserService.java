@@ -43,7 +43,7 @@ public class UserService {
         passwordEncoder = p;
     }
 
-    public boolean saveUser(UserDTO userDTO){
+    public Optional<User> saveUser(UserDTO userDTO){
         if(userRepository.findByUsername(userDTO.getLogin()) == null) {
             Role role = roleRepository.findByName("ROLE_USER");
             User user = new User();
@@ -56,11 +56,11 @@ public class UserService {
             userWithRoleConnector.setUser(user);
             userWithRoleConnector.setRole(role);
             user.setUserWithRoleConnectors(Collections.singletonList(userWithRoleConnector));
-            userRepository.save(user);
+            Optional<User> result = Optional.of(userRepository.save(user));
             connectorRepository.save(userWithRoleConnector);
-            return true;
+            return result;
         }
-        return false;
+        return Optional.empty();
     }
 
     public Optional<User> findByUsername(String username){

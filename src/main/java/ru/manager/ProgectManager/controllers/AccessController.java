@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.manager.ProgectManager.DTO.request.AccessRequest;
+import ru.manager.ProgectManager.DTO.request.AccessProjectRequest;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.services.AccessService;
 
@@ -35,11 +35,11 @@ public class AccessController {
     }
 
     @PostMapping("/users/access")
-    public ResponseEntity<String> postAccess(@RequestBody AccessRequest accessRequest){
+    public ResponseEntity<String> postAccess(@RequestBody AccessProjectRequest accessProjectRequest){
         try{
             Optional<String> token = accessService.generateTokenForAccessProject(provider.getLoginFromToken(),
-                    accessRequest.getProjectId(), accessRequest.isHasAdmin(), accessRequest.isDisposable(),
-                    accessRequest.getLiveTimeInDays());
+                    accessProjectRequest.getProjectId(), accessProjectRequest.isHasAdmin(), accessProjectRequest.isDisposable(),
+                    accessProjectRequest.getLiveTimeInDays());
             return token.map(s -> ResponseEntity.ok(configureLink(s)))
                     .orElseGet(() -> new ResponseEntity<>(HttpStatus.FORBIDDEN));
         } catch (NoSuchElementException e){
