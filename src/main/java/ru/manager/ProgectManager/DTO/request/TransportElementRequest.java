@@ -5,10 +5,12 @@ import org.springframework.validation.annotation.Validated;
 
 import javax.validation.constraints.Min;
 
-@Getter
 @Validated
-public class TransportRequest {
+@Getter
+public class TransportElementRequest {
     private long id;
     @Min(value = 0, message = "Index must be more 0")
-    private int to;
+    private int toIndex;
+    @Min(value = 0, message = "Index must be more 0")
+    private int toColumn;
 }

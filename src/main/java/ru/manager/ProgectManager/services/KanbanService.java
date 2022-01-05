@@ -83,7 +83,7 @@ public class KanbanService {
         return Optional.empty();
     }
 
-    public boolean transportColumn(TransportRequest request, String userLogin){
+    public boolean transportColumn(TransportColumnRequest request, String userLogin){
         User user = userRepository.findByUsername(userLogin);
         KanbanColumn column = columnRepository.findById(request.getId()).get();
         int from = column.getSerialNumber();
@@ -119,26 +119,33 @@ public class KanbanService {
         return false;
     }
 
-    public boolean transportElement(TransportRequest request, String userLogin){
+    public boolean transportElement(TransportElementRequest request, String userLogin){
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(request.getId()).get();
         int from = element.getSerialNumber();
         if(element.getKanbanColumn().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
-            List<KanbanElement> allElements = element.getKanbanColumn().getElements();
-            if(from >= allElements.size() || request.getTo() >= allElements.size())
-                throw new IllegalArgumentException("Index more collection size");
-            if(request.getTo() > from) {
-                allElements.stream()
-                        .filter(kanbanElement -> kanbanElement.getSerialNumber() > from)
-                        .filter(kanbanElement -> kanbanElement.getSerialNumber() <= request.getTo())
-                        .forEach(kanbanElement -> kanbanElement.setSerialNumber(kanbanElement.getSerialNumber() - 1));
+            if(element.getKanbanColumn().getId() == request.getToColumn()) {
+                List<KanbanElement> allElements = element.getKanbanColumn().getElements();
+                if (from >= allElements.size() || request.getToIndex() >= allElements.size())
+                    throw new IllegalArgumentException("Index more collection size");
+                if (request.getToIndex() > from) {
+                    allElements.stream()
+                            .filter(kanbanElement -> kanbanElement.getSerialNumber() > from)
+                            .filter(kanbanElement -> kanbanElement.getSerialNumber() <= request.getToIndex())
+                            .forEach(kanbanElement -> kanbanElement.setSerialNumber(kanbanElement.getSerialNumber() - 1));
+                } else {
+                    allElements.stream()
+                            .filter(kanbanElement -> kanbanElement.getSerialNumber() < from)
+                            .filter(kanbanElement -> kanbanElement.getSerialNumber() >= request.getToIndex())
+                            .forEach(kanbanElement -> kanbanElement.setSerialNumber(kanbanElement.getSerialNumber() + 1));
+                }
+                element.setSerialNumber(request.getToIndex());
             } else{
-                allElements.stream()
-                        .filter(kanbanElement -> kanbanElement.getSerialNumber() < from)
-                        .filter(kanbanElement -> kanbanElement.getSerialNumber() >= request.getTo())
-                        .forEach(kanbanElement -> kanbanElement.setSerialNumber(kanbanElement.getSerialNumber() + 1));
+                List<KanbanElement> fromColumnElements = element.getKanbanColumn().getElements();
+                List<KanbanElement> toColumnElements = columnRepository.findById((long) request.getToColumn()).get()
+                        .getElements();
+                //TODO: реализовать перемещение эелмента между колонками
             }
-            element.setSerialNumber(request.getTo());
             return true;
         }
         return false;

@@ -57,20 +57,20 @@ public class KanbanController {
     }
 
     @PutMapping("/users/kanban/transport_element")
-    public ResponseEntity<?> transportElement(@RequestBody @Valid TransportRequest transportRequest,
+    public ResponseEntity<?> transportElement(@RequestBody @Valid TransportElementRequest transportElementRequest,
                                               BindingResult bindingResult){
         if(bindingResult.hasErrors()){
             return new ResponseEntity<>(bindingResult.getAllErrors().get(0), HttpStatus.NOT_ACCEPTABLE);
         } else {
             try{
-                if(kanbanService.transportElement(transportRequest, provider.getLoginFromToken())){
+                if(kanbanService.transportElement(transportElementRequest, provider.getLoginFromToken())){
                     return ResponseEntity.ok(new KanbanResponse(projectService
-                                    .findKanbans(kanbanService.findProjectFromElement(transportRequest.getId()).getId(),
+                                    .findKanbans(kanbanService.findProjectFromElement(transportElementRequest.getId()).getId(),
                                             provider.getLoginFromToken()).get()));
                 }
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             } catch (NoSuchElementException e){
-                return new ResponseEntity<>("No such specified element", HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>("No such specified element or column", HttpStatus.BAD_REQUEST);
             } catch (IllegalArgumentException e){
                 return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_ACCEPTABLE);
             }
@@ -78,17 +78,17 @@ public class KanbanController {
     }
 
     @PutMapping("/users/kanban/transport_column")
-    public ResponseEntity<?> transportColumn(@RequestBody @Valid TransportRequest transportRequest,
+    public ResponseEntity<?> transportColumn(@RequestBody @Valid TransportColumnRequest transportColumnRequest,
                                              BindingResult bindingResult){
         if(bindingResult.hasErrors()){
             return new ResponseEntity<>(bindingResult.getAllErrors().get(0), HttpStatus.NOT_ACCEPTABLE);
         } else {
             String login = provider.getLoginFromToken();
             try{
-                if(kanbanService.transportColumn(transportRequest, login)){
+                if(kanbanService.transportColumn(transportColumnRequest, login)){
                     return ResponseEntity.ok(new KanbanResponse(projectService
                             .findKanbans(kanbanService
-                                    .findProjectFromColumn(transportRequest.getId()).getId(), login).get()));
+                                    .findProjectFromColumn(transportColumnRequest.getId()).getId(), login).get()));
                 }
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             } catch (NoSuchElementException e){
