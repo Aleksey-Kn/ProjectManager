@@ -24,7 +24,7 @@ public class AccessService {
     private final ProjectRepository projectRepository;
     private final UserWithProjectConnectorRepository connectorRepository;
 
-    public Optional<String> generateTokenForAccessProject(String fromUser,
+    public Optional<AccessProject> generateTokenForAccessProject(String fromUser,
                                                           long projectId,
                                                           boolean hasAdmin,
                                                           boolean disposable,
@@ -42,8 +42,7 @@ public class AccessService {
             accessProject.setDisposable(disposable);
             accessProject.setCode(UUID.randomUUID().toString());
             accessProject.setTimeForDie(LocalDate.now().plusDays(liveTime).toEpochDay());
-            accessProjectRepository.save(accessProject);
-            return Optional.of(accessProject.getCode());
+            return Optional.of(accessProjectRepository.save(accessProject));
         }
         return Optional.empty();
     }
