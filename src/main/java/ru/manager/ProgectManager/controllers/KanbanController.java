@@ -5,11 +5,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-import ru.manager.ProgectManager.DTO.request.KanbanColumnRequest;
-import ru.manager.ProgectManager.DTO.request.KanbanElementRequest;
-import ru.manager.ProgectManager.DTO.request.PhotoDTO;
+import ru.manager.ProgectManager.DTO.request.*;
 import ru.manager.ProgectManager.DTO.response.ContentDTO;
-import ru.manager.ProgectManager.DTO.request.TransportRequest;
 import ru.manager.ProgectManager.DTO.response.KanbanResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.components.PhotoCompressor;
@@ -103,7 +100,7 @@ public class KanbanController {
     }
 
     @PostMapping("/users/kanban/element")
-    public ResponseEntity<?> editElement(@RequestBody @Valid KanbanElementRequest request, BindingResult bindingResult){
+    public ResponseEntity<?> editElement(@RequestBody @Valid CreateKanbanElementRequest request, BindingResult bindingResult){
         if(bindingResult.hasErrors()){
             return new ResponseEntity<>(bindingResult.getAllErrors().get(0), HttpStatus.NOT_ACCEPTABLE);
         } else {
@@ -122,7 +119,7 @@ public class KanbanController {
     }
 
     @PutMapping("/users/kanban/element")
-    public ResponseEntity<?> addElement(@RequestParam long id, @RequestBody @Valid KanbanElementRequest request,
+    public ResponseEntity<?> addElement(@RequestParam long id, @RequestBody @Valid UpdateKanbanElementRequest request,
                                         BindingResult bindingResult){
         if(bindingResult.hasErrors()){
             return new ResponseEntity<>(bindingResult.getAllErrors().get(0), HttpStatus.NOT_ACCEPTABLE);
@@ -131,7 +128,7 @@ public class KanbanController {
                 String login = provider.getLoginFromToken();
                 if (kanbanService.setElement(id, request, login)) {
                     return ResponseEntity.ok(new KanbanResponse(projectService
-                            .findKanbans(kanbanService.findProjectFromColumn(request.getColumnId()).getId(), login)
+                            .findKanbans(kanbanService.findProjectFromElement(id).getId(), login)
                             .get()));
                 }
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -154,6 +151,26 @@ public class KanbanController {
             if(projectService.addColumn(kanbanColumnRequest, login))
                 return ResponseEntity.ok(new KanbanResponse(projectService
                         .findKanbans(kanbanColumnRequest.getProjectId(), login).get()));
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        } catch (NoSuchElementException e){
+            return new ResponseEntity<>("No such specified project", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PutMapping("/users/kanban/column")
+    public ResponseEntity<?> renameColumn(@RequestParam long id, @RequestBody @Valid NameRequestDTO name,
+                                          BindingResult bindingResult){
+        if(bindingResult.hasErrors()){
+            StringBuilder stringBuilder = new StringBuilder();
+            bindingResult.getAllErrors().forEach(e -> stringBuilder.append(e.getDefaultMessage()).append("; "));
+            return new ResponseEntity<>(stringBuilder.toString(), HttpStatus.NOT_ACCEPTABLE);
+        }
+        try {
+            String login = provider.getLoginFromToken();
+            if(kanbanService.renameColumn(id, name.getName(), login))
+                return ResponseEntity.ok(new KanbanResponse(projectService
+                        .findKanbans(kanbanService.findProjectFromColumn(id).getId(), login)
+                        .get()));
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (NoSuchElementException e){
             return new ResponseEntity<>("No such specified project", HttpStatus.BAD_REQUEST);

@@ -2,8 +2,7 @@ package ru.manager.ProgectManager.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.manager.ProgectManager.DTO.request.KanbanElementRequest;
-import ru.manager.ProgectManager.DTO.request.TransportRequest;
+import ru.manager.ProgectManager.DTO.request.*;
 import ru.manager.ProgectManager.entitys.KanbanColumn;
 import ru.manager.ProgectManager.entitys.KanbanElement;
 import ru.manager.ProgectManager.entitys.Project;
@@ -23,7 +22,7 @@ public class KanbanService {
     private final KanbanElementRepository elementRepository;
     private final UserRepository userRepository;
 
-    public boolean addElement(KanbanElementRequest request, String userLogin){
+    public boolean addElement(CreateKanbanElementRequest request, String userLogin){
         KanbanColumn column = columnRepository.findById(request.getColumnId()).get();
         User user = userRepository.findByUsername(userLogin);
         if(column.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
@@ -46,11 +45,10 @@ public class KanbanService {
         return false;
     }
 
-    public boolean setElement(long id, KanbanElementRequest request, String userLogin){
-        KanbanColumn column = columnRepository.findById(request.getColumnId()).get();
+    public boolean setElement(long id, UpdateKanbanElementRequest request, String userLogin){
+        KanbanElement element = elementRepository.findById(id).get();
         User user = userRepository.findByUsername(userLogin);
-        if(column.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
-            KanbanElement element = elementRepository.findById(id).get();
+        if(element.getKanbanColumn().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
             element.setContent(request.getContent());
             element.setName(request.getName());
             element.setTag(request.getTag());
@@ -105,6 +103,17 @@ public class KanbanService {
                         .forEach(kanbanColumn -> kanbanColumn.setSerialNumber(kanbanColumn.getSerialNumber() + 1));
             }
             column.setSerialNumber(request.getTo());
+            return true;
+        }
+        return false;
+    }
+
+    public boolean renameColumn(long id, String name, String userLogin){
+        User user = userRepository.findByUsername(userLogin);
+        KanbanColumn kanbanColumn = columnRepository.findById(id).get();
+        if(kanbanColumn.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
+            kanbanColumn.setName(name);
+            columnRepository.save(kanbanColumn);
             return true;
         }
         return false;

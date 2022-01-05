@@ -7,8 +7,7 @@ import javax.validation.constraints.NotBlank;
 
 @Getter
 @Validated
-public class KanbanElementRequest {
-    private long columnId;
+public class UpdateKanbanElementRequest {
     private String content;
     @NotBlank(message = "Name must be contains visible symbols")
     private String name;
