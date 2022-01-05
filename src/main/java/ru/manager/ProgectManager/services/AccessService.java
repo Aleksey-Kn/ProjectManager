@@ -56,16 +56,22 @@ public class AccessService {
         if(LocalDate.ofEpochDay(accessProject.getTimeForDie()).isAfter(LocalDate.now())) {
             User user = userRepository.findByUsername(toUser);
             Project project = accessProject.getProject();
-            UserWithProjectConnector connector = new UserWithProjectConnector();
-            connector.setUser(user);
-            connector.setProject(project);
-            connector.setAdmin(accessProject.isAdmin());
-            connector = connectorRepository.save(connector);
+            if(user.getUserWithProjectConnectors().stream().noneMatch(c -> c.getProject().equals(project))
+                    || user.getUserWithProjectConnectors().stream()
+                    .filter(c -> c.getProject().equals(project))
+                    .noneMatch(UserWithProjectConnector::isAdmin)
+                    && accessProject.isAdmin()) {
+                UserWithProjectConnector connector = new UserWithProjectConnector();
+                connector.setUser(user);
+                connector.setProject(project);
+                connector.setAdmin(accessProject.isAdmin());
+                connector = connectorRepository.save(connector);
 
-            project.getConnectors().add(connector);
-            user.getUserWithProjectConnectors().add(connector);
-            projectRepository.save(project);
-            userRepository.save(user);
+                project.getConnectors().add(connector);
+                user.getUserWithProjectConnectors().add(connector);
+                projectRepository.save(project);
+                userRepository.save(user);
+            }
             return true;
         }
         return false;
