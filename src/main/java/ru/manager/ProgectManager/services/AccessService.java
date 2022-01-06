@@ -32,7 +32,7 @@ public class AccessService {
         User user = userRepository.findByUsername(fromUser);
         Project project = projectRepository.findById(projectId).get();
         if (hasAdmin && !disposable)
-            throw new IllegalArgumentException("Link for access as admin must me disposable");
+            throw new IllegalArgumentException("Request: token for access as admin must me disposable");
         if (user.getUserWithProjectConnectors().stream()
                 .filter(UserWithProjectConnector::isAdmin)
                 .anyMatch(c -> c.getProject().equals(project))) {

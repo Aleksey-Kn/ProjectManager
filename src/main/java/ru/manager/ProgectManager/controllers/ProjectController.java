@@ -4,9 +4,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.NameRequestDTO;
 import ru.manager.ProgectManager.DTO.request.PhotoDTO;
+import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.ProjectResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.components.PhotoCompressor;
@@ -15,8 +17,10 @@ import ru.manager.ProgectManager.services.ProjectService;
 
 import javax.validation.Valid;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -28,7 +32,10 @@ public class ProjectController {
     @PostMapping("/users/project")
     public ResponseEntity<?> addProject(@RequestBody @Valid NameRequestDTO requestDTO, BindingResult bindingResult){
         if(bindingResult.hasErrors()){
-            return new ResponseEntity<>(bindingResult.getAllErrors().get(0), HttpStatus.NOT_ACCEPTABLE);
+            return new ResponseEntity<>(new ErrorResponse(bindingResult.getAllErrors().stream()
+                    .map(ObjectError::getDefaultMessage)
+                    .collect(Collectors.toList())),
+                    HttpStatus.NOT_ACCEPTABLE);
         } else{
             return ResponseEntity.ok(projectService.addProject(requestDTO, provider.getLoginFromToken()));
         }
@@ -44,7 +51,8 @@ public class ProjectController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (NoSuchElementException e){
-            return new ResponseEntity<>("No such specified project", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Project: No such specified project")),
+                    HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -52,7 +60,10 @@ public class ProjectController {
     public ResponseEntity<?> setName(@RequestParam long id, @RequestBody @Valid NameRequestDTO requestDTO,
                                      BindingResult bindingResult){
         if(bindingResult.hasErrors()){
-            return new ResponseEntity<>(bindingResult.getAllErrors().get(0), HttpStatus.NOT_ACCEPTABLE);
+            return new ResponseEntity<>(new ErrorResponse(bindingResult.getAllErrors().stream()
+                    .map(ObjectError::getDefaultMessage)
+                    .collect(Collectors.toList())),
+                    HttpStatus.NOT_ACCEPTABLE);
         } else{
             return ResponseEntity.ok(projectService.setName(id, requestDTO));
         }
@@ -64,10 +75,12 @@ public class ProjectController {
             if(projectService.setPhoto(id, compressor.compress(photoDTO.getFile()))) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else{
-                return new ResponseEntity<>("No such specified project", HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Project: No such specified project")),
+                        HttpStatus.BAD_REQUEST);
             }
         } catch (IOException e){
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_ACCEPTABLE);
+            return new ResponseEntity<>(new ErrorResponse(Collections.singletonList(e.getMessage())),
+                    HttpStatus.NOT_ACCEPTABLE);
         }
     }
 
@@ -79,9 +92,11 @@ public class ProjectController {
             }
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (NoSuchElementException e){
-            return new ResponseEntity<>("Not such specified project", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Project: Not such specified project")),
+                    HttpStatus.BAD_REQUEST);
         } catch (AssertionError e){
-            return new ResponseEntity<>("Not such specified user", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("User: Not such specified user")),
+                    HttpStatus.BAD_REQUEST);
         }
     }
 }

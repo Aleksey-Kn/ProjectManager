@@ -139,13 +139,20 @@ public class KanbanService {
                             .filter(kanbanElement -> kanbanElement.getSerialNumber() >= request.getToIndex())
                             .forEach(kanbanElement -> kanbanElement.setSerialNumber(kanbanElement.getSerialNumber() + 1));
                 }
-                element.setSerialNumber(request.getToIndex());
             } else{
+                KanbanColumn toColumn = columnRepository.findById((long) request.getToColumn()).get();
                 List<KanbanElement> fromColumnElements = element.getKanbanColumn().getElements();
-                List<KanbanElement> toColumnElements = columnRepository.findById((long) request.getToColumn()).get()
-                        .getElements();
-                //TODO: реализовать перемещение эелмента между колонками
+                List<KanbanElement> toColumnElements = toColumn.getElements();
+                fromColumnElements.stream()
+                        .filter(e -> e.getSerialNumber() > from)
+                        .forEach(e -> e.setSerialNumber(e.getSerialNumber() - 1));
+                toColumnElements.stream()
+                        .filter(e -> e.getSerialNumber() >= request.getToIndex())
+                        .forEach(e -> e.setSerialNumber(e.getSerialNumber() + 1));
+                element.getKanbanColumn().getElements().remove(element);
+                toColumn.getElements().add(element);
             }
+            element.setSerialNumber(request.getToIndex());
             return true;
         }
         return false;

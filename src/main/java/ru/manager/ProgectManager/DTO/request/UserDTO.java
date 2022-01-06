@@ -10,13 +10,13 @@ import javax.validation.constraints.Size;
 @Getter
 @Validated
 public class UserDTO {
-    @NotBlank(message = "Name of user must contains visible symbols")
+    @NotBlank(message = "Login: name of user must contains visible symbols")
     private String login;
-    @NotBlank(message = "Password must contains visible symbols")
-    @Size(min = 3, message = "Password must be longer 3 symbols")
+    @NotBlank(message = "Password: must contains visible symbols")
+    @Size(min = 3, message = "Password: must be longer 3 symbols")
     private String password;
-    @Email
+    @Email(message = "Email: incorrect format")
     private String email;
-    @NotBlank
+    @NotBlank(message = "Nickname: must contains visible symbols")
     private String nickname;
 }

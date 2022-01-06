@@ -6,10 +6,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.AccessProjectRequest;
 import ru.manager.ProgectManager.DTO.response.AccessProjectResponse;
+import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.AccessProject;
 import ru.manager.ProgectManager.services.AccessService;
 
+import java.util.Collections;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -28,7 +30,9 @@ public class AccessController {
             }
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (NoSuchElementException e){
-            return new ResponseEntity<>("The token is invalid or no longer available", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(
+                    new ErrorResponse(Collections.singletonList("Project access token: The token is invalid or no longer available")),
+                            HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -41,9 +45,11 @@ public class AccessController {
             return accessProject.map(s -> ResponseEntity.ok(new AccessProjectResponse(s)))
                     .orElseGet(() -> new ResponseEntity<>(HttpStatus.FORBIDDEN));
         } catch (NoSuchElementException e){
-            return new ResponseEntity<>("No such specified project", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Project: No such specified project")),
+                    HttpStatus.BAD_REQUEST);
         } catch (IllegalArgumentException e){
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_ACCEPTABLE);
+            return new ResponseEntity<>(new ErrorResponse(Collections.singletonList(e.getMessage())),
+                    HttpStatus.NOT_ACCEPTABLE);
         }
     }
 }
