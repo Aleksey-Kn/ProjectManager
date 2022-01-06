@@ -18,8 +18,10 @@ public class RefreshUserDTO {
     @Size(min = 3, message = "Password: must be longer 3 symbols")
     @Schema(description = "Новый пароль")
     private String newPassword;
+    @Schema(description = "Новые данные об электронной почте пользователя")
     @Email(message = "Email: incorrect format")
     private String email;
+    @Schema(description = "Новое отображаемое имя пользователя")
     @NotBlank(message = "Nickname: must contains visible symbols")
     private String nickname;
 }
