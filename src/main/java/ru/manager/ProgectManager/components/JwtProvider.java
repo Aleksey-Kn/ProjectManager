@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import ru.manager.ProgectManager.exception.InvalidTokenException;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -52,8 +53,13 @@ public class JwtProvider {
     }
 
     public String getLoginFromToken(){
-        Claims claims = Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(getBearerTokenHeader()).getBody();
-        return claims.getSubject();
+        String accessToken = getBearerTokenHeader();
+        if(validateToken(accessToken)) {
+            Claims claims = Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(accessToken).getBody();
+            return claims.getSubject();
+        } else{
+            throw new InvalidTokenException(accessToken);
+        }
     }
 
     private static String getBearerTokenHeader() {
