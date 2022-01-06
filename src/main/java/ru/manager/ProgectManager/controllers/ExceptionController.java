@@ -1,7 +1,9 @@
 package ru.manager.ProgectManager.controllers;
 
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureException;
+import io.jsonwebtoken.UnsupportedJwtException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -14,7 +16,7 @@ import java.util.Collections;
 public class ExceptionController {
 
     @ResponseStatus(code = HttpStatus.FORBIDDEN)
-    @ExceptionHandler(SignatureException.class)
+    @ExceptionHandler({SignatureException.class, UnsupportedJwtException.class, MalformedJwtException.class})
     public ErrorResponse incorrectToken() {
         return new ErrorResponse(Collections.singletonList("Access token: incorrect access token"));
     }

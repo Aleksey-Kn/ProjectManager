@@ -17,7 +17,7 @@ import java.util.Optional;
 public class StatisticsController {
     private final StatisticsRepository statisticsRepository;
 
-    @PostMapping("/users/add_statistics")
+    @PostMapping("/users/statistics")
     public ResponseEntity<?> setStatistics(@RequestBody List<String> answers){
         for(String answer: answers) {
             Optional<StatisticsUsing> statisticsUsing = Optional.
