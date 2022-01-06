@@ -2,9 +2,8 @@ package ru.manager.ProgectManager.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import ru.manager.ProgectManager.DTO.request.KanbanColumnRequest;
-import ru.manager.ProgectManager.DTO.request.NameRequestDTO;
+import ru.manager.ProgectManager.DTO.request.NameRequest;
 import ru.manager.ProgectManager.entitys.*;
 import ru.manager.ProgectManager.repositories.KanbanColumnRepository;
 import ru.manager.ProgectManager.repositories.ProjectRepository;
@@ -34,7 +33,7 @@ public class ProjectService {
         return Optional.empty();
     }
 
-    public Project addProject(NameRequestDTO requestDTO, String userLogin){
+    public Project addProject(NameRequest requestDTO, String userLogin){
         User owner = userRepository.findByUsername(userLogin);
 
         Project project = new Project();
@@ -86,7 +85,7 @@ public class ProjectService {
         return false;
     }
 
-    public boolean setName(long id, NameRequestDTO name){
+    public boolean setName(long id, NameRequest name){
         Optional<Project> project = projectRepository.findById(id);
         if(project.isPresent()) {
             project.get().setName(name.getName());

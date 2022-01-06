@@ -193,7 +193,7 @@ public class KanbanController {
     }
 
     @PutMapping("/users/kanban/column")
-    public ResponseEntity<?> renameColumn(@RequestParam long id, @RequestBody @Valid NameRequestDTO name,
+    public ResponseEntity<?> renameColumn(@RequestParam long id, @RequestBody @Valid NameRequest name,
                                           BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(

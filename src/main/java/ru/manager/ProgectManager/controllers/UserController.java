@@ -59,8 +59,10 @@ public class UserController {
                     .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
         }
-        userService.refreshUserData(jwtProvider.getLoginFromToken(), userDTO);
-        return new ResponseEntity<>(HttpStatus.OK);
+        if(userService.refreshUserData(jwtProvider.getLoginFromToken(), userDTO)) {
+            return new ResponseEntity<>(HttpStatus.OK);
+        }
+        return new ResponseEntity<>("Old password: incorrect password", HttpStatus.FORBIDDEN);
     }
 
     @PostMapping("users/user/photo")

@@ -12,7 +12,7 @@ import javax.validation.constraints.NotBlank;
 public class KanbanColumnRequest {
     @Schema(description = "Идентификатор проекта, в котором будет создана колонка", required = true)
     private long projectId;
-    @NotBlank
+    @NotBlank(message = "Name: name must contains visible symbols")
     @Schema(description = "Имя колонки")
     private String name;
 }

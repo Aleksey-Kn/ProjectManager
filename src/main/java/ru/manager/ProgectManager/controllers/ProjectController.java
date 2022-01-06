@@ -6,7 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
-import ru.manager.ProgectManager.DTO.request.NameRequestDTO;
+import ru.manager.ProgectManager.DTO.request.NameRequest;
 import ru.manager.ProgectManager.DTO.request.PhotoDTO;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.ProjectResponse;
@@ -30,7 +30,7 @@ public class ProjectController {
     private final PhotoCompressor compressor;
 
     @PostMapping("/users/project")
-    public ResponseEntity<?> addProject(@RequestBody @Valid NameRequestDTO requestDTO, BindingResult bindingResult){
+    public ResponseEntity<?> addProject(@RequestBody @Valid NameRequest requestDTO, BindingResult bindingResult){
         if(bindingResult.hasErrors()){
             return new ResponseEntity<>(new ErrorResponse(bindingResult.getAllErrors().stream()
                     .map(ObjectError::getDefaultMessage)
@@ -57,7 +57,7 @@ public class ProjectController {
     }
 
     @PutMapping("/users/project")
-    public ResponseEntity<?> setName(@RequestParam long id, @RequestBody @Valid NameRequestDTO requestDTO,
+    public ResponseEntity<?> setName(@RequestParam long id, @RequestBody @Valid NameRequest requestDTO,
                                      BindingResult bindingResult){
         if(bindingResult.hasErrors()){
             return new ResponseEntity<>(new ErrorResponse(bindingResult.getAllErrors().stream()

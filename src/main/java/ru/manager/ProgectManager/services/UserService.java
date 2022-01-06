@@ -3,7 +3,6 @@ package ru.manager.ProgectManager.services;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import ru.manager.ProgectManager.DTO.request.RefreshUserDTO;
 import ru.manager.ProgectManager.DTO.request.UserDTO;
 import ru.manager.ProgectManager.entitys.Role;
@@ -87,14 +86,16 @@ public class UserService {
         return Optional.empty();
     }
 
-    public void refreshUserData(String login, RefreshUserDTO userDTO){
+    public boolean refreshUserData(String login, RefreshUserDTO userDTO){
         User user = userRepository.findByUsername(login);
-        if(user != null){
+        if(passwordEncoder.matches(userDTO.getOldPassword(), user.getPassword())){
             user.setNickname(userDTO.getNickname());
             user.setEmail(userDTO.getEmail());
-            user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+            user.setPassword(passwordEncoder.encode(userDTO.getNewPassword()));
             userRepository.save(user);
+            return true;
         }
+        return false;
     }
 
     public void setPhoto(String login, byte[] file) throws IOException {
