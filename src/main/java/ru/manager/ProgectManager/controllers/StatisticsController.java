@@ -1,5 +1,9 @@
 package ru.manager.ProgectManager.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,9 +18,12 @@ import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
+@Tag(name = "Контроллер для сбора статистики о пользователях")
 public class StatisticsController {
     private final StatisticsRepository statisticsRepository;
 
+    @Operation(summary = "Сбор информации о целях использования приложения пользователем")
+    @ApiResponses(value = @ApiResponse(responseCode = "200", description = "Статистика успешно добавлена"))
     @PostMapping("/users/statistics")
     public ResponseEntity<?> setStatistics(@RequestBody List<String> answers){
         for(String answer: answers) {
