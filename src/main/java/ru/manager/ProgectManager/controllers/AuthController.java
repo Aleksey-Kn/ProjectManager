@@ -43,11 +43,11 @@ public class AuthController {
             @ApiResponse(responseCode = "400", description = "Попытка регистрации пользователя с существующим логином",
                     content = {
                             @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = AccessProjectResponse.class))
+                                    schema = @Schema(implementation = ErrorResponse.class))
                     }),
             @ApiResponse(responseCode = "406", description = "Некорректные значения полей", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = AccessProjectResponse.class))
+                            schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "200", description = "Возвращаются токены доступа", content = {
                     @Content(mediaType = "application/json",

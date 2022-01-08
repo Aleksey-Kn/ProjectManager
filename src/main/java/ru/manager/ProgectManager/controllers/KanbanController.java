@@ -74,7 +74,7 @@ public class KanbanController {
         }
     }
 
-    @Operation(summary = "Полвучние элемента канбана", description = "Получегие полной информации об элементе канбана")
+    @Operation(summary = "Получение элемента канбана", description = "Получение полной информации об элементе канбана")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "400", description = "Указанного элемента не существует", content = {
                     @Content(mediaType = "application/json",

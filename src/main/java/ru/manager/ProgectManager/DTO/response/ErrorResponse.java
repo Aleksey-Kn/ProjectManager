@@ -10,6 +10,6 @@ import java.util.List;
 @RequiredArgsConstructor
 @Schema(description = "Информация об ошибках текущего запроса")
 public class ErrorResponse {
-    @Schema(description = "Список ошибок")
+    @Schema(description = "Список ошибок", example = "Источник: причина")
     private final List<String> errors;
 }
