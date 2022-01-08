@@ -26,13 +26,14 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/users/kanban")
 public class KanbanController {
     private final ProjectService projectService;
     private final KanbanService kanbanService;
     private final JwtProvider provider;
     private final PhotoCompressor compressor;
 
-    @GetMapping("/users/kanban/get")
+    @GetMapping("/get")
     public ResponseEntity<?> getKanban(@RequestParam long projectId) {
         try {
             Optional<List<KanbanColumn>> result = projectService.findKanbans(projectId, provider.getLoginFromToken());
@@ -49,7 +50,7 @@ public class KanbanController {
         }
     }
 
-    @GetMapping("/users/kanban/element")
+    @GetMapping("/element")
     public ResponseEntity<?> getContent(@RequestParam long elementId) {
         try {
             Optional<KanbanElement> content = kanbanService
@@ -64,7 +65,7 @@ public class KanbanController {
         }
     }
 
-    @PutMapping("/users/kanban/transport_element")
+    @PutMapping("/transport_element")
     public ResponseEntity<?> transportElement(@RequestBody @Valid TransportElementRequest transportElementRequest,
                                               BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -92,7 +93,7 @@ public class KanbanController {
         }
     }
 
-    @PutMapping("/users/kanban/transport_column")
+    @PutMapping("/transport_column")
     public ResponseEntity<?> transportColumn(@RequestBody @Valid TransportColumnRequest transportColumnRequest,
                                              BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -120,7 +121,7 @@ public class KanbanController {
         }
     }
 
-    @PostMapping("/users/kanban/element")
+    @PostMapping("/element")
     public ResponseEntity<?> editElement(@RequestBody @Valid CreateKanbanElementRequest request, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(
@@ -144,7 +145,7 @@ public class KanbanController {
         }
     }
 
-    @PutMapping("/users/kanban/element")
+    @PutMapping("/element")
     public ResponseEntity<?> addElement(@RequestParam long id, @RequestBody @Valid UpdateKanbanElementRequest request,
                                         BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -170,7 +171,7 @@ public class KanbanController {
         }
     }
 
-    @PostMapping("/users/kanban/column")
+    @PostMapping("/column")
     public ResponseEntity<?> addColumn(@RequestBody @Valid KanbanColumnRequest kanbanColumnRequest,
                                        BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -192,7 +193,7 @@ public class KanbanController {
         }
     }
 
-    @PutMapping("/users/kanban/column")
+    @PutMapping("/column")
     public ResponseEntity<?> renameColumn(@RequestParam long id, @RequestBody @Valid NameRequest name,
                                           BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -215,7 +216,7 @@ public class KanbanController {
         }
     }
 
-    @PostMapping("users/kanban/photo")
+    @PostMapping("/photo")
     public ResponseEntity<?> addPhoto(@RequestParam long id, @ModelAttribute PhotoDTO photoDTO) {
         try {
             if (kanbanService.setPhoto(id, provider.getLoginFromToken(), compressor.compress(photoDTO.getFile()))) {
@@ -228,7 +229,7 @@ public class KanbanController {
         }
     }
 
-    @DeleteMapping("/users/kanban/element")
+    @DeleteMapping("/element")
     public ResponseEntity<?> removeElement(@RequestParam long id) {
         try {
             String login = provider.getLoginFromToken();
@@ -243,7 +244,7 @@ public class KanbanController {
         }
     }
 
-    @DeleteMapping("/users/kanban/column")
+    @DeleteMapping("/column")
     public ResponseEntity<?> removeColumn(@RequestParam long id) {
         try {
             String login = provider.getLoginFromToken();

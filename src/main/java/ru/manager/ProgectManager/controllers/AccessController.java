@@ -1,5 +1,11 @@
 package ru.manager.ProgectManager.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,11 +24,20 @@ import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/users")
+@Tag(name = "Контроллер предоставления доступа к проекту",
+        description = "Позволяет приглашать пользователя в проект с помощью токена доступа")
 public class AccessController {
     private final AccessService accessService;
     private final JwtProvider provider;
 
-    @GetMapping("/users/access")
+    @Operation(summary = "Получение доступа",
+            description = "Предоставляет доступ к проекту, к которому относится токен, пользователю, перешедшуму по данной ссылке")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "403", description = "Некорректный или устаревший токен доступа к проекту"),
+            @ApiResponse(responseCode = "200")
+    })
+    @GetMapping("/access")
     public ResponseEntity<?> getAccess(@RequestParam String token){
         try {
             if (accessService.createAccessForUser(token, provider.getLoginFromToken())) {
@@ -32,11 +47,22 @@ public class AccessController {
         } catch (NoSuchElementException e){
             return new ResponseEntity<>(
                     new ErrorResponse(Collections.singletonList("Project access token: The token is invalid or no longer available")),
-                            HttpStatus.BAD_REQUEST);
+                            HttpStatus.FORBIDDEN);
         }
     }
 
-    @PostMapping("/users/access")
+    @Operation(summary = "Предоставление доступа", description = "Генерирует токен доступа к проекту")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "403",
+                    description = "Пользователь, пытающийся предоставить доступ, не является администратором проекта"),
+            @ApiResponse(responseCode = "400", description = "Указанного проекта не существует"),
+            @ApiResponse(responseCode = "406",
+                    description = "Попытка создать многоразовую ссылку для приглашения пользователя, как администратора"),
+            @ApiResponse(responseCode = "200", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = AccessProjectResponse.class))})
+    })
+    @PostMapping("/access")
     public ResponseEntity<?> postAccess(@RequestBody AccessProjectRequest accessProjectRequest){
         try{
             Optional<AccessProject> accessProject = accessService.generateTokenForAccessProject(provider.getLoginFromToken(),

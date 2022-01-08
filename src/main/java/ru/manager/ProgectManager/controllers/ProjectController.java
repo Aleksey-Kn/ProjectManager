@@ -24,12 +24,13 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/users")
 public class ProjectController {
     private final ProjectService projectService;
     private final JwtProvider provider;
     private final PhotoCompressor compressor;
 
-    @PostMapping("/users/project")
+    @PostMapping("/project")
     public ResponseEntity<?> addProject(@RequestBody @Valid NameRequest requestDTO, BindingResult bindingResult){
         if(bindingResult.hasErrors()){
             return new ResponseEntity<>(new ErrorResponse(bindingResult.getAllErrors().stream()
@@ -41,7 +42,7 @@ public class ProjectController {
         }
     }
 
-    @GetMapping("/users/project")
+    @GetMapping("/project")
     public ResponseEntity<?> findProject(@RequestParam long id){
         try {
             Optional<Project> project = projectService.findProject(id, provider.getLoginFromToken());
@@ -56,7 +57,7 @@ public class ProjectController {
         }
     }
 
-    @PutMapping("/users/project")
+    @PutMapping("/project")
     public ResponseEntity<?> setName(@RequestParam long id, @RequestBody @Valid NameRequest requestDTO,
                                      BindingResult bindingResult){
         if(bindingResult.hasErrors()){
@@ -69,7 +70,7 @@ public class ProjectController {
         }
     }
 
-    @PostMapping("/users/project/photo")
+    @PostMapping("/project/photo")
     public ResponseEntity<?> setPhoto(@RequestParam long id, @ModelAttribute PhotoDTO photoDTO){
         try{
             if(projectService.setPhoto(id, compressor.compress(photoDTO.getFile()))) {
@@ -84,7 +85,7 @@ public class ProjectController {
         }
     }
 
-    @DeleteMapping("/users/project")
+    @DeleteMapping("/project")
     public ResponseEntity<?> deleteProject(@RequestParam long id){
         try {
             if(projectService.deleteProject(id, provider.getLoginFromToken())){

@@ -24,12 +24,13 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/users")
 public class UserController {
     private final UserService userService;
     private final JwtProvider jwtProvider;
     private final PhotoCompressor compressor;
 
-    @GetMapping("/users/user")
+    @GetMapping("/user")
     public ResponseEntity<?> findAllData(@RequestParam long id) {
         Optional<User> user;
         if (id == -1) { //about yourself
@@ -51,7 +52,7 @@ public class UserController {
         }
     }
 
-    @PutMapping("users/user")
+    @PutMapping("/user")
     public ResponseEntity<?> refreshMainData(@RequestBody @Valid RefreshUserDTO userDTO, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(bindingResult.getAllErrors().stream()
@@ -65,7 +66,7 @@ public class UserController {
         return new ResponseEntity<>("Old password: incorrect password", HttpStatus.FORBIDDEN);
     }
 
-    @PostMapping("users/user/photo")
+    @PostMapping("/user/photo")
     public ResponseEntity<?> setPhoto(@ModelAttribute PhotoDTO photoDTO) {
         try {
             userService.setPhoto(jwtProvider.getLoginFromToken(), compressor.compress(photoDTO.getFile()));
