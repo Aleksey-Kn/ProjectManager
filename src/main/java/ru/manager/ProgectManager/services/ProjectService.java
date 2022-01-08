@@ -85,11 +85,14 @@ public class ProjectService {
         return false;
     }
 
-    public boolean setName(long id, NameRequest name){
-        Optional<Project> project = projectRepository.findById(id);
-        if(project.isPresent()) {
-            project.get().setName(name.getName());
-            projectRepository.save(project.get());
+    public boolean setName(long id, NameRequest name, String userLogin){
+        Project project = projectRepository.findById(id).get();
+        User admin = userRepository.findByUsername(userLogin);
+        if(project.getConnectors().stream()
+                .filter(UserWithProjectConnector::isAdmin)
+                .anyMatch(c -> c.getUser().equals(admin))) {
+            project.setName(name.getName());
+            projectRepository.save(project);
             return true;
         }
         return false;

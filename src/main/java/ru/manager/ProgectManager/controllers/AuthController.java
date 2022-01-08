@@ -1,5 +1,11 @@
 package ru.manager.ProgectManager.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import ru.manager.ProgectManager.DTO.request.RefreshTokenRequest;
+import ru.manager.ProgectManager.DTO.response.AccessProjectResponse;
 import ru.manager.ProgectManager.DTO.response.AuthResponse;
 import ru.manager.ProgectManager.DTO.request.UserDTO;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
@@ -25,11 +32,28 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
+@Tag(name = "Контроллер аутентификации", description = "Здесь выполняется регистрация, авторизация и обновление токенов")
 public class AuthController {
     private final UserService userService;
     private final JwtProvider jwtProvider;
     private final RefreshTokenService refreshTokenService;
 
+    @Operation(summary = "Регистрация")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Попытка регистрации пользователя с существующим логином",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = AccessProjectResponse.class))
+                    }),
+            @ApiResponse(responseCode = "406", description = "Некорректные значения полей", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = AccessProjectResponse.class))
+            }),
+            @ApiResponse(responseCode = "200", description = "Возвращаются токены доступа", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = AuthResponse.class))
+            })
+    })
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody UserDTO userDTO, BindingResult bindingResult) {
         if (!bindingResult.hasErrors()) {
@@ -53,6 +77,17 @@ public class AuthController {
         }
     }
 
+    @Operation(summary = "Аутентификация")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "401", description = "Некорректный логин или пароль", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "200", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = AuthResponse.class))
+            })
+    })
     @PostMapping("/auth")
     public ResponseEntity<?> auth(@RequestBody UserDTO request) {
         try {
@@ -67,6 +102,15 @@ public class AuthController {
         }
     }
 
+    @Operation(summary = "Обновление токенов",
+            description = "Возвращает новые токены доступа по refresh-токену пользователя")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "403", description = "Некорректный refresh токен"),
+            @ApiResponse(responseCode = "200", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = AuthResponse.class))
+            })
+    })
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(@RequestBody RefreshTokenRequest tokenRequest){
         Optional<String> login = refreshTokenService.findLoginFromToken(tokenRequest.getRefresh());

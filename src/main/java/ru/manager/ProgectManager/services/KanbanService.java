@@ -89,7 +89,7 @@ public class KanbanService {
         int from = column.getSerialNumber();
         if (column.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))) {
             List<KanbanColumn> allColumns = column.getProject().getKanbanColumns();
-            if(from >= allColumns.size() || request.getTo() >= allColumns.size())
+            if(request.getTo() >= allColumns.size())
                 throw new IllegalArgumentException("Index more collection size");
             if(request.getTo() > from) {
                 allColumns.stream()
@@ -126,7 +126,7 @@ public class KanbanService {
         if(element.getKanbanColumn().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
             if(element.getKanbanColumn().getId() == request.getToColumn()) {
                 List<KanbanElement> allElements = element.getKanbanColumn().getElements();
-                if (from >= allElements.size() || request.getToIndex() >= allElements.size())
+                if (request.getToIndex() >= allElements.size())
                     throw new IllegalArgumentException("Index more collection size");
                 if (request.getToIndex() > from) {
                     allElements.stream()

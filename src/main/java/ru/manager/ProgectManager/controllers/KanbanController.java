@@ -1,5 +1,11 @@
 package ru.manager.ProgectManager.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,12 +33,30 @@ import java.util.stream.Collectors;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users/kanban")
+@Tag(name = "Контроллер получения и изменения канбан-доски")
 public class KanbanController {
     private final ProjectService projectService;
     private final KanbanService kanbanService;
     private final JwtProvider provider;
     private final PhotoCompressor compressor;
 
+    @Operation(summary = "Получение канбан-доски",
+            description = "Получение всего канбана, кроме контента элементов колонок")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Указанного проекта не сущесвует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к указанному проекту",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
+            @ApiResponse(responseCode = "200", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = KanbanResponse.class))
+            })
+    })
     @GetMapping("/get")
     public ResponseEntity<?> getKanban(@RequestParam long projectId) {
         try {
@@ -50,6 +74,22 @@ public class KanbanController {
         }
     }
 
+    @Operation(summary = "Полвучние элемента канбана", description = "Получегие полной информации об элементе канбана")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Указанного элемента не существует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Запрашивающий пользователь не имеет доступа к проекту",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
+            @ApiResponse(responseCode = "200", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ContentDTO.class))
+            })
+    })
     @GetMapping("/element")
     public ResponseEntity<?> getContent(@RequestParam long elementId) {
         try {
@@ -65,6 +105,24 @@ public class KanbanController {
         }
     }
 
+    @Operation(summary = "Перемещение элемента канбана",
+            description = "Изменение местоположения элемента на указанный порядковый номер в указанном столбце")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Неверные идентификаторы колонки или элемента", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному проекту"),
+            @ApiResponse(responseCode = "406", description = "Введённый желаемый порядковый номер элемента недопостим",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
+            @ApiResponse(responseCode = "200", description = "Канбан доска с учётом внесённых изменений", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = KanbanResponse.class))
+            })
+    })
     @PutMapping("/transport_element")
     public ResponseEntity<?> transportElement(@RequestBody @Valid TransportElementRequest transportElementRequest,
                                               BindingResult bindingResult) {
@@ -93,6 +151,24 @@ public class KanbanController {
         }
     }
 
+    @Operation(summary = "Перемещение столбца канбана",
+            description = "Изменение местоположения столбца на указанный порядковый номер")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Неверный идентификатор колонки", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному проекту"),
+            @ApiResponse(responseCode = "406", description = "Введённый желаемый порядковый номер колонки недопостим",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
+            @ApiResponse(responseCode = "200", description = "Канбан доска с учётом внесённых изменений", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = KanbanResponse.class))
+            })
+    })
     @PutMapping("/transport_column")
     public ResponseEntity<?> transportColumn(@RequestBody @Valid TransportColumnRequest transportColumnRequest,
                                              BindingResult bindingResult) {
@@ -121,6 +197,22 @@ public class KanbanController {
         }
     }
 
+    @Operation(summary = "Добавление элемента")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Указанной колонки не существует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
+            @ApiResponse(responseCode = "406", description = "Попытка создать элемент с пустым именем", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "200", description = "Канбан доска с учётом внесённых изменений", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = KanbanResponse.class))
+            })
+    })
     @PostMapping("/element")
     public ResponseEntity<?> editElement(@RequestBody @Valid CreateKanbanElementRequest request, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -145,6 +237,22 @@ public class KanbanController {
         }
     }
 
+    @Operation(summary = "Изменение элемента", description = "Обновление всех текстовых полей элемента")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Попытка обращения к несуществующему элементу", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
+            @ApiResponse(responseCode = "406", description = "Попытка присвоения элементу пустого имени", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "200", description = "Канбан доска с учётом внесённых изменений", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = KanbanResponse.class))
+            })
+    })
     @PutMapping("/element")
     public ResponseEntity<?> addElement(@RequestParam long id, @RequestBody @Valid UpdateKanbanElementRequest request,
                                         BindingResult bindingResult) {
@@ -165,12 +273,28 @@ public class KanbanController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             } catch (NoSuchElementException e) {
                 return new ResponseEntity<>(
-                        new ErrorResponse(Collections.singletonList("Request: No such specified column or element")),
+                        new ErrorResponse(Collections.singletonList("Request: No such specified element")),
                         HttpStatus.BAD_REQUEST);
             }
         }
     }
 
+    @Operation(summary = "Добавление колонки")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Обращение к несуществующему элементу", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
+            @ApiResponse(responseCode = "406", description = "Название колонки не должно быть пустым", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "200", description = "Канбан доска с учётом внесённых изменений", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = KanbanResponse.class))
+            })
+    })
     @PostMapping("/column")
     public ResponseEntity<?> addColumn(@RequestBody @Valid KanbanColumnRequest kanbanColumnRequest,
                                        BindingResult bindingResult) {
@@ -193,6 +317,22 @@ public class KanbanController {
         }
     }
 
+    @Operation(summary = "Изменение колонки", description = "Изменение названия колонки")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Обращение к несуществующей колонке", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
+            @ApiResponse(responseCode = "406", description = "Название колонки не должно быть пустым", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "200", description = "Канбан доска с учётом внесённых изменений", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = KanbanResponse.class))
+            })
+    })
     @PutMapping("/column")
     public ResponseEntity<?> renameColumn(@RequestParam long id, @RequestBody @Valid NameRequest name,
                                           BindingResult bindingResult) {
@@ -211,11 +351,20 @@ public class KanbanController {
                         .get()));
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Project: No such specified project")),
+            return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Column: No such specified column")),
                     HttpStatus.BAD_REQUEST);
         }
     }
 
+    @Operation(summary = "Добавление картинки", description = "Добавление или изменение картинки элемента")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Обращение к несуществующему элементу", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
+            @ApiResponse(responseCode = "200", description = "Фотография успешно добавлена или изменена")
+    })
     @PostMapping("/photo")
     public ResponseEntity<?> addPhoto(@RequestParam long id, @ModelAttribute PhotoDTO photoDTO) {
         try {
@@ -229,6 +378,18 @@ public class KanbanController {
         }
     }
 
+    @Operation(summary = "Удаление элемента")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Обращение к несуществующему элементу", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
+            @ApiResponse(responseCode = "200", description = "Канбан доска с учётом внесённых изменений", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = KanbanResponse.class))
+            })
+    })
     @DeleteMapping("/element")
     public ResponseEntity<?> removeElement(@RequestParam long id) {
         try {
@@ -244,6 +405,18 @@ public class KanbanController {
         }
     }
 
+    @Operation(summary = "Удаление колонки")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Обращение к несуществующей колонке", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
+            @ApiResponse(responseCode = "200", description = "Канбан доска с учётом внесённых изменений", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = KanbanResponse.class))
+            })
+    })
     @DeleteMapping("/column")
     public ResponseEntity<?> removeColumn(@RequestParam long id) {
         try {
@@ -254,7 +427,7 @@ public class KanbanController {
             }
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Element: No such specified element")),
+            return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Column: No such specified column")),
                     HttpStatus.BAD_REQUEST);
         }
     }

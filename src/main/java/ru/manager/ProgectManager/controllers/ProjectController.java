@@ -1,5 +1,11 @@
 package ru.manager.ProgectManager.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,11 +31,23 @@ import java.util.stream.Collectors;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users")
+@Tag(name = "Контроллер создания, изменения и удаления проекта")
 public class ProjectController {
     private final ProjectService projectService;
     private final JwtProvider provider;
     private final PhotoCompressor compressor;
 
+    @Operation(summary = "Создание проекта")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "406", description = "Имя проекта не должно быть пустым", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "200", description = "Возвращается информация о созданном проекте", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ProjectResponse.class))
+            })
+    })
     @PostMapping("/project")
     public ResponseEntity<?> addProject(@RequestBody @Valid NameRequest requestDTO, BindingResult bindingResult){
         if(bindingResult.hasErrors()){
@@ -38,10 +56,23 @@ public class ProjectController {
                     .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
         } else{
-            return ResponseEntity.ok(projectService.addProject(requestDTO, provider.getLoginFromToken()));
+            return ResponseEntity.ok(
+                    new ProjectResponse(projectService.addProject(requestDTO, provider.getLoginFromToken())));
         }
     }
 
+    @Operation(summary = "Получение данных проекта")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Обращание к несуществующему проекту", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не является участником проекта"),
+            @ApiResponse(responseCode = "200", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ProjectResponse.class))
+            })
+    })
     @GetMapping("/project")
     public ResponseEntity<?> findProject(@RequestParam long id){
         try {
@@ -57,6 +88,19 @@ public class ProjectController {
         }
     }
 
+    @Operation(summary = "Изменение проекта", description = "Установление нового имени проекта")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Обращание к несуществующему проекту", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не является участником проекта"),
+            @ApiResponse(responseCode = "406", description = "Имя проекта не должно быть пустым", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "200", description = "Название проекта изменено")
+    })
     @PutMapping("/project")
     public ResponseEntity<?> setName(@RequestParam long id, @RequestBody @Valid NameRequest requestDTO,
                                      BindingResult bindingResult){
@@ -66,7 +110,15 @@ public class ProjectController {
                     .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
         } else{
-            return ResponseEntity.ok(projectService.setName(id, requestDTO));
+            try {
+                if(projectService.setName(id, requestDTO, provider.getLoginFromToken()))
+                    return new ResponseEntity<>(HttpStatus.OK);
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            } catch (NoSuchElementException e){
+                return new ResponseEntity<>(
+                        new ErrorResponse(Collections.singletonList("Project: No such specified project")),
+                        HttpStatus.BAD_REQUEST);
+            }
         }
     }
 
