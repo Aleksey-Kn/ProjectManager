@@ -22,7 +22,7 @@ public class AllUserDataResponse {
     private final String nickname;
     @Schema(description = "Список проектов, к которым у пользователя есть доступ")
     private final List<Project> userProjects;
-    @Schema(description = "Фото профиля пользователя")
+    @Schema(description = "Фото профиля пользователя", nullable = true)
     private final byte[] photo;
 
     public AllUserDataResponse(User user){

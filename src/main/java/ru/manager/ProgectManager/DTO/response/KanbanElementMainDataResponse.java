@@ -1,16 +1,25 @@
 package ru.manager.ProgectManager.DTO.response;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import ru.manager.ProgectManager.entitys.KanbanElement;
 
 @Getter
+@Schema(description = "Ответ, содержащий основную информацию об элементе канбана")
 public class KanbanElementMainDataResponse {
+    @Schema(description = "Идентификатор элемента")
     private final long id;
+    @Schema(description = "Порядковый номер элемента в колонке")
     private final int serialNumber;
+    @Schema(description = "Название элемента")
     private final String name;
+    @Schema(description = "Тег элемента")
     private final String tag;
+    @Schema(description = "Картинка, прикреплённая к элементу", nullable = true)
     private final byte[] photo;
+    @Schema(description = "Информация об аккаунте создателя ячейки")
     private final PublicUserDataResponse creator;
+    @Schema(description = "Информация об акаунте последнего редактора ячейки")
     private final PublicUserDataResponse lastRedactor;
 
     public KanbanElementMainDataResponse(KanbanElement kanbanElement) {

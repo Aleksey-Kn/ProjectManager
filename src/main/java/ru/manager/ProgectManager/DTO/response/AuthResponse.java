@@ -1,9 +1,13 @@
 package ru.manager.ProgectManager.DTO.response;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Data
+@Schema(description = "Ответ для предоставления токенов доступа к ресурсу")
 public class AuthResponse {
+    @Schema(description = "Access токен")
     private String access;
+    @Schema(description = "Refresh токен")
     private String refresh;
 }
