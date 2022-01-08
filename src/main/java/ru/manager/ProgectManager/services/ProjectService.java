@@ -75,11 +75,14 @@ public class ProjectService {
         return false;
     }
 
-    public boolean setPhoto(long id, byte[] photo) throws IOException {
-        Optional<Project> project = projectRepository.findById(id);
-        if(project.isPresent()) {
-            project.get().setPhoto(photo);
-            projectRepository.save(project.get());
+    public boolean setPhoto(long id, byte[] photo, String userLogin) throws IOException {
+        User admin = userRepository.findByUsername(userLogin);
+        Project project = projectRepository.findById(id).get();
+        if(project.getConnectors().stream()
+                .filter(UserWithProjectConnector::isAdmin)
+                .anyMatch(c -> c.getUser().equals(admin))) {
+            project.setPhoto(photo);
+            projectRepository.save(project);
             return true;
         }
         return false;
@@ -100,7 +103,6 @@ public class ProjectService {
 
     public boolean deleteProject(long id, String adminLogin){
         User admin = userRepository.findByUsername(adminLogin);
-        assert admin != null;
         Project project = projectRepository.findById(id).get();
         if(project.getConnectors().stream()
                 .filter(UserWithProjectConnector::isAdmin)

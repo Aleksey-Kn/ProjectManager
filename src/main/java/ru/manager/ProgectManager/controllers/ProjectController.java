@@ -94,7 +94,7 @@ public class ProjectController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "403", description = "Пользователь не является участником проекта"),
+            @ApiResponse(responseCode = "403", description = "Пользователь не является администратором проекта"),
             @ApiResponse(responseCode = "406", description = "Имя проекта не должно быть пустым", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
@@ -122,21 +122,46 @@ public class ProjectController {
         }
     }
 
+    @Operation(summary = "Добавление картинки проекта", description = "Прикрепление картинки или замена существующей")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Обращание к несуществующему проекту", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не является администратором проекта"),
+            @ApiResponse(responseCode = "406", description = "Файл не может быть прочитан", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "200", description = "Картинка сжата и сохранена")
+    })
     @PostMapping("/project/photo")
     public ResponseEntity<?> setPhoto(@RequestParam long id, @ModelAttribute PhotoDTO photoDTO){
         try{
-            if(projectService.setPhoto(id, compressor.compress(photoDTO.getFile()))) {
+            if(projectService.setPhoto(id, compressor.compress(photoDTO.getFile()), provider.getLoginFromToken())) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else{
-                return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Project: No such specified project")),
-                        HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (IOException e){
             return new ResponseEntity<>(new ErrorResponse(Collections.singletonList(e.getMessage())),
                     HttpStatus.NOT_ACCEPTABLE);
+        } catch (NoSuchElementException e){
+            return new ResponseEntity<>(
+                    new ErrorResponse(Collections.singletonList("Project: No such specified project")),
+                    HttpStatus.BAD_REQUEST);
         }
     }
 
+    @Operation(summary = "Удаление проекта")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Обращание к несуществующему проекту", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не является администратором проекта"),
+            @ApiResponse(responseCode = "200", description = "Удаление прошло успешно")
+    })
     @DeleteMapping("/project")
     public ResponseEntity<?> deleteProject(@RequestParam long id){
         try {
@@ -146,9 +171,6 @@ public class ProjectController {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (NoSuchElementException e){
             return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Project: Not such specified project")),
-                    HttpStatus.BAD_REQUEST);
-        } catch (AssertionError e){
-            return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("User: Not such specified user")),
                     HttpStatus.BAD_REQUEST);
         }
     }

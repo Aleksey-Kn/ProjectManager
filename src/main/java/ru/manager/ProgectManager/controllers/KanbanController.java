@@ -363,7 +363,7 @@ public class KanbanController {
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
-            @ApiResponse(responseCode = "200", description = "Фотография успешно добавлена или изменена")
+            @ApiResponse(responseCode = "200", description = "Картинка успешно сжата и добавлена или изменена")
     })
     @PostMapping("/photo")
     public ResponseEntity<?> addPhoto(@RequestParam long id, @ModelAttribute PhotoDTO photoDTO) {

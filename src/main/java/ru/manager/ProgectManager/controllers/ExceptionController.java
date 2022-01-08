@@ -8,7 +8,6 @@ import ru.manager.ProgectManager.exception.InvalidTokenException;
 
 @RestControllerAdvice
 public class ExceptionController {
-
     @ResponseStatus(value = HttpStatus.FORBIDDEN, reason = "Token incorrect or deprecated")
     @ExceptionHandler(InvalidTokenException.class)
     public void incorrectToken() {
