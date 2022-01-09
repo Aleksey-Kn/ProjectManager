@@ -7,10 +7,8 @@ import ru.manager.ProgectManager.DTO.request.RefreshUserDTO;
 import ru.manager.ProgectManager.DTO.request.UserDTO;
 import ru.manager.ProgectManager.entitys.Role;
 import ru.manager.ProgectManager.entitys.User;
-import ru.manager.ProgectManager.entitys.UserWithRoleConnector;
 import ru.manager.ProgectManager.repositories.RoleRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
-import ru.manager.ProgectManager.repositories.UserWithRoleConnectorRepository;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -30,12 +28,6 @@ public class UserService {
         userRepository = u;
     }
 
-    private UserWithRoleConnectorRepository connectorRepository;
-    @Autowired
-    private void setConnectorRepository(UserWithRoleConnectorRepository u){
-        connectorRepository = u;
-    }
-
     private PasswordEncoder passwordEncoder;
     @Autowired
     private void setPasswordEncoder(PasswordEncoder p){
@@ -50,14 +42,9 @@ public class UserService {
             user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
             user.setEmail(userDTO.getEmail());
             user.setNickname(userDTO.getNickname());
+            user.setUserWithRoleConnectors(Collections.singletonList(role));
 
-            UserWithRoleConnector userWithRoleConnector = new UserWithRoleConnector();
-            userWithRoleConnector.setUser(user);
-            userWithRoleConnector.setRole(role);
-            user.setUserWithRoleConnectors(Collections.singletonList(userWithRoleConnector));
-            Optional<User> result = Optional.of(userRepository.save(user));
-            connectorRepository.save(userWithRoleConnector);
-            return result;
+            return Optional.of(userRepository.save(user));
         }
         return Optional.empty();
     }

@@ -11,10 +11,7 @@ import ru.manager.ProgectManager.repositories.UserRepository;
 import ru.manager.ProgectManager.repositories.UserWithProjectConnectorRepository;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -107,7 +104,7 @@ public class ProjectService {
         if(project.getConnectors().stream()
                 .filter(UserWithProjectConnector::isAdmin)
                 .anyMatch(c -> c.getUser().equals(admin))){
-            List<UserWithProjectConnector> removable = project.getConnectors();
+            List<UserWithProjectConnector> removable = new LinkedList<>(project.getConnectors());
             project.getConnectors().clear();
             removable.stream()
                     .map(UserWithProjectConnector::getUser)

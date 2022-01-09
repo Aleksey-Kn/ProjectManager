@@ -16,6 +16,9 @@ public class Role implements GrantedAuthority {
     @Column(nullable = false, unique = true)
     private String name;
 
+    @ManyToMany(mappedBy = "userWithRoleConnectors")
+    private List<User> users;
+
     @Override
     public String getAuthority() {
         return name;
