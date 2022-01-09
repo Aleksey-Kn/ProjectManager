@@ -14,8 +14,6 @@ import java.util.stream.Collectors;
 public class AllUserDataResponse {
     @Schema(description = "Идентифткатор пользователя")
     private final long id;
-    @Schema(description = "Логин пользователя")
-    private final String login;
     @Schema(description = "Электронная почта пользователя")
     private final String email;
     @Schema(description = "Отображаемое имя пользовалеля")
@@ -26,7 +24,6 @@ public class AllUserDataResponse {
     private final byte[] photo;
 
     public AllUserDataResponse(User user){
-        login = user.getUsername();
         email = user.getEmail();
         nickname = user.getNickname();
         userProjects = user.getUserWithProjectConnectors().stream()
