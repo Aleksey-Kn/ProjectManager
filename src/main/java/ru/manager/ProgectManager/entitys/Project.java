@@ -30,7 +30,7 @@ public class Project {
 
     @JsonIgnore
     @OneToMany(cascade = CascadeType.ALL)
-    private List<KanbanColumn> kanbanColumns;
+    private List<Kanban> kanbans;
 
     @Override
     public boolean equals(Object o) {

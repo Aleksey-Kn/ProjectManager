@@ -3,12 +3,10 @@ package ru.manager.ProgectManager.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.request.*;
-import ru.manager.ProgectManager.entitys.KanbanColumn;
-import ru.manager.ProgectManager.entitys.KanbanElement;
-import ru.manager.ProgectManager.entitys.Project;
-import ru.manager.ProgectManager.entitys.User;
+import ru.manager.ProgectManager.entitys.*;
 import ru.manager.ProgectManager.repositories.KanbanColumnRepository;
 import ru.manager.ProgectManager.repositories.KanbanElementRepository;
+import ru.manager.ProgectManager.repositories.KanbanRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
 
 import java.util.Comparator;
@@ -21,11 +19,12 @@ public class KanbanService {
     private final KanbanColumnRepository columnRepository;
     private final KanbanElementRepository elementRepository;
     private final UserRepository userRepository;
+    private final KanbanRepository kanbanRepository;
 
     public boolean addElement(CreateKanbanElementRequest request, String userLogin){
         KanbanColumn column = columnRepository.findById(request.getColumnId()).get();
         User user = userRepository.findByUsername(userLogin);
-        if(column.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
+        if(column.getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
             KanbanElement element = new KanbanElement();
             element.setContent(request.getContent());
             element.setName(request.getName());
@@ -48,7 +47,7 @@ public class KanbanService {
     public boolean setElement(long id, UpdateKanbanElementRequest request, String userLogin){
         KanbanElement element = elementRepository.findById(id).get();
         User user = userRepository.findByUsername(userLogin);
-        if(element.getKanbanColumn().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
+        if(element.getKanbanColumn().getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
             element.setContent(request.getContent());
             element.setName(request.getName());
             element.setTag(request.getTag());
@@ -63,7 +62,7 @@ public class KanbanService {
     public boolean setPhoto(long id, String userLogin, byte[] photo){
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(id).get();
-        if(element.getKanbanColumn().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
+        if(element.getKanbanColumn().getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
             element.setPhoto(photo);
             elementRepository.save(element);
             return true;
@@ -76,6 +75,7 @@ public class KanbanService {
         User user = userRepository.findByUsername(userLogin);
         if(kanbanElement
                 .getKanbanColumn()
+                .getKanban()
                 .getProject()
                 .getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
             return Optional.of(kanbanElement);
@@ -87,8 +87,8 @@ public class KanbanService {
         User user = userRepository.findByUsername(userLogin);
         KanbanColumn column = columnRepository.findById(request.getId()).get();
         int from = column.getSerialNumber();
-        if (column.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))) {
-            List<KanbanColumn> allColumns = column.getProject().getKanbanColumns();
+        if (column.getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))) {
+            List<KanbanColumn> allColumns = column.getKanban().getKanbanColumns();
             if(request.getTo() >= allColumns.size())
                 throw new IllegalArgumentException("Index more collection size");
             if(request.getTo() > from) {
@@ -111,7 +111,7 @@ public class KanbanService {
     public boolean renameColumn(long id, String name, String userLogin){
         User user = userRepository.findByUsername(userLogin);
         KanbanColumn kanbanColumn = columnRepository.findById(id).get();
-        if(kanbanColumn.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
+        if(kanbanColumn.getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
             kanbanColumn.setName(name);
             columnRepository.save(kanbanColumn);
             return true;
@@ -123,7 +123,7 @@ public class KanbanService {
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(request.getId()).get();
         int from = element.getSerialNumber();
-        if(element.getKanbanColumn().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
+        if(element.getKanbanColumn().getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
             if(element.getKanbanColumn().getId() == request.getToColumn()) {
                 List<KanbanElement> allElements = element.getKanbanColumn().getElements();
                 if (request.getToIndex() >= allElements.size())
@@ -161,12 +161,12 @@ public class KanbanService {
     public boolean deleteColumn(long id, String userLogin){
         User user = userRepository.findByUsername(userLogin);
         KanbanColumn column = columnRepository.findById(id).get();
-        Project project = column.getProject();
-        if (project.getConnectors().stream().anyMatch(c -> c.getUser().equals(user))) {
-            project.getKanbanColumns().stream()
+        Kanban kanban = column.getKanban();
+        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))) {
+            kanban.getKanbanColumns().stream()
                     .filter(kanbanColumn -> kanbanColumn.getSerialNumber() > column.getSerialNumber())
                             .forEach(kanbanColumn -> kanbanColumn.setSerialNumber(kanbanColumn.getSerialNumber() - 1));
-            project.getKanbanColumns().remove(column);
+            kanban.getKanbanColumns().remove(column);
             columnRepository.delete(column);
             return true;
         }
@@ -176,7 +176,7 @@ public class KanbanService {
     public boolean deleteElement(long id, String userLogin){
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(id).get();
-        if(element.getKanbanColumn().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
+        if(element.getKanbanColumn().getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
             element.getKanbanColumn().getElements().stream()
                     .filter(kanbanElement -> kanbanElement.getSerialNumber() > element.getSerialNumber())
                             .forEach(kanbanElement -> kanbanElement.setSerialNumber(kanbanElement.getSerialNumber() - 1));
@@ -191,11 +191,35 @@ public class KanbanService {
         return false;
     }
 
-    public Project findProjectFromElement(long id){
-        return elementRepository.findById(id).get().getKanbanColumn().getProject();
+    public boolean addColumn(KanbanColumnRequest request, String userLogin){
+        User user = userRepository.findByUsername(userLogin);
+        Kanban kanban = kanbanRepository.findById(request.getKanbanId()).get();
+        if(user.getUserWithProjectConnectors().stream().anyMatch(c -> c.getProject().equals(kanban))) {
+            KanbanColumn kanbanColumn = new KanbanColumn();
+            kanbanColumn.setName(request.getName());
+            kanbanColumn.setKanban(kanban);
+            kanban.getKanbanColumns().stream()
+                    .max(Comparator.comparing(KanbanColumn::getSerialNumber))
+                    .ifPresentOrElse(c -> kanbanColumn.setSerialNumber(c.getSerialNumber() + 1),
+                            () -> kanbanColumn.setSerialNumber(0));
+
+            kanban.getKanbanColumns().add(kanbanColumn);
+            columnRepository.save(kanbanColumn);
+            kanbanRepository.save(kanban);
+            return true;
+        }
+        return false;
     }
 
-    public Project findProjectFromColumn(long id){
-        return columnRepository.findById(id).get().getProject();
+    public Optional<Kanban> findKanban(long id){
+        return kanbanRepository.findById(id);
+    }
+
+    public Kanban findKanbanFromElement(long id){
+        return elementRepository.findById(id).get().getKanbanColumn().getKanban();
+    }
+
+    public Kanban findKanbanFromColumn(long id){
+        return columnRepository.findById(id).get().getKanban();
     }
 }

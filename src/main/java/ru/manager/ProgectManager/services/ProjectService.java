@@ -2,7 +2,6 @@ package ru.manager.ProgectManager.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.manager.ProgectManager.DTO.request.KanbanColumnRequest;
 import ru.manager.ProgectManager.DTO.request.NameRequest;
 import ru.manager.ProgectManager.entitys.*;
 import ru.manager.ProgectManager.repositories.KanbanColumnRepository;
@@ -52,26 +51,6 @@ public class ProjectService {
         return project;
     }
 
-    public boolean addColumn(KanbanColumnRequest request, String userLogin){
-        User user = userRepository.findByUsername(userLogin);
-        Project project = projectRepository.findById(request.getProjectId()).get();
-        if(user.getUserWithProjectConnectors().stream().anyMatch(c -> c.getProject().equals(project))) {
-            KanbanColumn kanbanColumn = new KanbanColumn();
-            kanbanColumn.setName(request.getName());
-            kanbanColumn.setProject(project);
-            project.getKanbanColumns().stream()
-                    .max(Comparator.comparing(KanbanColumn::getSerialNumber))
-                    .ifPresentOrElse(c -> kanbanColumn.setSerialNumber(c.getSerialNumber() + 1),
-                    () -> kanbanColumn.setSerialNumber(0));
-
-            project.getKanbanColumns().add(kanbanColumn);
-            kanbanColumnRepository.save(kanbanColumn);
-            projectRepository.save(project);
-            return true;
-        }
-        return false;
-    }
-
     public boolean setPhoto(long id, byte[] photo, String userLogin) throws IOException {
         User admin = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(id).get();
@@ -114,23 +93,5 @@ public class ProjectService {
             return true;
         }
         return false;
-    }
-
-    public Optional<List<KanbanColumn>> findKanbans(long id, String userLogin){
-        if(userRepository.findByUsername(userLogin).getUserWithProjectConnectors().stream()
-                .map(UserWithProjectConnector::getProject)
-                .anyMatch(p -> p.getId() == id)) {
-            List<KanbanColumn> result = projectRepository.findById(id).get().getKanbanColumns();
-            result.sort(Comparator.comparing(KanbanColumn::getSerialNumber));
-            List<KanbanElement> kanbanElements;
-            for (KanbanColumn column : result) {
-                kanbanElements = column.getElements();
-                if(kanbanElements != null){
-                    kanbanElements.sort(Comparator.comparing(KanbanElement::getSerialNumber));
-                }
-            }
-            return Optional.of(result);
-        }
-        return Optional.empty();
     }
 }

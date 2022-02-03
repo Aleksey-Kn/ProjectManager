@@ -28,8 +28,8 @@ public class KanbanColumn {
     private List<KanbanElement> elements;
 
     @ManyToOne
-    @JoinColumn(name = "project_id")
-    private Project project;
+    @JoinColumn(name = "kanban_id")
+    private Kanban kanban;
 
     @Override
     public boolean equals(Object o) {
