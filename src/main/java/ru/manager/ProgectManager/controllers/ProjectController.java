@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users")
-@Tag(name = "Контроллер создания, изменения и удаления проекта")
+@Tag(name = "Создание, изменение и удаление проекта")
 public class ProjectController {
     private final ProjectService projectService;
     private final JwtProvider provider;

@@ -194,7 +194,8 @@ public class KanbanService {
     public boolean addColumn(KanbanColumnRequest request, String userLogin){
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = kanbanRepository.findById(request.getKanbanId()).get();
-        if(user.getUserWithProjectConnectors().stream().anyMatch(c -> c.getProject().equals(kanban))) {
+        Project project = kanban.getProject();
+        if(user.getUserWithProjectConnectors().stream().anyMatch(c -> c.getProject().equals(project))) {
             KanbanColumn kanbanColumn = new KanbanColumn();
             kanbanColumn.setName(request.getName());
             kanbanColumn.setKanban(kanban);

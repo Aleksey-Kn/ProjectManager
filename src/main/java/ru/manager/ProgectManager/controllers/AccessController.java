@@ -25,7 +25,7 @@ import java.util.Optional;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users")
-@Tag(name = "Контроллер предоставления доступа к проекту",
+@Tag(name = "Предоставление доступа к проекту",
         description = "Позволяет приглашать пользователя в проект с помощью токена доступа")
 public class AccessController {
     private final AccessService accessService;

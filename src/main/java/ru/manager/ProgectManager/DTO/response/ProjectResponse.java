@@ -2,6 +2,7 @@ package ru.manager.ProgectManager.DTO.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
+import ru.manager.ProgectManager.entitys.Kanban;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.UserWithProjectConnector;
 
@@ -19,6 +20,8 @@ public class ProjectResponse {
     private final byte[] photo;
     @Schema(description = "Список участников проекта")
     private final List<PublicUserDataResponse> participants;
+    @Schema(description = "Канбан доски проекта")
+    private final List<Kanban> kanbans;
 
     public ProjectResponse(Project project){
         name = project.getName();
@@ -28,5 +31,6 @@ public class ProjectResponse {
                 .map(UserWithProjectConnector::getUser)
                 .map(PublicUserDataResponse::new)
                 .collect(Collectors.toList());
+        kanbans = project.getKanbans();
     }
 }

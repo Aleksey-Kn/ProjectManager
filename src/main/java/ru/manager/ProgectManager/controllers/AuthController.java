@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
-@Tag(name = "Контроллер аутентификации", description = "Здесь выполняется регистрация, авторизация и обновление токенов")
+@Tag(name = "Аутентификация", description = "Здесь выполняется регистрация, авторизация и обновление токенов")
 public class AuthController {
     private final UserService userService;
     private final JwtProvider jwtProvider;

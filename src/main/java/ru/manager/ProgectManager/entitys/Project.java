@@ -29,7 +29,7 @@ public class Project {
     private List<UserWithProjectConnector> connectors;
 
     @JsonIgnore
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Kanban> kanbans;
 
     @Override

@@ -18,7 +18,7 @@ import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
-@Tag(name = "Контроллер для сбора статистики о пользователях")
+@Tag(name = "Сбор статистики о пользователях")
 public class StatisticsController {
     private final StatisticsRepository statisticsRepository;
 

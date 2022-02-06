@@ -19,14 +19,12 @@ import ru.manager.ProgectManager.DTO.response.KanbanResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.entitys.Kanban;
-import ru.manager.ProgectManager.entitys.KanbanColumn;
 import ru.manager.ProgectManager.entitys.KanbanElement;
 import ru.manager.ProgectManager.services.KanbanService;
 import ru.manager.ProgectManager.services.ProjectService;
 
 import javax.validation.Valid;
 import java.util.Collections;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -34,12 +32,54 @@ import java.util.stream.Collectors;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users/kanban")
-@Tag(name = "Контроллер получения и изменения канбан-доски")
+@Tag(name = "Получение и изменения канбан-доски")
 public class KanbanController {
     private final ProjectService projectService;
     private final KanbanService kanbanService;
     private final JwtProvider provider;
     private final PhotoCompressor compressor;
+
+    @Operation(summary = "Добавление новой канбан-доски в проект")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Указанного проекта не сущесвует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к указанному проекту"),
+            @ApiResponse(responseCode = "406", description = "Имя не должно быть пустым",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
+            @ApiResponse(responseCode = "200", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Kanban.class))
+            })
+    })
+    @PostMapping("/new")
+    public ResponseEntity<?> createKanban(@RequestParam long projectId, @RequestBody @Valid NameRequest name,
+                                          BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            return new ResponseEntity<>(
+                    new ErrorResponse(bindingResult.getAllErrors().stream()
+                            .map(ObjectError::getDefaultMessage)
+                            .collect(Collectors.toList())),
+                    HttpStatus.NOT_ACCEPTABLE);
+        } else {
+            try {
+                Optional<Kanban> kanban =
+                        projectService.createKanban(projectId, name.getName(), provider.getLoginFromToken());
+                if (kanban.isPresent()) {
+                    return ResponseEntity.ok(kanban.get());
+                } else {
+                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+                }
+            } catch (NoSuchElementException e) {
+                return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Project: No such specified project")),
+                        HttpStatus.BAD_REQUEST);
+            }
+        }
+    }
 
     @Operation(summary = "Получение канбан-доски",
             description = "Получение всего канбана, кроме контента элементов колонок")
@@ -48,11 +88,7 @@ public class KanbanController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к указанному проекту",
-                    content = {
-                            @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ErrorResponse.class))
-                    }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к указанному проекту"),
             @ApiResponse(responseCode = "200", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = KanbanResponse.class))
@@ -65,9 +101,7 @@ public class KanbanController {
             if (result.isPresent()) {
                 return ResponseEntity.ok(new KanbanResponse(result.get()));
             } else {
-                return new ResponseEntity<>(
-                        new ErrorResponse(Collections.singletonList("User: The user does not have access to this project")),
-                        HttpStatus.FORBIDDEN);
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Project: No such specified project")),
@@ -253,7 +287,7 @@ public class KanbanController {
     })
     @PutMapping("/element")
     public ResponseEntity<?> editElement(@RequestParam long id, @RequestBody @Valid UpdateKanbanElementRequest request,
-                                        BindingResult bindingResult) {
+                                         BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(
                     new ErrorResponse(bindingResult.getAllErrors().stream()
@@ -372,6 +406,29 @@ public class KanbanController {
         }
     }
 
+    @Operation(summary = "Удаление всей канбан-доски")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Обращение к несуществующему канбану", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
+            @ApiResponse(responseCode = "200", description = "Канбан доска успешно удалена")
+    })
+    @DeleteMapping("/all_kanban")
+    public ResponseEntity<?> removeKanban(@RequestParam long id) {
+        try {
+            if (projectService.removeKanban(id, provider.getLoginFromToken())) {
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Kanban: No such specified kanban")),
+                    HttpStatus.BAD_REQUEST);
+        }
+    }
+
     @Operation(summary = "Удаление элемента")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "400", description = "Обращение к несуществующему элементу", content = {
@@ -390,8 +447,9 @@ public class KanbanController {
             String login = provider.getLoginFromToken();
             if (kanbanService.deleteElement(id, login)) {
                 return ResponseEntity.ok(new KanbanResponse(kanbanService.findKanbanFromElement(id)));
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Element: No such specified element")),
                     HttpStatus.BAD_REQUEST);

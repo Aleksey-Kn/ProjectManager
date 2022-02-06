@@ -4,10 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.request.NameRequest;
 import ru.manager.ProgectManager.entitys.*;
-import ru.manager.ProgectManager.repositories.KanbanColumnRepository;
-import ru.manager.ProgectManager.repositories.ProjectRepository;
-import ru.manager.ProgectManager.repositories.UserRepository;
-import ru.manager.ProgectManager.repositories.UserWithProjectConnectorRepository;
+import ru.manager.ProgectManager.repositories.*;
 
 import java.io.IOException;
 import java.util.*;
@@ -18,7 +15,37 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final UserWithProjectConnectorRepository connectorRepository;
-    private final KanbanColumnRepository kanbanColumnRepository;
+    private final KanbanRepository kanbanRepository;
+
+    public Optional<Kanban> createKanban(long projectId, String name, String userLogin){
+        Project project = projectRepository.findById(projectId).get();
+        if(userRepository.findByUsername(userLogin).getUserWithProjectConnectors()
+                .stream().anyMatch(c -> c.getProject().equals(project))){
+            Kanban kanban = new Kanban();
+            kanban.setProject(project);
+            kanban.setName(name);
+            project.getKanbans().add(kanban);
+
+            kanban = kanbanRepository.save(kanban);
+            projectRepository.save(project);
+            return Optional.of(kanban);
+        }
+        return Optional.empty();
+    }
+
+
+    public boolean removeKanban(long id, String userLogin){
+        Kanban kanban = kanbanRepository.findById(id).get();
+        Project project = kanban.getProject();
+        if(userRepository.findByUsername(userLogin).getUserWithProjectConnectors()
+                .stream().anyMatch(c -> c.getProject().equals(project))){
+            kanban.setProject(null);
+            project.getKanbans().remove(kanban);
+            projectRepository.save(project);
+            return true;
+        }
+        return false;
+    }
 
     public Optional<Project> findProject(long id, String login){
         User user = userRepository.findByUsername(login);

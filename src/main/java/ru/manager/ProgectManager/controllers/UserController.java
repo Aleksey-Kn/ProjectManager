@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users")
-@Tag(name = "Контроллер управления аккаунтом пользователя")
+@Tag(name = "Управление аккаунтом пользователя")
 public class UserController {
     private final UserService userService;
     private final JwtProvider jwtProvider;

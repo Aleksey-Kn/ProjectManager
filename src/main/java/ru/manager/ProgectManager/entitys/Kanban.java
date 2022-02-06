@@ -1,5 +1,6 @@
 package ru.manager.ProgectManager.entitys;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,10 +17,12 @@ public class Kanban {
 
     private String name;
 
+    @JsonIgnore
     @OneToMany(cascade = CascadeType.ALL)
     private List<KanbanColumn> kanbanColumns;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinColumn(name = "project_id")
     private Project project;
 }
