@@ -2,20 +2,26 @@ package ru.manager.ProgectManager.components;
 
 import io.jsonwebtoken.*;
 import lombok.extern.java.Log;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import ru.manager.ProgectManager.exception.InvalidTokenException;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.Date;
-import java.util.Objects;
 
 @Component
 @Log
 public class JwtProvider {
+    private HttpServletRequest request;
+    @Autowired
+    private void setRequest(HttpServletRequest httpServletRequest){
+        request = httpServletRequest;
+    }
 
     @Value("${jwt.secret}")
     private String jwtSecret;
@@ -62,10 +68,16 @@ public class JwtProvider {
         }
     }
 
-    private static String getBearerTokenHeader() {
-        return ((ServletRequestAttributes) Objects.requireNonNull(RequestContextHolder.getRequestAttributes()))
-                .getRequest()
-                .getHeader("Authorization")
-                .substring(7);
+    private String getBearerTokenHeader() {
+        Cookie[] cookies = request.getCookies();
+        if(cookies != null) {
+            return Arrays.stream(cookies)
+                    .filter(c -> c.getName().equals("access"))
+                    .findAny()
+                    .map(Cookie::getValue)
+                    .orElse(null);
+        } else{
+            return null;
+        }
     }
 }

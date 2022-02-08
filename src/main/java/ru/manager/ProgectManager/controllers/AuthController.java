@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import ru.manager.ProgectManager.DTO.request.RefreshTokenRequest;
-import ru.manager.ProgectManager.DTO.response.AccessProjectResponse;
 import ru.manager.ProgectManager.DTO.response.AuthResponse;
 import ru.manager.ProgectManager.DTO.request.UserDTO;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
