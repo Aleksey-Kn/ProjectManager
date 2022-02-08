@@ -24,6 +24,8 @@ import ru.manager.ProgectManager.entitys.User;
 import ru.manager.ProgectManager.services.RefreshTokenService;
 import ru.manager.ProgectManager.services.UserService;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.util.Collections;
 import java.util.NoSuchElementException;
@@ -55,13 +57,21 @@ public class AuthController {
             })
     })
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody UserDTO userDTO, BindingResult bindingResult) {
+    public ResponseEntity<?> registerUser(@Valid @RequestBody UserDTO userDTO, BindingResult bindingResult,
+                                          HttpServletResponse response) {
         if (!bindingResult.hasErrors()) {
             Optional<User> userOptional = userService.saveUser(userDTO);
             if (userOptional.isPresent()) {
                 AuthResponse authResponse = new AuthResponse();
-                authResponse.setAccess(jwtProvider.generateToken(userOptional.get().getUsername()));
                 authResponse.setRefresh(refreshTokenService.createToken(userOptional.get().getUsername()));
+
+                Cookie cookie = new Cookie("access", jwtProvider.generateToken(userOptional.get().getUsername()));
+                cookie.setPath("/");
+                cookie.setMaxAge(900);
+                cookie.setHttpOnly(true);
+                response.addCookie(cookie);//добавляем Cookie в запрос
+                response.setContentType("text/plain");//устанавливаем контекст
+
                 return ResponseEntity.ok(authResponse);
             } else {
                 return new ResponseEntity<>(
@@ -89,11 +99,18 @@ public class AuthController {
             })
     })
     @PostMapping("/auth")
-    public ResponseEntity<?> auth(@RequestBody UserDTO request) {
+    public ResponseEntity<?> auth(@RequestBody UserDTO request, HttpServletResponse response) {
         try {
             User userEntity = userService.findByUsernameOrEmailAndPassword(request.getLogin(), request.getPassword()).orElseThrow();
             AuthResponse authResponse = new AuthResponse();
-            authResponse.setAccess(jwtProvider.generateToken(userEntity.getUsername()));
+
+            Cookie cookie = new Cookie("access", jwtProvider.generateToken(userEntity.getUsername()));
+            cookie.setPath("/");
+            cookie.setMaxAge(900);
+            cookie.setHttpOnly(true);
+            response.addCookie(cookie);//добавляем Cookie в запрос
+            response.setContentType("text/plain");//устанавливаем контекст
+
             authResponse.setRefresh(refreshTokenService.createToken(userEntity.getUsername()));
             return ResponseEntity.ok(authResponse);
         } catch (NoSuchElementException e) {
@@ -112,12 +129,19 @@ public class AuthController {
             })
     })
     @PostMapping("/refresh")
-    public ResponseEntity<?> refresh(@RequestBody RefreshTokenRequest tokenRequest){
+    public ResponseEntity<?> refresh(@RequestBody RefreshTokenRequest tokenRequest, HttpServletResponse response){
         Optional<String> login = refreshTokenService.findLoginFromToken(tokenRequest.getRefresh());
         if(login.isPresent()){
             AuthResponse authResponse = new AuthResponse();
             authResponse.setRefresh(refreshTokenService.createToken(login.get()));
-            authResponse.setAccess(jwtProvider.generateToken(login.get()));
+
+            Cookie cookie = new Cookie("access", jwtProvider.generateToken(login.get()));
+            cookie.setPath("/");
+            cookie.setMaxAge(900);
+            cookie.setHttpOnly(true);
+            response.addCookie(cookie);//добавляем Cookie в запрос
+            response.setContentType("text/plain");//устанавливаем контекст
+
             return ResponseEntity.ok(authResponse);
         }
         return new ResponseEntity<>(HttpStatus.FORBIDDEN);
