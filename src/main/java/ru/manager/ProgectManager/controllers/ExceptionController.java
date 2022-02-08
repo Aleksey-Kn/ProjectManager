@@ -1,15 +1,26 @@
 package ru.manager.ProgectManager.controllers;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import ru.manager.ProgectManager.DTO.response.ErrorResponse;
+import ru.manager.ProgectManager.exception.ExpiredTokenException;
 import ru.manager.ProgectManager.exception.InvalidTokenException;
+
+import java.util.Collections;
 
 @RestControllerAdvice
 public class ExceptionController {
-    @ResponseStatus(value = HttpStatus.FORBIDDEN, reason = "Token incorrect or deprecated")
     @ExceptionHandler(InvalidTokenException.class)
-    public void incorrectToken() {
+    public ResponseEntity<ErrorResponse> incorrectToken() {
+        return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Token: incorrect token")),
+                HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(ExpiredTokenException.class)
+    public ResponseEntity<ErrorResponse> expiredToken(){
+        return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Token: expired token")),
+                HttpStatus.FORBIDDEN);
     }
 }

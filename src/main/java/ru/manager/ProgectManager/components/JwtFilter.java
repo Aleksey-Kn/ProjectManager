@@ -7,6 +7,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.GenericFilterBean;
+import ru.manager.ProgectManager.enums.TokenStatus;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -23,14 +24,14 @@ public class JwtFilter extends GenericFilterBean {
     private JwtProvider jwtProvider;
 
     @Autowired
-    private void setJwtProvider(JwtProvider j){
+    private void setJwtProvider(JwtProvider j) {
         jwtProvider = j;
     }
 
     private CustomUserDetailsService customUserDetailsService;
 
     @Autowired
-    private void setCustomUserDetailsService(CustomUserDetailsService c){
+    private void setCustomUserDetailsService(CustomUserDetailsService c) {
         customUserDetailsService = c;
     }
 
@@ -39,7 +40,7 @@ public class JwtFilter extends GenericFilterBean {
             throws IOException, ServletException {
         logger.info("do filter...");
         String token = getTokenFromRequest((HttpServletRequest) servletRequest);
-        if (token != null && jwtProvider.validateToken(token)) {
+        if (token != null && jwtProvider.validateToken(token) == TokenStatus.OK) {
             String userLogin = jwtProvider.getLoginFromToken(token);
             UserDetails customUserDetails = customUserDetailsService.loadUserByUsername(userLogin);
             UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(customUserDetails,
@@ -51,13 +52,13 @@ public class JwtFilter extends GenericFilterBean {
 
     private String getTokenFromRequest(HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
-        if(cookies != null) {
+        if (cookies != null) {
             return Arrays.stream(cookies)
                     .filter(c -> c.getName().equals("access"))
                     .findAny()
                     .map(Cookie::getValue)
                     .orElse(null);
-        } else{
+        } else {
             return null;
         }
     }

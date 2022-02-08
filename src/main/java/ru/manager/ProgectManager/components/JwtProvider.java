@@ -5,6 +5,8 @@ import lombok.extern.java.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import ru.manager.ProgectManager.enums.TokenStatus;
+import ru.manager.ProgectManager.exception.ExpiredTokenException;
 import ru.manager.ProgectManager.exception.InvalidTokenException;
 
 import javax.servlet.http.Cookie;
@@ -35,22 +37,26 @@ public class JwtProvider {
                 .compact();
     }
 
-    public boolean validateToken(String token) {
+    public TokenStatus validateToken(String token) {
         try {
             Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token);
-            return true;
+            return TokenStatus.OK;
         } catch (ExpiredJwtException expEx) {
             log.severe("Token expired");
+            return TokenStatus.EXPIRED;
         } catch (UnsupportedJwtException unsEx) {
             log.severe("Unsupported jwt");
+            return TokenStatus.INVALID;
         } catch (MalformedJwtException mjEx) {
             log.severe("Malformed jwt");
+            return TokenStatus.INVALID;
         } catch (SignatureException sEx) {
             log.severe("Invalid signature");
+            return TokenStatus.INVALID;
         } catch (Exception e) {
             log.severe("invalid token");
+            return TokenStatus.INVALID;
         }
-        return false;
     }
 
     public String getLoginFromToken(String token) {
@@ -60,11 +66,14 @@ public class JwtProvider {
 
     public String getLoginFromToken(){
         String accessToken = getBearerTokenHeader();
-        if(validateToken(accessToken)) {
+        TokenStatus status = validateToken(accessToken);
+        if(status == TokenStatus.OK) {
             Claims claims = Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(accessToken).getBody();
             return claims.getSubject();
-        } else{
-            throw new InvalidTokenException(accessToken);
+        } else if (status == TokenStatus.INVALID){
+            throw new InvalidTokenException();
+        } else {
+            throw new ExpiredTokenException();
         }
     }
 
