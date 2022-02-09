@@ -21,11 +21,12 @@ import ru.manager.ProgectManager.DTO.response.PublicUserDataResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.entitys.User;
+import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.UserService;
 
 import javax.validation.Valid;
 import java.io.IOException;
-import java.util.Collections;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -65,7 +66,7 @@ public class UserController {
             if (user.isPresent()) {
                 return ResponseEntity.ok(new PublicUserDataResponse(user.get()));
             } else {
-                return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("User: No such specified user")),
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER),
                         HttpStatus.BAD_REQUEST);
             }
         }
@@ -88,6 +89,8 @@ public class UserController {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(bindingResult.getAllErrors().stream()
                     .map(ObjectError::getDefaultMessage)
+                    .filter(Objects::nonNull)
+                    .map(Integer::parseInt)
                     .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
         }
@@ -112,7 +115,7 @@ public class UserController {
             userService.setPhoto(jwtProvider.getLoginFromToken(), compressor.compress(photoDTO.getFile()));
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (IOException e) {
-            return new ResponseEntity<>(new ErrorResponse(Collections.singletonList(e.getMessage())),
+            return new ResponseEntity<>(new ErrorResponse(Errors.BAD_FILE),
                     HttpStatus.NOT_ACCEPTABLE);
         }
     }

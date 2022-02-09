@@ -20,12 +20,14 @@ import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.entitys.Kanban;
 import ru.manager.ProgectManager.entitys.KanbanElement;
+import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.KanbanService;
 import ru.manager.ProgectManager.services.ProjectService;
 
 import javax.validation.Valid;
 import java.util.Collections;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -63,6 +65,8 @@ public class KanbanController {
             return new ResponseEntity<>(
                     new ErrorResponse(bindingResult.getAllErrors().stream()
                             .map(ObjectError::getDefaultMessage)
+                            .filter(Objects::nonNull)
+                            .map(Integer::parseInt)
                             .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
         } else {
@@ -75,7 +79,7 @@ public class KanbanController {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
             } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Project: No such specified project")),
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT),
                         HttpStatus.BAD_REQUEST);
             }
         }
@@ -84,7 +88,7 @@ public class KanbanController {
     @Operation(summary = "Получение канбан-доски",
             description = "Получение всего канбана, кроме контента элементов колонок")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Указанного проекта не сущесвует", content = {
+            @ApiResponse(responseCode = "400", description = "Указанного канбана не сущесвует", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -97,14 +101,14 @@ public class KanbanController {
     @GetMapping("/get")
     public ResponseEntity<?> getKanban(@RequestParam long kanbanId) {
         try {
-            Optional<Kanban> result = kanbanService.findKanban(kanbanId);
+            Optional<Kanban> result = kanbanService.findKanban(kanbanId, provider.getLoginFromToken());
             if (result.isPresent()) {
                 return ResponseEntity.ok(new KanbanResponse(result.get()));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Project: No such specified project")),
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN),
                     HttpStatus.BAD_REQUEST);
         }
     }
@@ -135,7 +139,7 @@ public class KanbanController {
             }
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Element: No such specified element")),
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT),
                     HttpStatus.BAD_REQUEST);
         }
     }
@@ -165,6 +169,8 @@ public class KanbanController {
             return new ResponseEntity<>(
                     new ErrorResponse(bindingResult.getAllErrors().stream()
                             .map(ObjectError::getDefaultMessage)
+                            .filter(Objects::nonNull)
+                            .map(Integer::parseInt)
                             .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
         } else {
@@ -176,10 +182,10 @@ public class KanbanController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             } catch (NoSuchElementException e) {
                 return new ResponseEntity<>(
-                        new ErrorResponse(Collections.singletonList("Request: No such specified element or column")),
+                        new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT_OR_COLUMN),
                         HttpStatus.BAD_REQUEST);
             } catch (IllegalArgumentException e) {
-                return new ResponseEntity<>(new ErrorResponse(Collections.singletonList(e.getMessage())),
+                return new ResponseEntity<>(new ErrorResponse(Errors.INDEX_MORE_COLLECTION_SIZE),
                         HttpStatus.NOT_ACCEPTABLE);
             }
         }
@@ -210,6 +216,8 @@ public class KanbanController {
             return new ResponseEntity<>(
                     new ErrorResponse(bindingResult.getAllErrors().stream()
                             .map(ObjectError::getDefaultMessage)
+                            .filter(Objects::nonNull)
+                            .map(Integer::parseInt)
                             .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
         } else {
@@ -221,10 +229,10 @@ public class KanbanController {
                 }
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Column: No such specified column")),
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN),
                         HttpStatus.BAD_REQUEST);
             } catch (IllegalArgumentException e) {
-                return new ResponseEntity<>(new ErrorResponse(Collections.singletonList(e.getMessage())),
+                return new ResponseEntity<>(new ErrorResponse(Errors.INDEX_MORE_COLLECTION_SIZE),
                         HttpStatus.NOT_ACCEPTABLE);
             }
         }
@@ -252,6 +260,8 @@ public class KanbanController {
             return new ResponseEntity<>(
                     new ErrorResponse(bindingResult.getAllErrors().stream()
                             .map(ObjectError::getDefaultMessage)
+                            .filter(Objects::nonNull)
+                            .map(Integer::parseInt)
                             .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
         } else {
@@ -263,7 +273,7 @@ public class KanbanController {
                 }
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Column: No such specified column")),
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN),
                         HttpStatus.BAD_REQUEST);
             }
         }
@@ -291,7 +301,9 @@ public class KanbanController {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(
                     new ErrorResponse(bindingResult.getAllErrors().stream()
-                            .map(ObjectError::toString)
+                            .map(ObjectError::getDefaultMessage)
+                            .filter(Objects::nonNull)
+                            .map(Integer::parseInt)
                             .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
         } else {
@@ -303,7 +315,7 @@ public class KanbanController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             } catch (NoSuchElementException e) {
                 return new ResponseEntity<>(
-                        new ErrorResponse(Collections.singletonList("Request: No such specified element")),
+                        new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT),
                         HttpStatus.BAD_REQUEST);
             }
         }
@@ -311,7 +323,7 @@ public class KanbanController {
 
     @Operation(summary = "Добавление колонки")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Обращение к несуществующему элементу", content = {
+            @ApiResponse(responseCode = "400", description = "Обращение к несуществующему проекту", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -331,7 +343,9 @@ public class KanbanController {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(
                     new ErrorResponse(bindingResult.getAllErrors().stream()
-                            .map(ObjectError::toString)
+                            .map(ObjectError::getDefaultMessage)
+                            .filter(Objects::nonNull)
+                            .map(Integer::parseInt)
                             .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
         }
@@ -339,10 +353,10 @@ public class KanbanController {
             String login = provider.getLoginFromToken();
             if (kanbanService.addColumn(kanbanColumnRequest, login))
                 return ResponseEntity.ok(
-                        new KanbanResponse(kanbanService.findKanban(kanbanColumnRequest.getKanbanId()).get()));
+                        new KanbanResponse(kanbanService.findKanban(kanbanColumnRequest.getKanbanId(), login).get()));
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Project: No such specified project")),
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN),
                     HttpStatus.BAD_REQUEST);
         }
     }
@@ -369,7 +383,8 @@ public class KanbanController {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(
                     new ErrorResponse(bindingResult.getAllErrors().stream()
-                            .map(ObjectError::toString)
+                            .map(ObjectError::getDefaultMessage).filter(Objects::nonNull)
+                            .map(Integer::parseInt)
                             .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
         }
@@ -379,7 +394,7 @@ public class KanbanController {
                 return ResponseEntity.ok(new KanbanResponse(kanbanService.findKanbanFromColumn(id)));
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Column: No such specified column")),
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN),
                     HttpStatus.BAD_REQUEST);
         }
     }
@@ -401,7 +416,7 @@ public class KanbanController {
             }
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Element: No such specified element")),
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT),
                     HttpStatus.BAD_REQUEST);
         }
     }
@@ -424,7 +439,7 @@ public class KanbanController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Kanban: No such specified kanban")),
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN),
                     HttpStatus.BAD_REQUEST);
         }
     }
@@ -451,7 +466,7 @@ public class KanbanController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Element: No such specified element")),
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT),
                     HttpStatus.BAD_REQUEST);
         }
     }
@@ -477,7 +492,7 @@ public class KanbanController {
             }
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Column: No such specified column")),
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN),
                     HttpStatus.BAD_REQUEST);
         }
     }

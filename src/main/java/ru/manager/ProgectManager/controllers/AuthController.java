@@ -15,19 +15,20 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import ru.manager.ProgectManager.DTO.request.RefreshTokenRequest;
-import ru.manager.ProgectManager.DTO.response.AuthResponse;
 import ru.manager.ProgectManager.DTO.request.UserDTO;
+import ru.manager.ProgectManager.DTO.response.AuthResponse;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.User;
+import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.RefreshTokenService;
 import ru.manager.ProgectManager.services.UserService;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
-import java.util.Collections;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -74,13 +75,15 @@ public class AuthController {
                 return ResponseEntity.ok(authResponse);
             } else {
                 return new ResponseEntity<>(
-                        new ErrorResponse(Collections.singletonList("Login: User with this login already created")),
+                        new ErrorResponse(Errors.USER_WITH_THIS_LOGIN_ALREADY_CREATED),
                         HttpStatus.BAD_REQUEST);
             }
         } else {
             return new ResponseEntity<>(
                     new ErrorResponse(bindingResult.getAllErrors().stream()
                             .map(ObjectError::getDefaultMessage)
+                            .filter(Objects::nonNull)
+                            .map(Integer::parseInt)
                             .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
         }
@@ -113,7 +116,7 @@ public class AuthController {
             authResponse.setRefresh(refreshTokenService.createToken(userEntity.getUsername()));
             return ResponseEntity.ok(authResponse);
         } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("User: Incorrect login or password")),
+            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_LOGIN_OR_PASSWORD),
                     HttpStatus.UNAUTHORIZED);
         }
     }

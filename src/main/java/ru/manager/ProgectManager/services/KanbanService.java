@@ -90,7 +90,7 @@ public class KanbanService {
         if (column.getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))) {
             List<KanbanColumn> allColumns = column.getKanban().getKanbanColumns();
             if(request.getTo() >= allColumns.size())
-                throw new IllegalArgumentException("Index more collection size");
+                throw new IllegalArgumentException();
             if(request.getTo() > from) {
                 allColumns.stream()
                         .filter(kanbanColumn -> kanbanColumn.getSerialNumber() > from)
@@ -127,7 +127,7 @@ public class KanbanService {
             if(element.getKanbanColumn().getId() == request.getToColumn()) {
                 List<KanbanElement> allElements = element.getKanbanColumn().getElements();
                 if (request.getToIndex() >= allElements.size())
-                    throw new IllegalArgumentException("Index more collection size");
+                    throw new IllegalArgumentException();
                 if (request.getToIndex() > from) {
                     allElements.stream()
                             .filter(kanbanElement -> kanbanElement.getSerialNumber() > from)
@@ -212,8 +212,14 @@ public class KanbanService {
         return false;
     }
 
-    public Optional<Kanban> findKanban(long id){
-        return kanbanRepository.findById(id);
+    public Optional<Kanban> findKanban(long id, String userLogin){
+        Kanban kanban = kanbanRepository.findById(id).get();
+        User user = userRepository.findByUsername(userLogin);
+        if(kanban.getProject().getConnectors().stream().anyMatch(p -> p.getUser().equals(user))){
+            return Optional.of(kanban);
+        } else{
+            return Optional.empty();
+        }
     }
 
     public Kanban findKanbanFromElement(long id){

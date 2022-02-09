@@ -19,12 +19,13 @@ import ru.manager.ProgectManager.DTO.response.ProjectResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.entitys.Project;
+import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.ProjectService;
 
 import javax.validation.Valid;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -53,6 +54,8 @@ public class ProjectController {
         if(bindingResult.hasErrors()){
             return new ResponseEntity<>(new ErrorResponse(bindingResult.getAllErrors().stream()
                     .map(ObjectError::getDefaultMessage)
+                    .filter(Objects::nonNull)
+                    .map(Integer::parseInt)
                     .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
         } else{
@@ -83,7 +86,7 @@ public class ProjectController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (NoSuchElementException e){
-            return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Project: No such specified project")),
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT),
                     HttpStatus.BAD_REQUEST);
         }
     }
@@ -107,6 +110,8 @@ public class ProjectController {
         if(bindingResult.hasErrors()){
             return new ResponseEntity<>(new ErrorResponse(bindingResult.getAllErrors().stream()
                     .map(ObjectError::getDefaultMessage)
+                    .filter(Objects::nonNull)
+                    .map(Integer::parseInt)
                     .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
         } else{
@@ -116,7 +121,7 @@ public class ProjectController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             } catch (NoSuchElementException e){
                 return new ResponseEntity<>(
-                        new ErrorResponse(Collections.singletonList("Project: No such specified project")),
+                        new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT),
                         HttpStatus.BAD_REQUEST);
             }
         }
@@ -144,11 +149,11 @@ public class ProjectController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (IOException e){
-            return new ResponseEntity<>(new ErrorResponse(Collections.singletonList(e.getMessage())),
+            return new ResponseEntity<>(new ErrorResponse(Errors.BAD_FILE),
                     HttpStatus.NOT_ACCEPTABLE);
         } catch (NoSuchElementException e){
             return new ResponseEntity<>(
-                    new ErrorResponse(Collections.singletonList("Project: No such specified project")),
+                    new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT),
                     HttpStatus.BAD_REQUEST);
         }
     }
@@ -170,7 +175,7 @@ public class ProjectController {
             }
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (NoSuchElementException e){
-            return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Project: Not such specified project")),
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT),
                     HttpStatus.BAD_REQUEST);
         }
     }

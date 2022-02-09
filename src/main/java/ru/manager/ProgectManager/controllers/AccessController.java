@@ -15,9 +15,9 @@ import ru.manager.ProgectManager.DTO.response.AccessProjectResponse;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.AccessProject;
+import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.AccessService;
 
-import java.util.Collections;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -48,11 +48,11 @@ public class AccessController {
                 return new ResponseEntity<>(HttpStatus.OK);
             }
             return new ResponseEntity<>(
-                    new ErrorResponse(Collections.singletonList("Project access token: The token is deprecated")),
+                    new ErrorResponse(Errors.PROJECT_ACCESS_TOKEN_IS_DEPRECATED),
                     HttpStatus.FORBIDDEN);
         } catch (NoSuchElementException e) {
             return new ResponseEntity<>(
-                    new ErrorResponse(Collections.singletonList("Project access token: The token is invalid or no longer available")),
+                    new ErrorResponse(Errors.PROJECT_ACCESS_TOKEN_IS_INVALID_OR_NO_LONGER_AVAILABLE),
                     HttpStatus.FORBIDDEN);
         }
     }
@@ -88,10 +88,11 @@ public class AccessController {
             return accessProject.map(s -> ResponseEntity.ok(new AccessProjectResponse(s)))
                     .orElseGet(() -> new ResponseEntity<>(HttpStatus.FORBIDDEN));
         } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Collections.singletonList("Project: No such specified project")),
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT),
                     HttpStatus.BAD_REQUEST);
         } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(new ErrorResponse(Collections.singletonList(e.getMessage())),
+            return new ResponseEntity<>(
+                    new ErrorResponse(Errors.TOKEN_FOR_ACCESS_WITH_PROJECT_AS_ADMIN_MUST_BE_DISPOSABLE),
                     HttpStatus.NOT_ACCEPTABLE);
         }
     }
