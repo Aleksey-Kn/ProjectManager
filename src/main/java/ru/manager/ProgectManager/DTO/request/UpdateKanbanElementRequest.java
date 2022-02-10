@@ -12,7 +12,7 @@ import javax.validation.constraints.NotBlank;
 public class UpdateKanbanElementRequest {
     @Schema(description = "Текстовое содержимое элемента")
     private String content;
-    @NotBlank(message = "Name must be contains visible symbols")
+    @NotBlank(message = "NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS")
     @Schema(description = "Название элемента")
     private String name;
     @Schema(description = "Тег элемента")

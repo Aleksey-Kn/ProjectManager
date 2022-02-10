@@ -14,14 +14,14 @@ import javax.validation.constraints.Size;
 public class RefreshUserDTO {
     @Schema(required = true, description = "Старый пароль")
     private String oldPassword;
-    @NotBlank(message = "Password: must contains visible symbols")
-    @Size(min = 3, message = "Password: must be longer 3 symbols")
+    @NotBlank(message = "PASSWORD_MUST_BE_CONTAINS_VISIBLE_SYMBOLS")
+    @Size(min = 3, message = "PASSWORD_MUST_BE_LONGER_3_SYMBOLS")
     @Schema(description = "Новый пароль")
     private String newPassword;
     @Schema(description = "Новые данные об электронной почте пользователя")
-    @Email(message = "Email: incorrect format")
+    @Email(message = "EMAIL_HAVE_INCORRECT_FORMAT")
     private String email;
     @Schema(description = "Новое отображаемое имя пользователя")
-    @NotBlank(message = "Nickname: must contains visible symbols")
+    @NotBlank(message = "NICKNAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS")
     private String nickname;
 }

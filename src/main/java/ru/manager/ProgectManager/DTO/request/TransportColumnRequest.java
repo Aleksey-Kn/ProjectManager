@@ -12,7 +12,7 @@ import javax.validation.constraints.Min;
 public class TransportColumnRequest {
     @Schema(required = true, description = "Идентификатор передвигаемой колонки")
     private long id;
-    @Min(value = 0, message = "Index must be more 0")
+    @Min(value = 0, message = "INDEX_MUST_BE_MORE_0")
     @Schema(description = "Новый индекс указанной колонки")
     private int to;
 }

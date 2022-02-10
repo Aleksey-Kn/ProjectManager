@@ -26,7 +26,6 @@ import ru.manager.ProgectManager.services.UserService;
 
 import javax.validation.Valid;
 import java.io.IOException;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -89,8 +88,8 @@ public class UserController {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(bindingResult.getAllErrors().stream()
                     .map(ObjectError::getDefaultMessage)
-                    .filter(Objects::nonNull)
-                    .map(Integer::parseInt)
+                    .map(Errors::valueOf)
+                    .map(Errors::getNumValue)
                     .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
         }

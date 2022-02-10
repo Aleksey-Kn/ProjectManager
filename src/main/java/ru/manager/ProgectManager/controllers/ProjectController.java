@@ -54,8 +54,8 @@ public class ProjectController {
         if(bindingResult.hasErrors()){
             return new ResponseEntity<>(new ErrorResponse(bindingResult.getAllErrors().stream()
                     .map(ObjectError::getDefaultMessage)
-                    .filter(Objects::nonNull)
-                    .map(Integer::parseInt)
+                    .map(Errors::valueOf)
+                    .map(Errors::getNumValue)
                     .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
         } else{
@@ -110,8 +110,8 @@ public class ProjectController {
         if(bindingResult.hasErrors()){
             return new ResponseEntity<>(new ErrorResponse(bindingResult.getAllErrors().stream()
                     .map(ObjectError::getDefaultMessage)
-                    .filter(Objects::nonNull)
-                    .map(Integer::parseInt)
+                    .map(Errors::valueOf)
+                    .map(Errors::getNumValue)
                     .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
         } else{

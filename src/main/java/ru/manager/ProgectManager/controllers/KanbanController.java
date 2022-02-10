@@ -65,8 +65,8 @@ public class KanbanController {
             return new ResponseEntity<>(
                     new ErrorResponse(bindingResult.getAllErrors().stream()
                             .map(ObjectError::getDefaultMessage)
-                            .filter(Objects::nonNull)
-                            .map(Integer::parseInt)
+                            .map(Errors::valueOf)
+                            .map(Errors::getNumValue)
                             .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
         } else {
@@ -169,8 +169,8 @@ public class KanbanController {
             return new ResponseEntity<>(
                     new ErrorResponse(bindingResult.getAllErrors().stream()
                             .map(ObjectError::getDefaultMessage)
-                            .filter(Objects::nonNull)
-                            .map(Integer::parseInt)
+                            .map(Errors::valueOf)
+                            .map(Errors::getNumValue)
                             .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
         } else {
@@ -216,8 +216,8 @@ public class KanbanController {
             return new ResponseEntity<>(
                     new ErrorResponse(bindingResult.getAllErrors().stream()
                             .map(ObjectError::getDefaultMessage)
-                            .filter(Objects::nonNull)
-                            .map(Integer::parseInt)
+                            .map(Errors::valueOf)
+                            .map(Errors::getNumValue)
                             .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
         } else {
@@ -260,8 +260,8 @@ public class KanbanController {
             return new ResponseEntity<>(
                     new ErrorResponse(bindingResult.getAllErrors().stream()
                             .map(ObjectError::getDefaultMessage)
-                            .filter(Objects::nonNull)
-                            .map(Integer::parseInt)
+                            .map(Errors::valueOf)
+                            .map(Errors::getNumValue)
                             .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
         } else {
@@ -302,8 +302,8 @@ public class KanbanController {
             return new ResponseEntity<>(
                     new ErrorResponse(bindingResult.getAllErrors().stream()
                             .map(ObjectError::getDefaultMessage)
-                            .filter(Objects::nonNull)
-                            .map(Integer::parseInt)
+                            .map(Errors::valueOf)
+                            .map(Errors::getNumValue)
                             .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
         } else {
@@ -344,8 +344,8 @@ public class KanbanController {
             return new ResponseEntity<>(
                     new ErrorResponse(bindingResult.getAllErrors().stream()
                             .map(ObjectError::getDefaultMessage)
-                            .filter(Objects::nonNull)
-                            .map(Integer::parseInt)
+                            .map(Errors::valueOf)
+                            .map(Errors::getNumValue)
                             .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
         }
@@ -383,8 +383,9 @@ public class KanbanController {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(
                     new ErrorResponse(bindingResult.getAllErrors().stream()
-                            .map(ObjectError::getDefaultMessage).filter(Objects::nonNull)
-                            .map(Integer::parseInt)
+                            .map(ObjectError::getDefaultMessage)
+                            .map(Errors::valueOf)
+                            .map(Errors::getNumValue)
                             .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
         }

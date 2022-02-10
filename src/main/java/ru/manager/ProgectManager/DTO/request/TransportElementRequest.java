@@ -13,9 +13,9 @@ public class TransportElementRequest {
     @Schema(required = true, description = "Идентификатор передвигаемого элемента")
     private long id;
     @Schema(description = "Новый индекс указанного элемента")
-    @Min(value = 0, message = "Index must be more 0")
+    @Min(value = 0, message = "INDEX_MUST_BE_MORE_0")
     private int toIndex;
-    @Min(value = 0, message = "Index must be more 0")
+    @Min(value = 0, message = "INDEX_MUST_BE_MORE_0")
     @Schema(description = "Индентификатор целевой колонки элемента")
     private int toColumn;
 }
