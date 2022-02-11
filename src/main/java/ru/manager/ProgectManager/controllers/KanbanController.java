@@ -15,19 +15,19 @@ import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.*;
 import ru.manager.ProgectManager.DTO.response.ContentDTO;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
+import ru.manager.ProgectManager.DTO.response.KanbanColumnResponse;
 import ru.manager.ProgectManager.DTO.response.KanbanResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.entitys.Kanban;
+import ru.manager.ProgectManager.entitys.KanbanColumn;
 import ru.manager.ProgectManager.entitys.KanbanElement;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.KanbanService;
 import ru.manager.ProgectManager.services.ProjectService;
 
 import javax.validation.Valid;
-import java.util.Collections;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -92,6 +92,11 @@ public class KanbanController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
+            @ApiResponse(responseCode = "406", description = "Указаны некорректные индекс или количество элементов",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к указанному проекту"),
             @ApiResponse(responseCode = "200", content = {
                     @Content(mediaType = "application/json",
@@ -99,17 +104,29 @@ public class KanbanController {
             })
     })
     @GetMapping("/get")
-    public ResponseEntity<?> getKanban(@RequestParam long kanbanId) {
-        try {
-            Optional<Kanban> result = kanbanService.findKanban(kanbanId, provider.getLoginFromToken());
-            if (result.isPresent()) {
-                return ResponseEntity.ok(new KanbanResponse(result.get()));
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+    public ResponseEntity<?> getKanban(@RequestBody @Valid GetKanbanRequest kanbanRequest, BindingResult bindingResult) {
+        if(bindingResult.hasErrors()){
+            return new ResponseEntity<>(
+                    new ErrorResponse(bindingResult.getAllErrors().stream()
+                            .map(ObjectError::getDefaultMessage)
+                            .map(Errors::valueOf)
+                            .map(Errors::getNumValue)
+                            .collect(Collectors.toList())),
+                    HttpStatus.NOT_ACCEPTABLE);
+        } else {
+            try {
+                Optional<Kanban> result = kanbanService.findKanban(kanbanRequest.getId(), provider.getLoginFromToken());
+                if (result.isPresent()) {
+                    return ResponseEntity.ok(new KanbanResponse(result.get(),
+                            kanbanRequest.getPageColumnIndex(), kanbanRequest.getCountColumn(),
+                            kanbanRequest.getPageElementIndex(), kanbanRequest.getCountElement()));
+                } else {
+                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+                }
+            } catch (NoSuchElementException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN),
+                        HttpStatus.BAD_REQUEST);
             }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN),
-                    HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -177,7 +194,11 @@ public class KanbanController {
             try {
                 if (kanbanService.transportElement(transportElementRequest, provider.getLoginFromToken())) {
                     return ResponseEntity.ok(
-                            new KanbanResponse(kanbanService.findKanbanFromElement(transportElementRequest.getId())));
+                            new KanbanResponse(kanbanService.findKanbanFromElement(transportElementRequest.getId()),
+                                    transportElementRequest.getPageColumnIndex(),
+                                    transportElementRequest.getCountColumn(),
+                                    transportElementRequest.getPageElementIndex(),
+                                    transportElementRequest.getCountElement()));
                 }
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             } catch (NoSuchElementException e) {
@@ -225,7 +246,9 @@ public class KanbanController {
             try {
                 if (kanbanService.transportColumn(transportColumnRequest, login)) {
                     return ResponseEntity.ok(
-                            new KanbanResponse(kanbanService.findKanbanFromColumn(transportColumnRequest.getId())));
+                            new KanbanResponse(kanbanService.findKanbanFromColumn(transportColumnRequest.getId()),
+                                    transportColumnRequest.getPageColumnIndex(), transportColumnRequest.getCountColumn(),
+                                    transportColumnRequest.getPageElementIndex(), transportColumnRequest.getCountElement()));
                 }
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             } catch (NoSuchElementException e) {
@@ -249,9 +272,9 @@ public class KanbanController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "200", description = "Канбан доска с учётом внесённых изменений", content = {
+            @ApiResponse(responseCode = "200", description = "Добавленный элемент", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = KanbanResponse.class))
+                            schema = @Schema(implementation = ContentDTO.class))
             })
     })
     @PostMapping("/element")
@@ -267,11 +290,12 @@ public class KanbanController {
         } else {
             try {
                 String login = provider.getLoginFromToken();
-                if (kanbanService.addElement(request, login)) {
-                    return ResponseEntity.ok(
-                            new KanbanResponse(kanbanService.findKanbanFromColumn(request.getColumnId())));
+                Optional<KanbanElement> element = kanbanService.addElement(request, login);
+                if (element.isPresent()) {
+                    return ResponseEntity.ok(new ContentDTO(element.get()));
+                } else {
+                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             } catch (NoSuchElementException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN),
                         HttpStatus.BAD_REQUEST);
@@ -290,9 +314,9 @@ public class KanbanController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "200", description = "Канбан доска с учётом внесённых изменений", content = {
+            @ApiResponse(responseCode = "200", description = "Елемент с учётом внесённых изменений", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = KanbanResponse.class))
+                            schema = @Schema(implementation = ContentDTO.class))
             })
     })
     @PutMapping("/element")
@@ -309,10 +333,12 @@ public class KanbanController {
         } else {
             try {
                 String login = provider.getLoginFromToken();
-                if (kanbanService.setElement(id, request, login)) {
-                    return ResponseEntity.ok(new KanbanResponse(kanbanService.findKanbanFromElement(id)));
+                Optional<KanbanElement> element = kanbanService.setElement(id, request, login);
+                if (element.isPresent()) {
+                    return ResponseEntity.ok(new ContentDTO(element.get()));
+                } else {
+                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             } catch (NoSuchElementException e) {
                 return new ResponseEntity<>(
                         new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT),
@@ -332,9 +358,9 @@ public class KanbanController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "200", description = "Канбан доска с учётом внесённых изменений", content = {
+            @ApiResponse(responseCode = "200", description = "Добавленная колонка", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = KanbanResponse.class))
+                            schema = @Schema(implementation = KanbanColumnResponse.class))
             })
     })
     @PostMapping("/column")
@@ -351,10 +377,12 @@ public class KanbanController {
         }
         try {
             String login = provider.getLoginFromToken();
-            if (kanbanService.addColumn(kanbanColumnRequest, login))
-                return ResponseEntity.ok(
-                        new KanbanResponse(kanbanService.findKanban(kanbanColumnRequest.getKanbanId(), login).get()));
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            Optional<KanbanColumn> column = kanbanService.addColumn(kanbanColumnRequest, login);
+            if (column.isPresent()) {
+                return ResponseEntity.ok(new KanbanColumnResponse(column.get(), 0, 1));
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
         } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN),
                     HttpStatus.BAD_REQUEST);
@@ -372,14 +400,14 @@ public class KanbanController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "200", description = "Канбан доска с учётом внесённых изменений", content = {
+            @ApiResponse(responseCode = "200", description = "Колонка с учётом внесённых изменений", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = KanbanResponse.class))
+                            schema = @Schema(implementation = KanbanColumnResponse.class))
             })
     })
     @PutMapping("/column")
-    public ResponseEntity<?> renameColumn(@RequestParam long id, @RequestBody @Valid NameRequest name,
-                                          BindingResult bindingResult) {
+    public ResponseEntity<?> renameColumn(@RequestParam long id, @RequestParam int pageIndex, @RequestParam int rowCount,
+                                          @RequestBody @Valid NameRequest name, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(
                     new ErrorResponse(bindingResult.getAllErrors().stream()
@@ -388,15 +416,23 @@ public class KanbanController {
                             .map(Errors::getNumValue)
                             .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
-        }
-        try {
-            String login = provider.getLoginFromToken();
-            if (kanbanService.renameColumn(id, name.getName(), login))
-                return ResponseEntity.ok(new KanbanResponse(kanbanService.findKanbanFromColumn(id)));
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN),
-                    HttpStatus.BAD_REQUEST);
+        } else {
+            if(pageIndex < 0)
+                pageIndex = 0;
+            if(rowCount < 1)
+                rowCount = 1;
+            try {
+                String login = provider.getLoginFromToken();
+                Optional<KanbanColumn> column = kanbanService.renameColumn(id, name.getName(), login);
+                if (column.isPresent()) {
+                    return ResponseEntity.ok(new KanbanColumnResponse(column.get(), pageIndex, rowCount));
+                } else {
+                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+                }
+            } catch (NoSuchElementException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN),
+                        HttpStatus.BAD_REQUEST);
+            }
         }
     }
 
@@ -407,15 +443,21 @@ public class KanbanController {
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
-            @ApiResponse(responseCode = "200", description = "Картинка успешно сжата и добавлена или изменена")
+            @ApiResponse(responseCode = "200", description = "Элемент с учётом добавленной фотографии", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ContentDTO.class))
+            })
     })
     @PostMapping("/photo")
     public ResponseEntity<?> addPhoto(@RequestParam long id, @ModelAttribute PhotoDTO photoDTO) {
         try {
-            if (kanbanService.setPhoto(id, provider.getLoginFromToken(), compressor.compress(photoDTO.getFile()))) {
-                return new ResponseEntity<>(HttpStatus.OK);
+            Optional<KanbanElement> element =
+                    kanbanService.setPhoto(id, provider.getLoginFromToken(), compressor.compress(photoDTO.getFile()));
+            if (element.isPresent()) {
+                return ResponseEntity.ok(new ContentDTO(element.get()));
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT),
                     HttpStatus.BAD_REQUEST);
@@ -452,17 +494,24 @@ public class KanbanController {
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
-            @ApiResponse(responseCode = "200", description = "Канбан доска с учётом внесённых изменений", content = {
+            @ApiResponse(responseCode = "200",
+                    description = "Колонка, в которой находился удалённый элемент, с учётом внесённых изменений",
+                    content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = KanbanResponse.class))
             })
     })
     @DeleteMapping("/element")
-    public ResponseEntity<?> removeElement(@RequestParam long id) {
+    public ResponseEntity<?> removeElement(@RequestParam long id, @RequestParam int pageIndex, @RequestParam int rowCount) {
+        if(pageIndex < 0)
+            pageIndex = 0;
+        if(rowCount < 1)
+            rowCount = 1;
         try {
             String login = provider.getLoginFromToken();
-            if (kanbanService.deleteElement(id, login)) {
-                return ResponseEntity.ok(new KanbanResponse(kanbanService.findKanbanFromElement(id)));
+            Optional<KanbanColumn> column = kanbanService.deleteElement(id, login);
+            if (column.isPresent()) {
+                return ResponseEntity.ok(new KanbanColumnResponse(column.get(), pageIndex, rowCount));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
@@ -479,22 +528,39 @@ public class KanbanController {
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
+            @ApiResponse(responseCode = "406", description = "Указаны некорректные индекс или количество элементов",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
             @ApiResponse(responseCode = "200", description = "Канбан доска с учётом внесённых изменений", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = KanbanResponse.class))
             })
     })
     @DeleteMapping("/column")
-    public ResponseEntity<?> removeColumn(@RequestParam long id) {
-        try {
-            String login = provider.getLoginFromToken();
-            if (kanbanService.deleteColumn(id, login)) {
-                return ResponseEntity.ok(new KanbanResponse(kanbanService.findKanbanFromColumn(id)));
+    public ResponseEntity<?> removeColumn(@RequestBody @Valid GetKanbanRequest request, BindingResult bindingResult) {
+        if(bindingResult.hasErrors()){
+            return new ResponseEntity<>(
+                    new ErrorResponse(bindingResult.getAllErrors().stream()
+                            .map(ObjectError::getDefaultMessage)
+                            .map(Errors::valueOf)
+                            .map(Errors::getNumValue)
+                            .collect(Collectors.toList())),
+                    HttpStatus.NOT_ACCEPTABLE);
+        } else {
+            try {
+                String login = provider.getLoginFromToken();
+                if (kanbanService.deleteColumn(request.getId(), login)) {
+                    return ResponseEntity.ok(new KanbanResponse(kanbanService.findKanbanFromColumn(request.getId()),
+                            request.getPageColumnIndex(), request.getCountColumn(),
+                            request.getPageElementIndex(), request.getCountElement()));
+                }
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            } catch (NoSuchElementException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN),
+                        HttpStatus.BAD_REQUEST);
             }
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN),
-                    HttpStatus.BAD_REQUEST);
         }
     }
 }

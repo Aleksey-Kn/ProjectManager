@@ -18,8 +18,12 @@ public class KanbanResponse {
     private final long id;
     private final Project project;
 
-    public KanbanResponse(Kanban kanban){
-        kanbanColumns = kanban.getKanbanColumns().stream().map(KanbanColumnResponse::new).collect(Collectors.toList());
+    public KanbanResponse(Kanban kanban, int pageIndexColumn, int countColumn, int pageIndexElement, int countElement){
+        kanbanColumns = kanban.getKanbanColumns().stream()
+                .map(kanbanColumn -> new KanbanColumnResponse(kanbanColumn, pageIndexElement, countElement))
+                .skip(pageIndexColumn)
+                .limit(countColumn)
+                .collect(Collectors.toList());
         name = kanban.getName();
         id = kanban.getId();
         project = kanban.getProject();

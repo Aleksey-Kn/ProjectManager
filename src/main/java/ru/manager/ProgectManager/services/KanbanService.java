@@ -21,7 +21,7 @@ public class KanbanService {
     private final UserRepository userRepository;
     private final KanbanRepository kanbanRepository;
 
-    public boolean addElement(CreateKanbanElementRequest request, String userLogin){
+    public Optional<KanbanElement> addElement(CreateKanbanElementRequest request, String userLogin){
         KanbanColumn column = columnRepository.findById(request.getColumnId()).get();
         User user = userRepository.findByUsername(userLogin);
         if(column.getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
@@ -37,14 +37,14 @@ public class KanbanService {
                             () -> element.setSerialNumber(0));
             column.getElements().add(element);
             element.setKanbanColumn(column);
-            elementRepository.save(element);
+            KanbanElement kanbanElement = elementRepository.save(element);
             columnRepository.save(column);
-            return true;
+            return Optional.of(kanbanElement);
         }
-        return false;
+        return Optional.empty();
     }
 
-    public boolean setElement(long id, UpdateKanbanElementRequest request, String userLogin){
+    public Optional<KanbanElement> setElement(long id, UpdateKanbanElementRequest request, String userLogin){
         KanbanElement element = elementRepository.findById(id).get();
         User user = userRepository.findByUsername(userLogin);
         if(element.getKanbanColumn().getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
@@ -53,21 +53,19 @@ public class KanbanService {
             element.setTag(request.getTag());
 
             element.setLastRedactor(user);
-            elementRepository.save(element);
-            return true;
+            return Optional.of(elementRepository.save(element));
         }
-        return false;
+        return Optional.empty();
     }
 
-    public boolean setPhoto(long id, String userLogin, byte[] photo){
+    public Optional<KanbanElement> setPhoto(long id, String userLogin, byte[] photo){
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(id).get();
         if(element.getKanbanColumn().getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
             element.setPhoto(photo);
-            elementRepository.save(element);
-            return true;
+            return Optional.of(elementRepository.save(element));
         }
-        return false;
+        return Optional.empty();
     }
 
     public Optional<KanbanElement> getContentFromElement(long id, String userLogin){
@@ -108,15 +106,14 @@ public class KanbanService {
         return false;
     }
 
-    public boolean renameColumn(long id, String name, String userLogin){
+    public Optional<KanbanColumn> renameColumn(long id, String name, String userLogin){
         User user = userRepository.findByUsername(userLogin);
         KanbanColumn kanbanColumn = columnRepository.findById(id).get();
         if(kanbanColumn.getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
             kanbanColumn.setName(name);
-            columnRepository.save(kanbanColumn);
-            return true;
+            return Optional.of(columnRepository.save(kanbanColumn));
         }
-        return false;
+        return Optional.empty();
     }
 
     public boolean transportElement(TransportElementRequest request, String userLogin){
@@ -173,7 +170,7 @@ public class KanbanService {
         return false;
     }
 
-    public boolean deleteElement(long id, String userLogin){
+    public Optional<KanbanColumn> deleteElement(long id, String userLogin){
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(id).get();
         if(element.getKanbanColumn().getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
@@ -183,15 +180,12 @@ public class KanbanService {
 
             KanbanColumn column = element.getKanbanColumn();
             column.getElements().remove(element);
-            columnRepository.save(column);
-
-            elementRepository.delete(element);
-            return true;
+            return Optional.of(columnRepository.save(column));
         }
-        return false;
+        return Optional.empty();
     }
 
-    public boolean addColumn(KanbanColumnRequest request, String userLogin){
+    public Optional<KanbanColumn> addColumn(KanbanColumnRequest request, String userLogin){
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = kanbanRepository.findById(request.getKanbanId()).get();
         Project project = kanban.getProject();
@@ -205,11 +199,11 @@ public class KanbanService {
                             () -> kanbanColumn.setSerialNumber(0));
 
             kanban.getKanbanColumns().add(kanbanColumn);
-            columnRepository.save(kanbanColumn);
+            KanbanColumn result = columnRepository.save(kanbanColumn);
             kanbanRepository.save(kanban);
-            return true;
+            return Optional.of(result);
         }
-        return false;
+        return Optional.empty();
     }
 
     public Optional<Kanban> findKanban(long id, String userLogin){

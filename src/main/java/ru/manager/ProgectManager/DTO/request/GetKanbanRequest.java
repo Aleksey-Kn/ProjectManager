@@ -6,18 +6,12 @@ import org.springframework.validation.annotation.Validated;
 
 import javax.validation.constraints.Min;
 
-@Validated
 @Getter
-@Schema(description = "Запрос на передвижение елемента канбана")
-public class TransportElementRequest {
-    @Schema(required = true, description = "Идентификатор передвигаемого элемента")
+@Validated
+@Schema(description = "Запрос на получение канбана с пагинированием по столбцам и их элементам")
+public class GetKanbanRequest {
+    @Schema(description = "Идентификатор получаемого канбана")
     private long id;
-    @Schema(description = "Новый индекс указанного элемента")
-    @Min(value = 0, message = "INDEX_MUST_BE_MORE_0")
-    private int toIndex;
-    @Min(value = 0, message = "INDEX_MUST_BE_MORE_0")
-    @Schema(description = "Индентификатор целевой колонки элемента")
-    private int toColumn;
     @Min(value = 0, message = "INDEX_MUST_BE_MORE_0")
     @Schema(description = "Первый порядковый номер колонки в запрашиваемой странице")
     private int pageColumnIndex;

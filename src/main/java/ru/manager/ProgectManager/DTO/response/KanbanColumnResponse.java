@@ -19,7 +19,7 @@ public class KanbanColumnResponse {
     @Schema(description = "Список элементов, содержащихся в данной колонке")
     private final List<KanbanElementMainDataResponse> kanbanElements;
 
-    public KanbanColumnResponse(KanbanColumn kanbanColumn){
+    public KanbanColumnResponse(KanbanColumn kanbanColumn, int pageIndex, int count){
         id = kanbanColumn.getId();
         serialNumber = kanbanColumn.getSerialNumber();
         name = kanbanColumn.getName();
@@ -27,6 +27,8 @@ public class KanbanColumnResponse {
                 ? List.of()
                 : kanbanColumn.getElements().stream()
                 .map(KanbanElementMainDataResponse::new)
+                .skip(pageIndex)
+                .limit(count)
                 .collect(Collectors.toList()));
     }
 }
