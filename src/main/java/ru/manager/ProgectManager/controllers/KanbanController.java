@@ -396,7 +396,7 @@ public class KanbanController {
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
-            @ApiResponse(responseCode = "406", description = "Название колонки не должно быть пустым", content = {
+            @ApiResponse(responseCode = "406", description = "Переданные данные неприемлемы", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -417,10 +417,12 @@ public class KanbanController {
                             .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
         } else {
-            if(pageIndex < 0)
-                pageIndex = 0;
-            if(rowCount < 1)
-                rowCount = 1;
+            if(pageIndex < 0) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.INDEX_MUST_BE_MORE_0), HttpStatus.NOT_ACCEPTABLE);
+            }
+            if(rowCount < 1) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.COUNT_MUST_BE_MORE_1), HttpStatus.NOT_ACCEPTABLE);
+            }
             try {
                 String login = provider.getLoginFromToken();
                 Optional<KanbanColumn> column = kanbanService.renameColumn(id, name.getName(), login);
@@ -494,6 +496,11 @@ public class KanbanController {
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
+            @ApiResponse(responseCode = "406", description = "Указаны некорректные индекс или количество элементов",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
             @ApiResponse(responseCode = "200",
                     description = "Колонка, в которой находился удалённый элемент, с учётом внесённых изменений",
                     content = {
@@ -503,10 +510,12 @@ public class KanbanController {
     })
     @DeleteMapping("/element")
     public ResponseEntity<?> removeElement(@RequestParam long id, @RequestParam int pageIndex, @RequestParam int rowCount) {
-        if(pageIndex < 0)
-            pageIndex = 0;
-        if(rowCount < 1)
-            rowCount = 1;
+        if(pageIndex < 0) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.INDEX_MUST_BE_MORE_0), HttpStatus.NOT_ACCEPTABLE);
+        }
+        if(rowCount < 1) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.COUNT_MUST_BE_MORE_1), HttpStatus.NOT_ACCEPTABLE);
+        }
         try {
             String login = provider.getLoginFromToken();
             Optional<KanbanColumn> column = kanbanService.deleteElement(id, login);
