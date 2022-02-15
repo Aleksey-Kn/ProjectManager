@@ -1,6 +1,5 @@
 package ru.manager.ProgectManager.components;
 
-import lombok.extern.java.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -8,7 +7,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.GenericFilterBean;
 import ru.manager.ProgectManager.enums.TokenStatus;
-import ru.manager.ProgectManager.exception.InvalidTokenException;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -21,7 +19,6 @@ import java.util.Arrays;
 import java.util.NoSuchElementException;
 
 @Component
-@Log
 public class JwtFilter extends GenericFilterBean {
     private JwtProvider jwtProvider;
 
@@ -40,7 +37,6 @@ public class JwtFilter extends GenericFilterBean {
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
             throws IOException, ServletException {
-        logger.info("do filter...");
         String token = getTokenFromRequest((HttpServletRequest) servletRequest);
         if (token != null && jwtProvider.validateToken(token) == TokenStatus.OK) {
             try {

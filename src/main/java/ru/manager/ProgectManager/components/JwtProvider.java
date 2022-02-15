@@ -65,7 +65,7 @@ public class JwtProvider {
     }
 
     public String getLoginFromToken(){
-        String accessToken = getBearerTokenHeader();
+        String accessToken = getBearerToken();
         TokenStatus status = validateToken(accessToken);
         if(status == TokenStatus.OK) {
             Claims claims = Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(accessToken).getBody();
@@ -77,7 +77,7 @@ public class JwtProvider {
         }
     }
 
-    private String getBearerTokenHeader() {
+    private String getBearerToken() {
         Cookie[] cookies = request.getCookies();
         if(cookies != null) {
             return Arrays.stream(cookies)

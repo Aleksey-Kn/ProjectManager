@@ -617,5 +617,71 @@ public class KanbanController {
         }
     }
 
+    @Operation(summary = "Удаление комментария элемента канбана")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Обращение к несуществующему комментарию", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному комментарию"),
+            @ApiResponse(responseCode = "200", description = "Элемент канбана с учётом внесённых изменений", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = KanbanElementContentResponse.class))
+            })
+    })
+    @DeleteMapping("/comment")
+    public ResponseEntity<?> removeComment(@RequestParam long id,
+                                           @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId){
+        try{
+            Optional<KanbanElement> element = kanbanService.removeComment(id, provider.getLoginFromToken());
+            if(element.isPresent()){
+                return ResponseEntity.ok(new KanbanElementContentResponse(element.get(), zoneId));
+            } else{
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e){
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COMMENT), HttpStatus.BAD_REQUEST);
+        }
+    }
 
+    @Operation(summary = "Изменение комментария элемента канбана")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Обращение к несуществующему элементу", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
+            @ApiResponse(responseCode = "406", description = "Неподходящие текстовые данные",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
+            @ApiResponse(responseCode = "200", description = "Полная информация о изменённом комментарии", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = KanbanElementCommentResponse.class))
+            })
+    })
+    @PutMapping("/comment")
+    public ResponseEntity<?> updateComment(@RequestBody @Valid KanbanCommentRequest request, BindingResult bindingResult){
+        if(bindingResult.hasErrors()){
+            return new ResponseEntity<>(
+                    new ErrorResponse(bindingResult.getAllErrors().stream()
+                            .map(ObjectError::getDefaultMessage)
+                            .map(Errors::valueOf)
+                            .map(Errors::getNumValue)
+                            .collect(Collectors.toList())),
+                    HttpStatus.NOT_ACCEPTABLE);
+        } else {
+            try {
+                Optional<KanbanElementComment> comment = kanbanService.updateComment(request, provider.getLoginFromToken());
+                if (comment.isPresent()) {
+                    return ResponseEntity.ok(new KanbanElementCommentResponse(comment.get(), request.getZone()));
+                } else {
+                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+                }
+            } catch (NoSuchElementException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COMMENT), HttpStatus.BAD_REQUEST);
+            }
+        }
+    }
 }

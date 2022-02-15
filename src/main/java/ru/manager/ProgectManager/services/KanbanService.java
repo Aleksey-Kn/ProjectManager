@@ -216,8 +216,7 @@ public class KanbanService {
             comment.setText(request.getText());
             comment.setOwner(user);
             comment.setKanbanElement(element);
-            comment.setDateTime(LocalDateTime.now()
-                    .toEpochSecond(ZoneOffset.systemDefault().getRules().getOffset(Instant.now())));
+            comment.setDateTime(getEpochSeconds());
             comment = commentRepository.save(comment);
 
             element.getComments().add(comment);
@@ -228,7 +227,37 @@ public class KanbanService {
         }
     }
 
-    //public Optional<>
+    public Optional<KanbanElement> removeComment(long id, String userLogin){
+        User user = userRepository.findByUsername(userLogin);
+        KanbanElementComment comment = commentRepository.findById(id).get();
+        if(comment.getOwner().equals(user)
+                || comment.getKanbanElement().getKanbanColumn().getKanban().getProject().getConnectors().stream()
+                .filter(UserWithProjectConnector::isAdmin)
+                .anyMatch(c -> c.getUser().equals(user))){
+            KanbanElement element = comment.getKanbanElement();
+            element.getComments().remove(comment);
+            element = elementRepository.save(element);
+            return Optional.of(element);
+        } else{
+            return Optional.empty();
+        }
+    }
+
+    public Optional<KanbanElementComment> updateComment(KanbanCommentRequest request, String userLogin){
+        User user = userRepository.findByUsername(userLogin);
+        KanbanElementComment comment = commentRepository.findById(request.getId()).get();
+        if(comment.getOwner().equals(user)){
+            comment.setText(request.getText());
+            comment.setDateTime(getEpochSeconds());
+            return Optional.of(commentRepository.save(comment));
+        } else{
+            return Optional.empty();
+        }
+    }
+
+    private long getEpochSeconds(){
+        return LocalDateTime.now().toEpochSecond(ZoneOffset.systemDefault().getRules().getOffset(Instant.now()));
+    }
 
     public Optional<Kanban> findKanban(long id, String userLogin){
         Kanban kanban = kanbanRepository.findById(id).get();
