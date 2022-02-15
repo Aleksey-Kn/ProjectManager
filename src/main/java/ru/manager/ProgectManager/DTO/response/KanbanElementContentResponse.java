@@ -4,9 +4,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import ru.manager.ProgectManager.entitys.KanbanElement;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Getter
 @Schema(description = "Ответ предоставления полной информации о элементе канбана")
-public class ContentDTO {
+public class KanbanElementContentResponse {
     @Schema(description = "Текстовая информация, хранящаяся внутри элемента", nullable = true)
     private final String content;
     @Schema(description = "Идентификатор элемента")
@@ -23,8 +26,10 @@ public class ContentDTO {
     private final PublicUserDataResponse creator;
     @Schema(description = "Информация об акаунте последнего редактора ячейки")
     private final PublicUserDataResponse lastRedactor;
+    @Schema(description = "Комментарии")
+    private final List<KanbanElementCommentResponse> comment;
 
-    public ContentDTO(KanbanElement kanbanElement) {
+    public KanbanElementContentResponse(KanbanElement kanbanElement) {
         id = kanbanElement.getId();
         serialNumber = kanbanElement.getSerialNumber();
         name = kanbanElement.getName();
@@ -33,5 +38,7 @@ public class ContentDTO {
         creator = new PublicUserDataResponse(kanbanElement.getOwner());
         lastRedactor = new PublicUserDataResponse(kanbanElement.getLastRedactor());
         content = kanbanElement.getContent();
+        comment = kanbanElement.getComments().stream().map(KanbanElementCommentResponse::new)
+                .collect(Collectors.toList());
     }
 }

@@ -13,7 +13,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.*;
-import ru.manager.ProgectManager.DTO.response.ContentDTO;
+import ru.manager.ProgectManager.DTO.response.KanbanElementContentResponse;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.KanbanColumnResponse;
 import ru.manager.ProgectManager.DTO.response.KanbanResponse;
@@ -143,7 +143,7 @@ public class KanbanController {
                     }),
             @ApiResponse(responseCode = "200", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ContentDTO.class))
+                            schema = @Schema(implementation = KanbanElementContentResponse.class))
             })
     })
     @GetMapping("/element")
@@ -152,7 +152,7 @@ public class KanbanController {
             Optional<KanbanElement> content = kanbanService
                     .getContentFromElement(elementId, provider.getLoginFromToken());
             if (content.isPresent()) {
-                return ResponseEntity.ok(new ContentDTO(content.get()));
+                return ResponseEntity.ok(new KanbanElementContentResponse(content.get()));
             }
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (NoSuchElementException e) {
@@ -274,7 +274,7 @@ public class KanbanController {
             }),
             @ApiResponse(responseCode = "200", description = "Добавленный элемент", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ContentDTO.class))
+                            schema = @Schema(implementation = KanbanElementContentResponse.class))
             })
     })
     @PostMapping("/element")
@@ -292,7 +292,7 @@ public class KanbanController {
                 String login = provider.getLoginFromToken();
                 Optional<KanbanElement> element = kanbanService.addElement(request, login);
                 if (element.isPresent()) {
-                    return ResponseEntity.ok(new ContentDTO(element.get()));
+                    return ResponseEntity.ok(new KanbanElementContentResponse(element.get()));
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
@@ -316,7 +316,7 @@ public class KanbanController {
             }),
             @ApiResponse(responseCode = "200", description = "Елемент с учётом внесённых изменений", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ContentDTO.class))
+                            schema = @Schema(implementation = KanbanElementContentResponse.class))
             })
     })
     @PutMapping("/element")
@@ -335,7 +335,7 @@ public class KanbanController {
                 String login = provider.getLoginFromToken();
                 Optional<KanbanElement> element = kanbanService.setElement(id, request, login);
                 if (element.isPresent()) {
-                    return ResponseEntity.ok(new ContentDTO(element.get()));
+                    return ResponseEntity.ok(new KanbanElementContentResponse(element.get()));
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
@@ -447,7 +447,7 @@ public class KanbanController {
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
             @ApiResponse(responseCode = "200", description = "Элемент с учётом добавленной фотографии", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ContentDTO.class))
+                            schema = @Schema(implementation = KanbanElementContentResponse.class))
             })
     })
     @PostMapping("/photo")
@@ -456,7 +456,7 @@ public class KanbanController {
             Optional<KanbanElement> element =
                     kanbanService.setPhoto(id, provider.getLoginFromToken(), compressor.compress(photoDTO.getFile()));
             if (element.isPresent()) {
-                return ResponseEntity.ok(new ContentDTO(element.get()));
+                return ResponseEntity.ok(new KanbanElementContentResponse(element.get()));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
@@ -572,4 +572,9 @@ public class KanbanController {
             }
         }
     }
+//
+//    @PostMapping("/comment")
+//    public ResponseEntity<?> addComment(){
+//
+//    }
 }

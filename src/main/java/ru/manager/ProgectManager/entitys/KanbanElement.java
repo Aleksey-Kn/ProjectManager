@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.util.List;
 
 @Entity
 @Table(name = "kanban_element")
@@ -41,4 +42,7 @@ public class KanbanElement {
     @ManyToOne
     @JoinColumn(name = "kanban_column_id")
     private KanbanColumn kanbanColumn;
+
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<KanbanElementComment> comments;
 }
