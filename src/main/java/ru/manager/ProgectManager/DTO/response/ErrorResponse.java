@@ -10,7 +10,7 @@ import java.util.List;
 @Getter
 @Schema(description = "Информация об ошибках текущего запроса")
 public class ErrorResponse {
-    @Schema(description = "Список ошибок")
+    @Schema(description = "Список ошибок. Представлены в виде числовых кодов ошибок")
     private final List<Integer> errors;
 
     public ErrorResponse(List<Integer> err){

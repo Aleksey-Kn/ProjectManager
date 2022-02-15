@@ -13,15 +13,13 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.*;
-import ru.manager.ProgectManager.DTO.response.KanbanElementContentResponse;
-import ru.manager.ProgectManager.DTO.response.ErrorResponse;
-import ru.manager.ProgectManager.DTO.response.KanbanColumnResponse;
-import ru.manager.ProgectManager.DTO.response.KanbanResponse;
+import ru.manager.ProgectManager.DTO.response.*;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.entitys.Kanban;
 import ru.manager.ProgectManager.entitys.KanbanColumn;
 import ru.manager.ProgectManager.entitys.KanbanElement;
+import ru.manager.ProgectManager.entitys.KanbanElementComment;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.KanbanService;
 import ru.manager.ProgectManager.services.ProjectService;
@@ -572,9 +570,47 @@ public class KanbanController {
             }
         }
     }
-//
-//    @PostMapping("/comment")
-//    public ResponseEntity<?> addComment(){
-//
-//    }
+
+    @Operation(summary = "Добавление комментария к элементу канбана")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Обращение к несуществующему элементу", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
+            @ApiResponse(responseCode = "406", description = "Неподходящие текстовые данные",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
+            @ApiResponse(responseCode = "200", description = "Полная информация о добавленном комментарии", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = KanbanElementCommentResponse.class))
+            })
+    })
+    @PostMapping("/comment")
+    public ResponseEntity<?> addComment(@RequestBody @Valid KanbanCommentRequest request, BindingResult bindingResult){
+        if(bindingResult.hasErrors()){
+            return new ResponseEntity<>(
+                    new ErrorResponse(bindingResult.getAllErrors().stream()
+                            .map(ObjectError::getDefaultMessage)
+                            .map(Errors::valueOf)
+                            .map(Errors::getNumValue)
+                            .collect(Collectors.toList())),
+                    HttpStatus.NOT_ACCEPTABLE);
+        } else {
+            try {
+                Optional<KanbanElementComment> comment = kanbanService.addComment(request, provider.getLoginFromToken());
+                if (comment.isPresent()) {
+                    return ResponseEntity.ok(new KanbanElementCommentResponse(comment.get()));
+                } else {
+                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+                }
+            } catch (NoSuchElementException e){
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.BAD_REQUEST);
+            }
+        }
+    }
+
+
 }

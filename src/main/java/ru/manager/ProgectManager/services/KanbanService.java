@@ -4,11 +4,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.request.*;
 import ru.manager.ProgectManager.entitys.*;
-import ru.manager.ProgectManager.repositories.KanbanColumnRepository;
-import ru.manager.ProgectManager.repositories.KanbanElementRepository;
-import ru.manager.ProgectManager.repositories.KanbanRepository;
-import ru.manager.ProgectManager.repositories.UserRepository;
+import ru.manager.ProgectManager.repositories.*;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -20,6 +19,7 @@ public class KanbanService {
     private final KanbanElementRepository elementRepository;
     private final UserRepository userRepository;
     private final KanbanRepository kanbanRepository;
+    private final KanbanElementCommentRepository commentRepository;
 
     public Optional<KanbanElement> addElement(CreateKanbanElementRequest request, String userLogin){
         KanbanColumn column = columnRepository.findById(request.getColumnId()).get();
@@ -205,6 +205,28 @@ public class KanbanService {
         }
         return Optional.empty();
     }
+
+    public Optional<KanbanElementComment> addComment(KanbanCommentRequest request, String userLogin){
+        User user = userRepository.findByUsername(userLogin);
+        KanbanElement element = elementRepository.findById(request.getId()).get();
+        if(element.getKanbanColumn().getKanban().getProject().getConnectors().stream()
+                .anyMatch(c -> c.getUser().equals(user))){
+            KanbanElementComment comment = new KanbanElementComment();
+            comment.setText(request.getText());
+            comment.setOwner(user);
+            comment.setKanbanElement(element);
+            //comment.setDateTime(LocalDateTime.now().toEpochSecond(ZoneOffset.UTC));
+            comment = commentRepository.save(comment);
+
+            element.getComments().add(comment);
+            elementRepository.save(element);
+            return Optional.of(comment);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    //public Optional<>
 
     public Optional<Kanban> findKanban(long id, String userLogin){
         Kanban kanban = kanbanRepository.findById(id).get();

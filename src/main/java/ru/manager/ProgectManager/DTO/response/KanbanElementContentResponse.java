@@ -3,7 +3,9 @@ package ru.manager.ProgectManager.DTO.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import ru.manager.ProgectManager.entitys.KanbanElement;
+import ru.manager.ProgectManager.entitys.KanbanElementComment;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,7 +29,7 @@ public class KanbanElementContentResponse {
     @Schema(description = "Информация об акаунте последнего редактора ячейки")
     private final PublicUserDataResponse lastRedactor;
     @Schema(description = "Комментарии")
-    private final List<KanbanElementCommentResponse> comment;
+    private final List<KanbanElementCommentResponse> comments;
 
     public KanbanElementContentResponse(KanbanElement kanbanElement) {
         id = kanbanElement.getId();
@@ -38,7 +40,9 @@ public class KanbanElementContentResponse {
         creator = new PublicUserDataResponse(kanbanElement.getOwner());
         lastRedactor = new PublicUserDataResponse(kanbanElement.getLastRedactor());
         content = kanbanElement.getContent();
-        comment = kanbanElement.getComments().stream().map(KanbanElementCommentResponse::new)
+        comments = kanbanElement.getComments().stream()
+                .sorted(Comparator.comparing(KanbanElementComment::getId))
+                .map(KanbanElementCommentResponse::new)
                 .collect(Collectors.toList());
     }
 }
