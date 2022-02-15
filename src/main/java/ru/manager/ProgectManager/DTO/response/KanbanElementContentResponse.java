@@ -31,7 +31,7 @@ public class KanbanElementContentResponse {
     @Schema(description = "Комментарии")
     private final List<KanbanElementCommentResponse> comments;
 
-    public KanbanElementContentResponse(KanbanElement kanbanElement) {
+    public KanbanElementContentResponse(KanbanElement kanbanElement, int zoneId) {
         id = kanbanElement.getId();
         serialNumber = kanbanElement.getSerialNumber();
         name = kanbanElement.getName();
@@ -40,9 +40,10 @@ public class KanbanElementContentResponse {
         creator = new PublicUserDataResponse(kanbanElement.getOwner());
         lastRedactor = new PublicUserDataResponse(kanbanElement.getLastRedactor());
         content = kanbanElement.getContent();
-        comments = kanbanElement.getComments().stream()
+        comments = (kanbanElement.getComments() == null? List.of():
+                kanbanElement.getComments().stream()
                 .sorted(Comparator.comparing(KanbanElementComment::getId))
-                .map(KanbanElementCommentResponse::new)
-                .collect(Collectors.toList());
+                .map(o -> new KanbanElementCommentResponse(o, zoneId))
+                .collect(Collectors.toList()));
     }
 }

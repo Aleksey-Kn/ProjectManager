@@ -18,4 +18,6 @@ public class KanbanCommentRequest {
     @Size(max = 200, message = "TEXT_LENGTH_IS_TOO_LONG")
     @Schema(description = "Текст комментария")
     private String text;
+    @Schema(description = "Часовой пояс текущего пользователя")
+    private int zone;
 }

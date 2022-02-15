@@ -1,6 +1,7 @@
 package ru.manager.ProgectManager.controllers;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -145,12 +146,13 @@ public class KanbanController {
             })
     })
     @GetMapping("/element")
-    public ResponseEntity<?> getContent(@RequestParam long elementId) {
+    public ResponseEntity<?> getContent(@RequestParam long elementId,
+                                        @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId) {
         try {
             Optional<KanbanElement> content = kanbanService
                     .getContentFromElement(elementId, provider.getLoginFromToken());
             if (content.isPresent()) {
-                return ResponseEntity.ok(new KanbanElementContentResponse(content.get()));
+                return ResponseEntity.ok(new KanbanElementContentResponse(content.get(), zoneId));
             }
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (NoSuchElementException e) {
@@ -290,7 +292,7 @@ public class KanbanController {
                 String login = provider.getLoginFromToken();
                 Optional<KanbanElement> element = kanbanService.addElement(request, login);
                 if (element.isPresent()) {
-                    return ResponseEntity.ok(new KanbanElementContentResponse(element.get()));
+                    return ResponseEntity.ok(new KanbanElementContentResponse(element.get(), 0));
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
@@ -318,7 +320,9 @@ public class KanbanController {
             })
     })
     @PutMapping("/element")
-    public ResponseEntity<?> editElement(@RequestParam long id, @RequestBody @Valid UpdateKanbanElementRequest request,
+    public ResponseEntity<?> editElement(@RequestParam long id,
+                                         @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId,
+                                         @RequestBody @Valid UpdateKanbanElementRequest request,
                                          BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(
@@ -333,7 +337,7 @@ public class KanbanController {
                 String login = provider.getLoginFromToken();
                 Optional<KanbanElement> element = kanbanService.setElement(id, request, login);
                 if (element.isPresent()) {
-                    return ResponseEntity.ok(new KanbanElementContentResponse(element.get()));
+                    return ResponseEntity.ok(new KanbanElementContentResponse(element.get(), zoneId));
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
@@ -449,12 +453,13 @@ public class KanbanController {
             })
     })
     @PostMapping("/photo")
-    public ResponseEntity<?> addPhoto(@RequestParam long id, @ModelAttribute PhotoDTO photoDTO) {
+    public ResponseEntity<?> addPhoto(@RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId,
+                                      @RequestParam long id, @ModelAttribute PhotoDTO photoDTO) {
         try {
             Optional<KanbanElement> element =
                     kanbanService.setPhoto(id, provider.getLoginFromToken(), compressor.compress(photoDTO.getFile()));
             if (element.isPresent()) {
-                return ResponseEntity.ok(new KanbanElementContentResponse(element.get()));
+                return ResponseEntity.ok(new KanbanElementContentResponse(element.get(), zoneId));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
@@ -602,7 +607,7 @@ public class KanbanController {
             try {
                 Optional<KanbanElementComment> comment = kanbanService.addComment(request, provider.getLoginFromToken());
                 if (comment.isPresent()) {
-                    return ResponseEntity.ok(new KanbanElementCommentResponse(comment.get()));
+                    return ResponseEntity.ok(new KanbanElementCommentResponse(comment.get(), request.getZone()));
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }

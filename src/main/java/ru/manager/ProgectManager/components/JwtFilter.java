@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.GenericFilterBean;
 import ru.manager.ProgectManager.enums.TokenStatus;
+import ru.manager.ProgectManager.exception.InvalidTokenException;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -17,6 +18,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.NoSuchElementException;
 
 @Component
 @Log
@@ -41,11 +43,14 @@ public class JwtFilter extends GenericFilterBean {
         logger.info("do filter...");
         String token = getTokenFromRequest((HttpServletRequest) servletRequest);
         if (token != null && jwtProvider.validateToken(token) == TokenStatus.OK) {
-            String userLogin = jwtProvider.getLoginFromToken(token);
-            UserDetails customUserDetails = customUserDetailsService.loadUserByUsername(userLogin);
-            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(customUserDetails,
-                    null, customUserDetails.getAuthorities());
-            SecurityContextHolder.getContext().setAuthentication(auth);
+            try {
+                String userLogin = jwtProvider.getLoginFromToken(token);
+                UserDetails customUserDetails = customUserDetailsService.loadUserByUsername(userLogin);
+                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(customUserDetails,
+                        null, customUserDetails.getAuthorities());
+                SecurityContextHolder.getContext().setAuthentication(auth);
+            } catch (NoSuchElementException ignore) {
+            }
         }
         filterChain.doFilter(servletRequest, servletResponse);
     }

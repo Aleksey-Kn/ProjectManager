@@ -6,6 +6,7 @@ import ru.manager.ProgectManager.DTO.request.*;
 import ru.manager.ProgectManager.entitys.*;
 import ru.manager.ProgectManager.repositories.*;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Comparator;
@@ -215,7 +216,8 @@ public class KanbanService {
             comment.setText(request.getText());
             comment.setOwner(user);
             comment.setKanbanElement(element);
-            //comment.setDateTime(LocalDateTime.now().toEpochSecond(ZoneOffset.UTC));
+            comment.setDateTime(LocalDateTime.now()
+                    .toEpochSecond(ZoneOffset.systemDefault().getRules().getOffset(Instant.now())));
             comment = commentRepository.save(comment);
 
             element.getComments().add(comment);

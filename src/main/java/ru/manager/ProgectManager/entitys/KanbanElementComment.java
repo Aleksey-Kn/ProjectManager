@@ -16,8 +16,8 @@ public class KanbanElementComment {
     @Column
     private String text;
 
-//    @Column
-//    private long dateTime;
+    @Column
+    private long dateTime;
 
     @ManyToOne
     @JoinColumn(name = "element_id")
