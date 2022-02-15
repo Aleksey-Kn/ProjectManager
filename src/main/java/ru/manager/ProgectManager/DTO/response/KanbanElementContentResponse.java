@@ -2,6 +2,7 @@ package ru.manager.ProgectManager.DTO.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
+import ru.manager.ProgectManager.entitys.KanbanAttachment;
 import ru.manager.ProgectManager.entitys.KanbanElement;
 import ru.manager.ProgectManager.entitys.KanbanElementComment;
 
@@ -22,21 +23,20 @@ public class KanbanElementContentResponse {
     private final String name;
     @Schema(description = "Тег элемента")
     private final String tag;
-    @Schema(description = "Картинка, прикреплённа к элементу", nullable = true)
-    private final byte[] photo;
     @Schema(description = "Информация об аккаунте создателя ячейки")
     private final PublicUserDataResponse creator;
     @Schema(description = "Информация об акаунте последнего редактора ячейки")
     private final PublicUserDataResponse lastRedactor;
     @Schema(description = "Комментарии")
     private final List<KanbanElementCommentResponse> comments;
+    @Schema(description = "Список вложенных файлов")
+    private final List<AttachMainDataResponse> attachmentNames;
 
     public KanbanElementContentResponse(KanbanElement kanbanElement, int zoneId) {
         id = kanbanElement.getId();
         serialNumber = kanbanElement.getSerialNumber();
         name = kanbanElement.getName();
         tag = kanbanElement.getTag();
-        photo = kanbanElement.getPhoto();
         creator = new PublicUserDataResponse(kanbanElement.getOwner());
         lastRedactor = new PublicUserDataResponse(kanbanElement.getLastRedactor());
         content = kanbanElement.getContent();
@@ -45,5 +45,8 @@ public class KanbanElementContentResponse {
                 .sorted(Comparator.comparing(KanbanElementComment::getId))
                 .map(o -> new KanbanElementCommentResponse(o, zoneId))
                 .collect(Collectors.toList()));
+        attachmentNames = (kanbanElement.getKanbanAttachments() == null? List.of():
+                kanbanElement.getKanbanAttachments().stream().map(AttachMainDataResponse::new)
+                        .collect(Collectors.toList()));
     }
 }

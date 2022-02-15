@@ -35,9 +35,8 @@ public class KanbanElement {
     @Column
     private String content;
 
-    @Column(length = 524_288)
-    @Lob
-    private byte[] photo;
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<KanbanAttachment> kanbanAttachments;
 
     @ManyToOne
     @JoinColumn(name = "kanban_column_id")

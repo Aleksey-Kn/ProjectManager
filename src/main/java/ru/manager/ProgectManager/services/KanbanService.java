@@ -2,10 +2,12 @@ package ru.manager.ProgectManager.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import ru.manager.ProgectManager.DTO.request.*;
 import ru.manager.ProgectManager.entitys.*;
 import ru.manager.ProgectManager.repositories.*;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -21,6 +23,7 @@ public class KanbanService {
     private final UserRepository userRepository;
     private final KanbanRepository kanbanRepository;
     private final KanbanElementCommentRepository commentRepository;
+    private final KanbanAttachmentRepository attachmentRepository;
 
     public Optional<KanbanElement> addElement(CreateKanbanElementRequest request, String userLogin){
         KanbanColumn column = columnRepository.findById(request.getColumnId()).get();
@@ -59,11 +62,17 @@ public class KanbanService {
         return Optional.empty();
     }
 
-    public Optional<KanbanElement> setPhoto(long id, String userLogin, byte[] photo){
+    public Optional<KanbanElement> addAttachment(long id, String userLogin, MultipartFile file) throws IOException {
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(id).get();
         if(element.getKanbanColumn().getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
-            element.setPhoto(photo);
+            KanbanAttachment attachment = new KanbanAttachment();
+            attachment.setFileData(file.getBytes());
+            attachment.setFilename(file.getOriginalFilename());
+            attachment.setElement(element);
+            attachment = attachmentRepository.save(attachment);
+
+            element.getKanbanAttachments().add(attachment);
             return Optional.of(elementRepository.save(element));
         }
         return Optional.empty();

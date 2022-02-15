@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.*;
 import ru.manager.ProgectManager.DTO.response.*;
 import ru.manager.ProgectManager.components.JwtProvider;
-import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.entitys.Kanban;
 import ru.manager.ProgectManager.entitys.KanbanColumn;
 import ru.manager.ProgectManager.entitys.KanbanElement;
@@ -26,6 +25,7 @@ import ru.manager.ProgectManager.services.KanbanService;
 import ru.manager.ProgectManager.services.ProjectService;
 
 import javax.validation.Valid;
+import java.io.IOException;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -38,7 +38,6 @@ public class KanbanController {
     private final ProjectService projectService;
     private final KanbanService kanbanService;
     private final JwtProvider provider;
-    private final PhotoCompressor compressor;
 
     @Operation(summary = "Добавление новой канбан-доски в проект")
     @ApiResponses(value = {
@@ -450,14 +449,18 @@ public class KanbanController {
             @ApiResponse(responseCode = "200", description = "Элемент с учётом добавленной фотографии", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = KanbanElementContentResponse.class))
+            }),
+            @ApiResponse(responseCode = "406", description = "Ошибка чтения файла", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
             })
     })
-    @PostMapping("/photo")
-    public ResponseEntity<?> addPhoto(@RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId,
-                                      @RequestParam long id, @ModelAttribute PhotoDTO photoDTO) {
+    @PostMapping("/attachment")
+    public ResponseEntity<?> addAttachment(@RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId,
+                                           @RequestParam long id, @ModelAttribute PhotoDTO photoDTO) {
         try {
             Optional<KanbanElement> element =
-                    kanbanService.setPhoto(id, provider.getLoginFromToken(), compressor.compress(photoDTO.getFile()));
+                    kanbanService.addAttachment(id, provider.getLoginFromToken(), photoDTO.getFile());
             if (element.isPresent()) {
                 return ResponseEntity.ok(new KanbanElementContentResponse(element.get(), zoneId));
             } else {
@@ -466,6 +469,8 @@ public class KanbanController {
         } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT),
                     HttpStatus.BAD_REQUEST);
+        } catch (IOException e){
+            return new ResponseEntity<>(new ErrorResponse(Errors.BAD_FILE), HttpStatus.NOT_ACCEPTABLE);
         }
     }
 

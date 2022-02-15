@@ -15,20 +15,23 @@ public class KanbanElementMainDataResponse {
     private final String name;
     @Schema(description = "Тег элемента")
     private final String tag;
-    @Schema(description = "Картинка, прикреплённая к элементу", nullable = true)
-    private final byte[] photo;
     @Schema(description = "Информация об аккаунте создателя ячейки")
     private final PublicUserDataResponse creator;
     @Schema(description = "Информация об акаунте последнего редактора ячейки")
     private final PublicUserDataResponse lastRedactor;
+    @Schema(description = "Количество комментариев в ячейке")
+    private final int commentCount;
+    @Schema(description = "Количество вложений в ячейке")
+    private final int attachCount;
 
     public KanbanElementMainDataResponse(KanbanElement kanbanElement) {
         id = kanbanElement.getId();
         serialNumber = kanbanElement.getSerialNumber();
         name = kanbanElement.getName();
         tag = kanbanElement.getTag();
-        photo = kanbanElement.getPhoto();
         creator = new PublicUserDataResponse(kanbanElement.getOwner());
         lastRedactor = new PublicUserDataResponse(kanbanElement.getLastRedactor());
+        commentCount = (kanbanElement.getComments() == null? 0: kanbanElement.getComments().size());
+        attachCount = (kanbanElement.getKanbanAttachments() == null? 0: kanbanElement.getKanbanAttachments().size());
     }
 }
