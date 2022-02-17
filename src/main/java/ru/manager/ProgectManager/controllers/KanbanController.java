@@ -466,7 +466,7 @@ public class KanbanController {
         } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT),
                     HttpStatus.BAD_REQUEST);
-        } catch (IOException e){
+        } catch (IOException | NullPointerException e){
             return new ResponseEntity<>(new ErrorResponse(Errors.BAD_FILE), HttpStatus.NOT_ACCEPTABLE);
         }
     }
@@ -488,7 +488,34 @@ public class KanbanController {
         try{
             Optional<KanbanAttachment> attachment = kanbanService.getAttachment(id, provider.getLoginFromToken());
             if(attachment.isPresent()){
-                return ResponseEntity.ok(attachment.get());
+                return ResponseEntity.ok(new AttachAllDataResponse(attachment.get()));
+            } else{
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e){
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ATTACHMENT), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @Operation(summary = "Удаление вложения")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Обращение к несуществующему вложению", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
+            @ApiResponse(responseCode = "200", description = "Элемент, в котором произошло изменение", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = KanbanElementContentResponse.class))
+            })
+    })
+    @DeleteMapping("/attachment")
+    public ResponseEntity<?> deleteAttachment(@RequestParam long id,
+                                              @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId){
+        try{
+            Optional<KanbanElement> element = kanbanService.deleteAttachment(id, provider.getLoginFromToken());
+            if(element.isPresent()){
+                return ResponseEntity.ok(new KanbanElementContentResponse(element.get(), zoneId));
             } else{
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
@@ -661,7 +688,7 @@ public class KanbanController {
     public ResponseEntity<?> removeComment(@RequestParam long id,
                                            @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId){
         try{
-            Optional<KanbanElement> element = kanbanService.removeComment(id, provider.getLoginFromToken());
+            Optional<KanbanElement> element = kanbanService.deleteComment(id, provider.getLoginFromToken());
             if(element.isPresent()){
                 return ResponseEntity.ok(new KanbanElementContentResponse(element.get(), zoneId));
             } else{

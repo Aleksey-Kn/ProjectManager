@@ -89,6 +89,19 @@ public class KanbanService {
         }
     }
 
+    public Optional<KanbanElement> deleteAttachment(long id, String userLogin){
+        User user = userRepository.findByUsername(userLogin);
+        KanbanAttachment attachment = attachmentRepository.findById(id).get();
+        if(attachment.getElement().getKanbanColumn().getKanban().getProject().getConnectors().stream()
+                .anyMatch(c -> c.getUser().equals(user))){
+            KanbanElement element = attachment.getElement();
+            element.getKanbanAttachments().remove(attachment);
+            return Optional.of(elementRepository.save(element));
+        } else{
+            return Optional.empty();
+        }
+    }
+
     public Optional<KanbanElement> getContentFromElement(long id, String userLogin){
         KanbanElement kanbanElement = elementRepository.findById(id).get();
         User user = userRepository.findByUsername(userLogin);
@@ -247,7 +260,7 @@ public class KanbanService {
         }
     }
 
-    public Optional<KanbanElement> removeComment(long id, String userLogin){
+    public Optional<KanbanElement> deleteComment(long id, String userLogin){
         User user = userRepository.findByUsername(userLogin);
         KanbanElementComment comment = commentRepository.findById(id).get();
         if(comment.getOwner().equals(user)
