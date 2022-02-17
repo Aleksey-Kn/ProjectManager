@@ -78,6 +78,17 @@ public class KanbanService {
         return Optional.empty();
     }
 
+    public Optional<KanbanAttachment> getAttachment(long id, String userLogin){
+        User user = userRepository.findByUsername(userLogin);
+        KanbanAttachment attachment = attachmentRepository.findById(id).get();
+        if(attachment.getElement().getKanbanColumn().getKanban().getProject().getConnectors().stream()
+                .anyMatch(c -> c.getUser().equals(user))){
+            return Optional.of(attachment);
+        } else{
+            return Optional.empty();
+        }
+    }
+
     public Optional<KanbanElement> getContentFromElement(long id, String userLogin){
         KanbanElement kanbanElement = elementRepository.findById(id).get();
         User user = userRepository.findByUsername(userLogin);

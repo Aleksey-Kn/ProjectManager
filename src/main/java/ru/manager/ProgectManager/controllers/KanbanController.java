@@ -16,10 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.*;
 import ru.manager.ProgectManager.DTO.response.*;
 import ru.manager.ProgectManager.components.JwtProvider;
-import ru.manager.ProgectManager.entitys.Kanban;
-import ru.manager.ProgectManager.entitys.KanbanColumn;
-import ru.manager.ProgectManager.entitys.KanbanElement;
-import ru.manager.ProgectManager.entitys.KanbanElementComment;
+import ru.manager.ProgectManager.entitys.*;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.KanbanService;
 import ru.manager.ProgectManager.services.ProjectService;
@@ -439,14 +436,14 @@ public class KanbanController {
         }
     }
 
-    @Operation(summary = "Добавление картинки", description = "Добавление или изменение картинки элемента")
+    @Operation(summary = "Добавление вложения")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "400", description = "Обращение к несуществующему элементу", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
-            @ApiResponse(responseCode = "200", description = "Элемент с учётом добавленной фотографии", content = {
+            @ApiResponse(responseCode = "200", description = "Элемент с учётом добавленного вложения", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = KanbanElementContentResponse.class))
             }),
@@ -471,6 +468,32 @@ public class KanbanController {
                     HttpStatus.BAD_REQUEST);
         } catch (IOException e){
             return new ResponseEntity<>(new ErrorResponse(Errors.BAD_FILE), HttpStatus.NOT_ACCEPTABLE);
+        }
+    }
+
+    @Operation(summary = "Получение вложения")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Обращение к несуществующему вложению", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
+            @ApiResponse(responseCode = "200", description = "Запрашиваемое вложение", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = KanbanAttachment.class))
+            })
+    })
+    @GetMapping("/attachment")
+    public ResponseEntity<?> getAttachment(@RequestParam long id){
+        try{
+            Optional<KanbanAttachment> attachment = kanbanService.getAttachment(id, provider.getLoginFromToken());
+            if(attachment.isPresent()){
+                return ResponseEntity.ok(attachment.get());
+            } else{
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e){
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ATTACHMENT), HttpStatus.BAD_REQUEST);
         }
     }
 
