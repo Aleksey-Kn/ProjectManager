@@ -35,4 +35,38 @@ public class ArchiveAndTrashService {
             return Optional.empty();
         }
     }
+
+    public boolean archive(long id, String userLogin){
+        User user = userRepository.findByUsername(userLogin);
+        KanbanElement element = elementRepository.findById(id).get();
+        if (element.getKanbanColumn().getKanban().getProject().getConnectors().stream()
+                .anyMatch(c -> c.getUser().equals(user))) {
+            element.setStatus(ElementStatus.ARCHIVED);
+            KanbanColumn column = elementRepository.save(element).getKanbanColumn();
+            column.getElements().stream()
+                    .filter(e -> e.getSerialNumber() > element.getSerialNumber())
+                    .forEach(e -> e.setSerialNumber(e.getSerialNumber() - 1));
+            columnRepository.save(column);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean reestablish(long id, String userLogin){
+        User user = userRepository.findByUsername(userLogin);
+        KanbanElement element = elementRepository.findById(id).get();
+        if (element.getKanbanColumn().getKanban().getProject().getConnectors().stream()
+                .anyMatch(c -> c.getUser().equals(user))) {
+            element.setStatus(ElementStatus.ALIVE);
+            element.setSerialNumber(element.getKanbanColumn().getElements().stream()
+                    .filter(e -> e.getStatus() == ElementStatus.ALIVE)
+                    .mapToInt(KanbanElement::getSerialNumber)
+                    .max().orElse(-1) + 1);
+            elementRepository.save(element);
+            return true;
+        } else {
+            return false;
+        }
+    }
 }
