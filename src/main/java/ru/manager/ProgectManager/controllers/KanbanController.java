@@ -595,7 +595,12 @@ public class KanbanController {
                     content = {
                             @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = KanbanResponse.class))
-                    })
+                    }),
+            @ApiResponse(responseCode = "410",
+                    description = "Операция недоступна, поскольку элемент уже в корзине", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
     })
     @DeleteMapping("/element")
     public ResponseEntity<?> removeElement(@RequestParam long id, @RequestParam int pageIndex, @RequestParam int rowCount) {
@@ -607,7 +612,7 @@ public class KanbanController {
         }
         try {
             String login = provider.getLoginFromToken();
-            Optional<KanbanColumn> column = kanbanService.deleteElement(id, login);
+            Optional<KanbanColumn> column = kanbanService.utilizeElement(id, login);
             if (column.isPresent()) {
                 return ResponseEntity.ok(new KanbanColumnResponse(column.get(), pageIndex, rowCount));
             } else {
@@ -616,6 +621,9 @@ public class KanbanController {
         } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT),
                     HttpStatus.BAD_REQUEST);
+        } catch (IncorrectStatusException e){
+            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
+                    HttpStatus.GONE);
         }
     }
 

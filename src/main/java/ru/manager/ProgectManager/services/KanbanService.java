@@ -216,13 +216,21 @@ public class KanbanService {
         return false;
     }
 
-    public Optional<KanbanColumn> deleteElement(long id, String userLogin) {
+    public Optional<KanbanColumn> utilizeElement(long id, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(id).get();
         if (element.getKanbanColumn().getKanban().getProject().getConnectors().stream()
                 .anyMatch(c -> c.getUser().equals(user))) {
+            if(element.getStatus() == ElementStatus.UTILISE)
+                throw new IncorrectStatusException();
+
             element.setStatus(ElementStatus.UTILISE);
-            return Optional.of(elementRepository.save(element).getKanbanColumn());
+            KanbanColumn column = elementRepository.save(element).getKanbanColumn();
+
+            column.getElements().stream()
+                    .filter(e -> e.getSerialNumber() > element.getSerialNumber())
+                    .forEach(e -> e.setSerialNumber(e.getSerialNumber() - 1));
+            return Optional.of(columnRepository.save(column));
         } else {
             return Optional.empty();
         }
@@ -235,9 +243,6 @@ public class KanbanService {
                 .anyMatch(c -> c.getUser().equals(user))) {
             if(element.getStatus() != ElementStatus.UTILISE)
                 throw new IncorrectStatusException();
-            element.getKanbanColumn().getElements().stream()
-                    .filter(kanbanElement -> kanbanElement.getSerialNumber() > element.getSerialNumber())
-                    .forEach(kanbanElement -> kanbanElement.setSerialNumber(kanbanElement.getSerialNumber() - 1));
 
             KanbanColumn column = element.getKanbanColumn();
             column.getElements().remove(element);
