@@ -236,22 +236,6 @@ public class KanbanService {
         }
     }
 
-    public Optional<KanbanColumn> finalDeleteElementFromTrash(long id, String userLogin) {
-        User user = userRepository.findByUsername(userLogin);
-        KanbanElement element = elementRepository.findById(id).get();
-        if (element.getKanbanColumn().getKanban().getProject().getConnectors().stream()
-                .anyMatch(c -> c.getUser().equals(user))) {
-            if(element.getStatus() != ElementStatus.UTILISE)
-                throw new IncorrectStatusException();
-
-            KanbanColumn column = element.getKanbanColumn();
-            column.getElements().remove(element);
-            return Optional.of(columnRepository.save(column));
-        } else {
-            return Optional.empty();
-        }
-    }
-
     public Optional<KanbanColumn> addColumn(KanbanColumnRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = kanbanRepository.findById(request.getKanbanId()).get();
