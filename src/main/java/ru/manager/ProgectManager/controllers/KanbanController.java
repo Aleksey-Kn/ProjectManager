@@ -18,6 +18,7 @@ import ru.manager.ProgectManager.DTO.response.*;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.*;
 import ru.manager.ProgectManager.enums.Errors;
+import ru.manager.ProgectManager.exception.IncorrectStatusException;
 import ru.manager.ProgectManager.services.KanbanService;
 import ru.manager.ProgectManager.services.ProjectService;
 
@@ -100,7 +101,7 @@ public class KanbanController {
     })
     @GetMapping("/get")
     public ResponseEntity<?> getKanban(@RequestBody @Valid GetKanbanRequest kanbanRequest, BindingResult bindingResult) {
-        if(bindingResult.hasErrors()){
+        if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(
                     new ErrorResponse(bindingResult.getAllErrors().stream()
                             .map(ObjectError::getDefaultMessage)
@@ -173,6 +174,11 @@ public class KanbanController {
             @ApiResponse(responseCode = "200", description = "Канбан доска с учётом внесённых изменений", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = KanbanResponse.class))
+            }),
+            @ApiResponse(responseCode = "410",
+                    description = "Операция недоступна, поскольку элемент перемещён в корзину или архив", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
             })
     })
     @PutMapping("/transport_element")
@@ -198,12 +204,14 @@ public class KanbanController {
                 }
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(
-                        new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT_OR_COLUMN),
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT_OR_COLUMN),
                         HttpStatus.BAD_REQUEST);
             } catch (IllegalArgumentException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.INDEX_MORE_COLLECTION_SIZE),
                         HttpStatus.NOT_ACCEPTABLE);
+            } catch (IncorrectStatusException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
+                        HttpStatus.GONE);
             }
         }
     }
@@ -313,6 +321,11 @@ public class KanbanController {
             @ApiResponse(responseCode = "200", description = "Елемент с учётом внесённых изменений", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = KanbanElementContentResponse.class))
+            }),
+            @ApiResponse(responseCode = "410",
+                    description = "Операция недоступна, поскольку элемент перемещён в корзину", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
             })
     })
     @PutMapping("/element")
@@ -338,9 +351,11 @@ public class KanbanController {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
             } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(
-                        new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT),
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT),
                         HttpStatus.BAD_REQUEST);
+            } catch (IncorrectStatusException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
+                        HttpStatus.GONE);
             }
         }
     }
@@ -415,10 +430,10 @@ public class KanbanController {
                             .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
         } else {
-            if(pageIndex < 0) {
+            if (pageIndex < 0) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.INDEX_MUST_BE_MORE_0), HttpStatus.NOT_ACCEPTABLE);
             }
-            if(rowCount < 1) {
+            if (rowCount < 1) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.COUNT_MUST_BE_MORE_1), HttpStatus.NOT_ACCEPTABLE);
             }
             try {
@@ -450,6 +465,11 @@ public class KanbanController {
             @ApiResponse(responseCode = "406", description = "Ошибка чтения файла", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "410",
+                    description = "Операция недоступна, поскольку элемент перемещён в корзину", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
             })
     })
     @PostMapping("/attachment")
@@ -466,8 +486,11 @@ public class KanbanController {
         } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT),
                     HttpStatus.BAD_REQUEST);
-        } catch (IOException | NullPointerException e){
+        } catch (IOException | NullPointerException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.BAD_FILE), HttpStatus.NOT_ACCEPTABLE);
+        } catch (IncorrectStatusException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
+                    HttpStatus.GONE);
         }
     }
 
@@ -484,15 +507,15 @@ public class KanbanController {
             })
     })
     @GetMapping("/attachment")
-    public ResponseEntity<?> getAttachment(@RequestParam long id){
-        try{
+    public ResponseEntity<?> getAttachment(@RequestParam long id) {
+        try {
             Optional<KanbanAttachment> attachment = kanbanService.getAttachment(id, provider.getLoginFromToken());
-            if(attachment.isPresent()){
+            if (attachment.isPresent()) {
                 return ResponseEntity.ok(new AttachAllDataResponse(attachment.get()));
-            } else{
+            } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
-        } catch (NoSuchElementException e){
+        } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ATTACHMENT), HttpStatus.BAD_REQUEST);
         }
     }
@@ -507,20 +530,28 @@ public class KanbanController {
             @ApiResponse(responseCode = "200", description = "Элемент, в котором произошло изменение", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = KanbanElementContentResponse.class))
+            }),
+            @ApiResponse(responseCode = "410",
+                    description = "Операция недоступна, поскольку элемент перемещён в корзину", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
             })
     })
     @DeleteMapping("/attachment")
     public ResponseEntity<?> deleteAttachment(@RequestParam long id,
-                                              @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId){
-        try{
+                                              @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId) {
+        try {
             Optional<KanbanElement> element = kanbanService.deleteAttachment(id, provider.getLoginFromToken());
-            if(element.isPresent()){
+            if (element.isPresent()) {
                 return ResponseEntity.ok(new KanbanElementContentResponse(element.get(), zoneId));
-            } else{
+            } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
-        } catch (NoSuchElementException e){
+        } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ATTACHMENT), HttpStatus.BAD_REQUEST);
+        } catch (IncorrectStatusException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
+                    HttpStatus.GONE);
         }
     }
 
@@ -562,16 +593,16 @@ public class KanbanController {
             @ApiResponse(responseCode = "200",
                     description = "Колонка, в которой находился удалённый элемент, с учётом внесённых изменений",
                     content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = KanbanResponse.class))
-            })
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = KanbanResponse.class))
+                    })
     })
     @DeleteMapping("/element")
     public ResponseEntity<?> removeElement(@RequestParam long id, @RequestParam int pageIndex, @RequestParam int rowCount) {
-        if(pageIndex < 0) {
+        if (pageIndex < 0) {
             return new ResponseEntity<>(new ErrorResponse(Errors.INDEX_MUST_BE_MORE_0), HttpStatus.NOT_ACCEPTABLE);
         }
-        if(rowCount < 1) {
+        if (rowCount < 1) {
             return new ResponseEntity<>(new ErrorResponse(Errors.COUNT_MUST_BE_MORE_1), HttpStatus.NOT_ACCEPTABLE);
         }
         try {
@@ -607,7 +638,7 @@ public class KanbanController {
     })
     @DeleteMapping("/column")
     public ResponseEntity<?> removeColumn(@RequestBody @Valid GetKanbanRequest request, BindingResult bindingResult) {
-        if(bindingResult.hasErrors()){
+        if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(
                     new ErrorResponse(bindingResult.getAllErrors().stream()
                             .map(ObjectError::getDefaultMessage)
@@ -646,11 +677,16 @@ public class KanbanController {
             @ApiResponse(responseCode = "200", description = "Полная информация о добавленном комментарии", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = KanbanElementCommentResponse.class))
+            }),
+            @ApiResponse(responseCode = "410",
+                    description = "Операция недоступна, поскольку элемент перемещён в корзину", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
             })
     })
     @PostMapping("/comment")
-    public ResponseEntity<?> addComment(@RequestBody @Valid KanbanCommentRequest request, BindingResult bindingResult){
-        if(bindingResult.hasErrors()){
+    public ResponseEntity<?> addComment(@RequestBody @Valid KanbanCommentRequest request, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(
                     new ErrorResponse(bindingResult.getAllErrors().stream()
                             .map(ObjectError::getDefaultMessage)
@@ -666,8 +702,11 @@ public class KanbanController {
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
-            } catch (NoSuchElementException e){
+            } catch (NoSuchElementException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.BAD_REQUEST);
+            } catch (IncorrectStatusException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
+                        HttpStatus.GONE);
             }
         }
     }
@@ -682,20 +721,28 @@ public class KanbanController {
             @ApiResponse(responseCode = "200", description = "Элемент канбана с учётом внесённых изменений", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = KanbanElementContentResponse.class))
+            }),
+            @ApiResponse(responseCode = "410",
+                    description = "Операция недоступна, поскольку элемент перемещён в корзину", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
             })
     })
     @DeleteMapping("/comment")
     public ResponseEntity<?> removeComment(@RequestParam long id,
-                                           @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId){
-        try{
+                                           @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId) {
+        try {
             Optional<KanbanElement> element = kanbanService.deleteComment(id, provider.getLoginFromToken());
-            if(element.isPresent()){
+            if (element.isPresent()) {
                 return ResponseEntity.ok(new KanbanElementContentResponse(element.get(), zoneId));
-            } else{
+            } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
-        } catch (NoSuchElementException e){
+        } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COMMENT), HttpStatus.BAD_REQUEST);
+        } catch (IncorrectStatusException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
+                    HttpStatus.GONE);
         }
     }
 
@@ -705,7 +752,7 @@ public class KanbanController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к комментарию"),
             @ApiResponse(responseCode = "406", description = "Неподходящие текстовые данные",
                     content = {
                             @Content(mediaType = "application/json",
@@ -714,11 +761,16 @@ public class KanbanController {
             @ApiResponse(responseCode = "200", description = "Полная информация о изменённом комментарии", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = KanbanElementCommentResponse.class))
+            }),
+            @ApiResponse(responseCode = "410",
+                    description = "Операция недоступна, поскольку элемент перемещён в корзину", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
             })
     })
     @PutMapping("/comment")
-    public ResponseEntity<?> updateComment(@RequestBody @Valid KanbanCommentRequest request, BindingResult bindingResult){
-        if(bindingResult.hasErrors()){
+    public ResponseEntity<?> updateComment(@RequestBody @Valid KanbanCommentRequest request, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(
                     new ErrorResponse(bindingResult.getAllErrors().stream()
                             .map(ObjectError::getDefaultMessage)
@@ -736,6 +788,9 @@ public class KanbanController {
                 }
             } catch (NoSuchElementException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COMMENT), HttpStatus.BAD_REQUEST);
+            } catch (IncorrectStatusException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
+                        HttpStatus.GONE);
             }
         }
     }

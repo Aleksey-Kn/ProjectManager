@@ -2,6 +2,7 @@ package ru.manager.ProgectManager.entitys;
 
 import lombok.Getter;
 import lombok.Setter;
+import ru.manager.ProgectManager.enums.ElementStatus;
 
 import javax.persistence.*;
 import java.util.List;
@@ -34,6 +35,9 @@ public class KanbanElement {
 
     @Column
     private String content;
+
+    @Enumerated(EnumType.ORDINAL)
+    private ElementStatus status;
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<KanbanAttachment> kanbanAttachments;
