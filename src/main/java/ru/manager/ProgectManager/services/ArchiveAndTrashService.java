@@ -41,6 +41,9 @@ public class ArchiveAndTrashService {
         KanbanElement element = elementRepository.findById(id).get();
         if (element.getKanbanColumn().getKanban().getProject().getConnectors().stream()
                 .anyMatch(c -> c.getUser().equals(user))) {
+            if(element.getStatus() == ElementStatus.ARCHIVED)
+                throw new IncorrectStatusException();
+
             element.setStatus(ElementStatus.ARCHIVED);
             KanbanColumn column = elementRepository.save(element).getKanbanColumn();
             column.getElements().stream()
@@ -58,6 +61,9 @@ public class ArchiveAndTrashService {
         KanbanElement element = elementRepository.findById(id).get();
         if (element.getKanbanColumn().getKanban().getProject().getConnectors().stream()
                 .anyMatch(c -> c.getUser().equals(user))) {
+            if(element.getStatus() == ElementStatus.ALIVE)
+                throw new IncorrectStatusException();
+
             element.setStatus(ElementStatus.ALIVE);
             element.setSerialNumber(element.getKanbanColumn().getElements().stream()
                     .filter(e -> e.getStatus() == ElementStatus.ALIVE)
