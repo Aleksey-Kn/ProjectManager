@@ -9,9 +9,8 @@ import ru.manager.ProgectManager.enums.ElementStatus;
 import ru.manager.ProgectManager.exception.IncorrectStatusException;
 import ru.manager.ProgectManager.repositories.KanbanColumnRepository;
 import ru.manager.ProgectManager.repositories.KanbanElementRepository;
+import ru.manager.ProgectManager.repositories.TimeRemoverRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
-
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -19,30 +18,27 @@ public class ArchiveAndTrashService {
     private final UserRepository userRepository;
     private final KanbanColumnRepository columnRepository;
     private final KanbanElementRepository elementRepository;
+    private final TimeRemoverRepository timeRemoverRepository;
 
-    public Optional<KanbanColumn> finalDeleteElementFromTrash(long id, String userLogin) {
-        User user = userRepository.findByUsername(userLogin);
+    public void finalDeleteElementFromTrash(long id) {
         KanbanElement element = elementRepository.findById(id).get();
-        if (element.getKanbanColumn().getKanban().getProject().getConnectors().stream()
-                .anyMatch(c -> c.getUser().equals(user))) {
-            if(element.getStatus() != ElementStatus.UTILISE)
-                throw new IncorrectStatusException();
+        if (element.getStatus() != ElementStatus.UTILISE)
+            throw new IncorrectStatusException();
 
-            KanbanColumn column = element.getKanbanColumn();
-            column.getElements().remove(element);
-            return Optional.of(columnRepository.save(column));
-        } else {
-            return Optional.empty();
-        }
+        KanbanColumn column = element.getKanbanColumn();
+        column.getElements().remove(element);
+        columnRepository.save(column);
     }
 
-    public boolean archive(long id, String userLogin){
+    public boolean archive(long id, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(id).get();
         if (element.getKanbanColumn().getKanban().getProject().getConnectors().stream()
                 .anyMatch(c -> c.getUser().equals(user))) {
-            if(element.getStatus() == ElementStatus.ARCHIVED)
+            if (element.getStatus() == ElementStatus.ARCHIVED)
                 throw new IncorrectStatusException();
+
+            timeRemoverRepository.findById(id).ifPresent(timeRemoverRepository::delete);
 
             element.setStatus(ElementStatus.ARCHIVED);
             KanbanColumn column = elementRepository.save(element).getKanbanColumn();
@@ -56,13 +52,15 @@ public class ArchiveAndTrashService {
         }
     }
 
-    public boolean reestablish(long id, String userLogin){
+    public boolean reestablish(long id, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(id).get();
         if (element.getKanbanColumn().getKanban().getProject().getConnectors().stream()
                 .anyMatch(c -> c.getUser().equals(user))) {
-            if(element.getStatus() == ElementStatus.ALIVE)
+            if (element.getStatus() == ElementStatus.ALIVE)
                 throw new IncorrectStatusException();
+
+            timeRemoverRepository.findById(id).ifPresent(timeRemoverRepository::delete);
 
             element.setStatus(ElementStatus.ALIVE);
             element.setSerialNumber(element.getKanbanColumn().getElements().stream()

@@ -11,6 +11,7 @@ import ru.manager.ProgectManager.repositories.*;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Comparator;
@@ -26,6 +27,7 @@ public class KanbanService {
     private final KanbanRepository kanbanRepository;
     private final KanbanElementCommentRepository commentRepository;
     private final KanbanAttachmentRepository attachmentRepository;
+    private final TimeRemoverRepository timeRemoverRepository;
 
     public Optional<KanbanElement> addElement(CreateKanbanElementRequest request, String userLogin) {
         KanbanColumn column = columnRepository.findById(request.getColumnId()).get();
@@ -226,6 +228,11 @@ public class KanbanService {
 
             element.setStatus(ElementStatus.UTILISE);
             KanbanColumn column = elementRepository.save(element).getKanbanColumn();
+
+            TimeRemover timeRemover = new TimeRemover();
+            timeRemover.setRemoverId(element.getId());
+            timeRemover.setTimeToDelete(LocalDate.now().plusDays(6).toEpochDay());
+            timeRemoverRepository.save(timeRemover);
 
             column.getElements().stream()
                     .filter(e -> e.getSerialNumber() > element.getSerialNumber())
