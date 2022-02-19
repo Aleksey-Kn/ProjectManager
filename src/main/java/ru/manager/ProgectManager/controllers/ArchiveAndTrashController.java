@@ -35,4 +35,18 @@ public class ArchiveAndTrashController {
                     HttpStatus.GONE);
         }
     }
+
+    @PutMapping("/reestablish")
+    public ResponseEntity<?> reestablish(@RequestParam long id){
+        try{
+            if(trashService.reestablish(id, provider.getLoginFromToken())){
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else{
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (IncorrectStatusException e){
+            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
+                    HttpStatus.GONE);
+        }
+    }
 }
