@@ -38,6 +38,7 @@ public class ScheduleRemover {
         for(long now: removersIndex){
             try{
                 trashService.finalDeleteElementFromTrash(now);
+                timeRemoverRepository.deleteById(now);
             } catch (IncorrectStatusException ignored){}
         }
     }
