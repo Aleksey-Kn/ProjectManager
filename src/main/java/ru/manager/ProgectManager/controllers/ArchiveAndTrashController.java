@@ -1,11 +1,17 @@
 package ru.manager.ProgectManager.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.manager.ProgectManager.DTO.response.Elements;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.KanbanElementMainDataResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
@@ -27,6 +33,20 @@ public class ArchiveAndTrashController {
     private final ArchiveAndTrashService trashService;
     private final JwtProvider provider;
 
+    @Operation(summary = "Перемещение элемента в архив")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Элемент успешно перемещён"),
+            @ApiResponse(responseCode = "403", description = "Польлзователь не имеет доступа к этому проекту"),
+            @ApiResponse(responseCode = "400", description = "Элемента с указанным идентификатором не существует",
+                    content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "410", description = "Указанный элемент уже в архиве",  content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
+    })
     @PutMapping("/archive")
     public ResponseEntity<?> archive(@RequestParam long id){
         try{
@@ -38,9 +58,26 @@ public class ArchiveAndTrashController {
         } catch (IncorrectStatusException e){
             return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
                     HttpStatus.GONE);
+        } catch (NoSuchElementException e){
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.BAD_REQUEST);
         }
     }
 
+    @Operation(summary = "Перемещение восстановление элемента обратно в канбан",
+            description = "Восстановленеие работает одинаково как из архива, так и из корзины")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Элемент успешно перемещён"),
+            @ApiResponse(responseCode = "403", description = "Польлзователь не имеет доступа к этому проекту"),
+            @ApiResponse(responseCode = "400", description = "Элемента с указанным идентификатором не существует",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
+            @ApiResponse(responseCode = "410", description = "Указанный элемент уже восстановлен",  content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
+    })
     @PutMapping("/reestablish")
     public ResponseEntity<?> reestablish(@RequestParam long id){
         try{
@@ -52,16 +89,30 @@ public class ArchiveAndTrashController {
         } catch (IncorrectStatusException e){
             return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
                     HttpStatus.GONE);
+        } catch (NoSuchElementException e){
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.BAD_REQUEST);
         }
     }
 
+    @Operation(summary = "Получение архива указанного канбана")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Элементы, содержащиеся в архиве", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Elements.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Польлзователь не имеет доступа к этому проекту"),
+            @ApiResponse(responseCode = "400", description = "Канбана с указанным идентификатором не существует",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    })
+    })
     @GetMapping("/archive")
     public ResponseEntity<?> getArchive(@RequestParam @Parameter(description = "Идентификатор канбана") long id){
         try {
             Optional<List<KanbanElement>> elements = trashService.findArchive(id, provider.getLoginFromToken());
             if(elements.isPresent()){
-                return ResponseEntity.ok(elements.get().stream().map(KanbanElementMainDataResponse::new)
-                        .collect(Collectors.toList()));
+                return ResponseEntity.ok(new Elements(elements.get()));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
@@ -70,6 +121,19 @@ public class ArchiveAndTrashController {
         }
     }
 
+    @Operation(summary = "Получение корзины указанного канбана")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Элементы, содержащиеся в корзине", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Elements.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Польлзователь не имеет доступа к этому проекту"),
+            @ApiResponse(responseCode = "400", description = "Канбана с указанным идентификатором не существует",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    })
+    })
     @GetMapping("/trash")
     public ResponseEntity<?> getTrash(@RequestParam @Parameter(description = "Идентификатор канбана") long id){
         try {
