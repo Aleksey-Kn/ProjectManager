@@ -2,15 +2,17 @@ package ru.manager.ProgectManager.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import ru.manager.ProgectManager.entitys.Kanban;
 import ru.manager.ProgectManager.entitys.KanbanColumn;
 import ru.manager.ProgectManager.entitys.KanbanElement;
 import ru.manager.ProgectManager.entitys.User;
 import ru.manager.ProgectManager.enums.ElementStatus;
 import ru.manager.ProgectManager.exception.IncorrectStatusException;
-import ru.manager.ProgectManager.repositories.KanbanColumnRepository;
-import ru.manager.ProgectManager.repositories.KanbanElementRepository;
-import ru.manager.ProgectManager.repositories.TimeRemoverRepository;
-import ru.manager.ProgectManager.repositories.UserRepository;
+import ru.manager.ProgectManager.repositories.*;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +21,7 @@ public class ArchiveAndTrashService {
     private final KanbanColumnRepository columnRepository;
     private final KanbanElementRepository elementRepository;
     private final TimeRemoverRepository timeRemoverRepository;
+    private final KanbanRepository kanbanRepository;
 
     public void finalDeleteElementFromTrash(long id) {
         KanbanElement element = elementRepository.findById(id).get();
@@ -71,6 +74,32 @@ public class ArchiveAndTrashService {
             return true;
         } else {
             return false;
+        }
+    }
+
+    public Optional<List<KanbanElement>> findArchive(long kanbanId, String userLogin){
+        User user = userRepository.findByUsername(userLogin);
+        Kanban kanban = kanbanRepository.findById(kanbanId).get();
+        if(kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
+            return Optional.of(kanban.getKanbanColumns().stream()
+                    .flatMap(c -> c.getElements().stream())
+                    .filter(e -> e.getStatus() == ElementStatus.ARCHIVED)
+                    .collect(Collectors.toList()));
+        } else{
+            return Optional.empty();
+        }
+    }
+
+    public Optional<List<KanbanElement>> findTrash(long kanbanId, String userLogin){
+        User user = userRepository.findByUsername(userLogin);
+        Kanban kanban = kanbanRepository.findById(kanbanId).get();
+        if(kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
+            return Optional.of(kanban.getKanbanColumns().stream()
+                    .flatMap(c -> c.getElements().stream())
+                    .filter(e -> e.getStatus() == ElementStatus.UTILISE)
+                    .collect(Collectors.toList()));
+        } else{
+            return Optional.empty();
         }
     }
 }
