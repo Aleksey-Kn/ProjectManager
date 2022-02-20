@@ -39,7 +39,7 @@ public class ScheduleRemover {
             try{
                 trashService.finalDeleteElementFromTrash(now);
                 timeRemoverRepository.deleteById(now);
-            } catch (IncorrectStatusException ignored){}
+            } catch (Exception ignored){}
         }
     }
 }
