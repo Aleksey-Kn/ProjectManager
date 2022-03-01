@@ -13,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.response.Elements;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
-import ru.manager.ProgectManager.DTO.response.KanbanElementMainDataResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.KanbanElement;
 import ru.manager.ProgectManager.enums.Errors;
@@ -23,7 +22,6 @@ import ru.manager.ProgectManager.services.ArchiveAndTrashService;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -108,11 +106,12 @@ public class ArchiveAndTrashController {
                     })
     })
     @GetMapping("/archive")
-    public ResponseEntity<?> getArchive(@RequestParam @Parameter(description = "Идентификатор канбана") long id){
+    public ResponseEntity<?> getArchive(@RequestParam @Parameter(description = "Идентификатор канбана") long id,
+                                        @RequestParam int pageIndex, @RequestParam int rowCount){
         try {
             Optional<List<KanbanElement>> elements = trashService.findArchive(id, provider.getLoginFromToken());
             if(elements.isPresent()){
-                return ResponseEntity.ok(new Elements(elements.get()));
+                return ResponseEntity.ok(new Elements(elements.get(), pageIndex, rowCount));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
@@ -135,12 +134,12 @@ public class ArchiveAndTrashController {
                     })
     })
     @GetMapping("/trash")
-    public ResponseEntity<?> getTrash(@RequestParam @Parameter(description = "Идентификатор канбана") long id){
+    public ResponseEntity<?> getTrash(@RequestParam @Parameter(description = "Идентификатор канбана") long id,
+                                      @RequestParam int pageIndex, @RequestParam int rowCount){
         try {
             Optional<List<KanbanElement>> elements = trashService.findTrash(id, provider.getLoginFromToken());
             if(elements.isPresent()){
-                return ResponseEntity.ok(elements.get().stream().map(KanbanElementMainDataResponse::new)
-                        .collect(Collectors.toList()));
+                return ResponseEntity.ok(new Elements(elements.get(), pageIndex, rowCount));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }

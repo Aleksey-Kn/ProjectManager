@@ -1,7 +1,6 @@
 package ru.manager.ProgectManager.DTO.response;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import ru.manager.ProgectManager.entitys.KanbanElement;
 
 import java.util.List;
@@ -11,7 +10,10 @@ import java.util.stream.Collectors;
 public class Elements {
     private final List<KanbanElementMainDataResponse> elements;
 
-    public Elements(List<KanbanElement> input){
-        elements = input.stream().map(KanbanElementMainDataResponse::new).collect(Collectors.toList());
+    public Elements(List<KanbanElement> input, int pageIndex, int rowCount){
+        elements = input.stream()
+                .skip(pageIndex)
+                .limit(rowCount)
+                .map(KanbanElementMainDataResponse::new).collect(Collectors.toList());
     }
 }
