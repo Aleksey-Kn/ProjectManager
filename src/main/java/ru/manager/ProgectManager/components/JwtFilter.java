@@ -6,7 +6,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.GenericFilterBean;
-import ru.manager.ProgectManager.enums.TokenStatus;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -38,7 +37,7 @@ public class JwtFilter extends GenericFilterBean {
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
             throws IOException, ServletException {
         String token = getTokenFromRequest((HttpServletRequest) servletRequest);
-        if (token != null && jwtProvider.validateToken(token) == TokenStatus.OK) {
+        if (token != null && jwtProvider.validateToken(token)) {
             try {
                 String userLogin = jwtProvider.getLoginFromToken(token);
                 UserDetails customUserDetails = customUserDetailsService.loadUserByUsername(userLogin);

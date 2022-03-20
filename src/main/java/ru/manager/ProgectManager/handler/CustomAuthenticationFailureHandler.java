@@ -1,7 +1,6 @@
 package ru.manager.ProgectManager.handler;
 
 import com.google.gson.Gson;
-import io.jsonwebtoken.ExpiredJwtException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -19,13 +18,8 @@ public class CustomAuthenticationFailureHandler implements AuthenticationEntryPo
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception)
             throws IOException, ServletException {
-        response.setStatus(HttpStatus.FORBIDDEN.value());
-        if(exception.getCause() instanceof ExpiredJwtException){
-            response.getOutputStream()
-                    .println(gson.toJson(new ErrorResponse(Errors.TOKEN_EXPIRED)));
-        } else {
-            response.getOutputStream()
-                    .println(gson.toJson(new ErrorResponse(Errors.TOKEN_INVALID)));
-        }
+        response.setStatus(HttpStatus.UNAUTHORIZED.value());
+        response.setHeader("Content-Type", "application/json");
+        response.getOutputStream().println(gson.toJson(new ErrorResponse(Errors.TOKEN_EXPIRED)));
     }
 }

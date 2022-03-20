@@ -7,16 +7,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.exception.ExpiredTokenException;
-import ru.manager.ProgectManager.exception.InvalidTokenException;
 
 @RestControllerAdvice
 public class ExceptionController {
-    @ExceptionHandler(InvalidTokenException.class)
-    public ResponseEntity<ErrorResponse> incorrectToken() {
-        return new ResponseEntity<>(new ErrorResponse(Errors.TOKEN_INVALID),
-                HttpStatus.FORBIDDEN);
-    }
-
     @ExceptionHandler(ExpiredTokenException.class)
     public ResponseEntity<ErrorResponse> expiredToken(){
         return new ResponseEntity<>(new ErrorResponse(Errors.TOKEN_EXPIRED),
