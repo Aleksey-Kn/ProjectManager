@@ -24,6 +24,12 @@ public class KanbanElement {
     @JoinColumn(name = "last_redactor_id")
     private User lastRedactor;
 
+    @Column
+    private long timeOfCreate;
+
+    @Column
+    private long timeOfUpdate;
+
     @Column(nullable = false)
     private int serialNumber;
 
