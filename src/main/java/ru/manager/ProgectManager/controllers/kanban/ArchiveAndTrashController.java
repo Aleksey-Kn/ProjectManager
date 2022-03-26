@@ -1,4 +1,4 @@
-package ru.manager.ProgectManager.controllers;
+package ru.manager.ProgectManager.controllers.kanban;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
