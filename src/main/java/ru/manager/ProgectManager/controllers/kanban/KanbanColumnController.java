@@ -22,7 +22,7 @@ import ru.manager.ProgectManager.DTO.response.KanbanResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.KanbanColumn;
 import ru.manager.ProgectManager.enums.Errors;
-import ru.manager.ProgectManager.services.kanban.KanbanService;
+import ru.manager.ProgectManager.services.kanban.KanbanColumnService;
 
 import javax.validation.Valid;
 import java.util.NoSuchElementException;
@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/users/kanban/column")
 @Tag(name = "Манипуляции с колонками канбан-доски")
 public class KanbanColumnController {
-    private final KanbanService kanbanService;
+    private final KanbanColumnService kanbanColumnService;
     private final JwtProvider provider;
 
     @Operation(summary = "Добавление колонки")
@@ -67,7 +67,7 @@ public class KanbanColumnController {
         }
         try {
             String login = provider.getLoginFromToken();
-            Optional<KanbanColumn> column = kanbanService.addColumn(kanbanColumnRequest, login);
+            Optional<KanbanColumn> column = kanbanColumnService.addColumn(kanbanColumnRequest, login);
             if (column.isPresent()) {
                 return ResponseEntity.ok(new KanbanColumnResponse(column.get(), 0, 1));
             } else {
@@ -115,7 +115,7 @@ public class KanbanColumnController {
             }
             try {
                 String login = provider.getLoginFromToken();
-                Optional<KanbanColumn> column = kanbanService.renameColumn(id, name.getName(), login);
+                Optional<KanbanColumn> column = kanbanColumnService.renameColumn(id, name.getName(), login);
                 if (column.isPresent()) {
                     return ResponseEntity.ok(new KanbanColumnResponse(column.get(), pageIndex, rowCount));
                 } else {
@@ -158,8 +158,8 @@ public class KanbanColumnController {
         } else {
             try {
                 String login = provider.getLoginFromToken();
-                if (kanbanService.deleteColumn(request.getId(), login)) {
-                    return ResponseEntity.ok(new KanbanResponse(kanbanService.findKanbanFromColumn(request.getId()),
+                if (kanbanColumnService.deleteColumn(request.getId(), login)) {
+                    return ResponseEntity.ok(new KanbanResponse(kanbanColumnService.findKanbanFromColumn(request.getId()),
                             request.getPageColumnIndex(), request.getCountColumn(),
                             request.getPageElementIndex(), request.getCountElement()));
                 }
@@ -203,9 +203,9 @@ public class KanbanColumnController {
         } else {
             String login = provider.getLoginFromToken();
             try {
-                if (kanbanService.transportColumn(transportColumnRequest, login)) {
+                if (kanbanColumnService.transportColumn(transportColumnRequest, login)) {
                     return ResponseEntity.ok(
-                            new KanbanResponse(kanbanService.findKanbanFromColumn(transportColumnRequest.getId()),
+                            new KanbanResponse(kanbanColumnService.findKanbanFromColumn(transportColumnRequest.getId()),
                                     transportColumnRequest.getPageColumnIndex(), transportColumnRequest.getCountColumn(),
                                     transportColumnRequest.getPageElementIndex(), transportColumnRequest.getCountElement()));
                 }

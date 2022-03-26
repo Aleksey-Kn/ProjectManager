@@ -20,7 +20,7 @@ import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.Kanban;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.ProjectService;
-import ru.manager.ProgectManager.services.kanban.KanbanService;
+import ru.manager.ProgectManager.services.kanban.KanbanColumnService;
 
 import javax.validation.Valid;
 import java.util.NoSuchElementException;
@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 @Tag(name = "Манипуляции с канбан-доской")
 public class KanbanController {
     private final ProjectService projectService;
-    private final KanbanService kanbanService;
+    private final KanbanColumnService kanbanColumnService;
     private final JwtProvider provider;
 
     @Operation(summary = "Добавление новой канбан-доски в проект")
@@ -110,7 +110,7 @@ public class KanbanController {
                     HttpStatus.NOT_ACCEPTABLE);
         } else {
             try {
-                Optional<Kanban> result = kanbanService.findKanban(kanbanRequest.getId(), provider.getLoginFromToken());
+                Optional<Kanban> result = kanbanColumnService.findKanban(kanbanRequest.getId(), provider.getLoginFromToken());
                 if (result.isPresent()) {
                     return ResponseEntity.ok(new KanbanResponse(result.get(),
                             kanbanRequest.getPageColumnIndex(), kanbanRequest.getCountColumn(),
