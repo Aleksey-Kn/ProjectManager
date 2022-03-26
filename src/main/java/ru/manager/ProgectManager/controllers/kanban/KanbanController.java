@@ -19,8 +19,8 @@ import ru.manager.ProgectManager.DTO.response.KanbanResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.Kanban;
 import ru.manager.ProgectManager.enums.Errors;
-import ru.manager.ProgectManager.services.KanbanService;
 import ru.manager.ProgectManager.services.ProjectService;
+import ru.manager.ProgectManager.services.kanban.KanbanService;
 
 import javax.validation.Valid;
 import java.util.NoSuchElementException;

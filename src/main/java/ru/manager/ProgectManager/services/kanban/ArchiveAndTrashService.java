@@ -1,4 +1,4 @@
-package ru.manager.ProgectManager.services;
+package ru.manager.ProgectManager.services.kanban;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -10,6 +10,9 @@ import ru.manager.ProgectManager.enums.ElementStatus;
 import ru.manager.ProgectManager.exception.IncorrectStatusException;
 import ru.manager.ProgectManager.repositories.*;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -43,6 +46,7 @@ public class ArchiveAndTrashService {
 
             timeRemoverRepository.findById(id).ifPresent(timeRemoverRepository::delete);
 
+            element.setTimeOfUpdate(getEpochSeconds());
             element.setStatus(ElementStatus.ARCHIVED);
             KanbanColumn column = elementRepository.save(element).getKanbanColumn();
             column.getElements().stream()
@@ -65,6 +69,7 @@ public class ArchiveAndTrashService {
 
             timeRemoverRepository.findById(id).ifPresent(timeRemoverRepository::delete);
 
+            element.setTimeOfUpdate(getEpochSeconds());
             element.setStatus(ElementStatus.ALIVE);
             element.setSerialNumber(element.getKanbanColumn().getElements().stream()
                     .filter(e -> e.getStatus() == ElementStatus.ALIVE)
@@ -101,5 +106,9 @@ public class ArchiveAndTrashService {
         } else{
             return Optional.empty();
         }
+    }
+
+    private long getEpochSeconds() {
+        return LocalDateTime.now().toEpochSecond(ZoneOffset.systemDefault().getRules().getOffset(Instant.now()));
     }
 }

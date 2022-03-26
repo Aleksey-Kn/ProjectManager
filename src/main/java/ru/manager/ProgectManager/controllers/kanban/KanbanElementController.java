@@ -22,7 +22,7 @@ import ru.manager.ProgectManager.entitys.KanbanElement;
 import ru.manager.ProgectManager.entitys.KanbanElementComment;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.exception.IncorrectStatusException;
-import ru.manager.ProgectManager.services.KanbanService;
+import ru.manager.ProgectManager.services.kanban.KanbanService;
 
 import javax.validation.Valid;
 import java.io.IOException;

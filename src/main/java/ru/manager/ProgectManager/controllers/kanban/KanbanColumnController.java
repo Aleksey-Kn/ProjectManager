@@ -22,7 +22,7 @@ import ru.manager.ProgectManager.DTO.response.KanbanResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.KanbanColumn;
 import ru.manager.ProgectManager.enums.Errors;
-import ru.manager.ProgectManager.services.KanbanService;
+import ru.manager.ProgectManager.services.kanban.KanbanService;
 
 import javax.validation.Valid;
 import java.util.NoSuchElementException;

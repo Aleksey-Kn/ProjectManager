@@ -1,4 +1,4 @@
-package ru.manager.ProgectManager.services;
+package ru.manager.ProgectManager.services.kanban;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -41,6 +41,8 @@ public class KanbanService {
             element.setLastRedactor(user);
             element.setKanbanColumn(column);
             element.setStatus(ElementStatus.ALIVE);
+            element.setTimeOfCreate(getEpochSeconds());
+            element.setTimeOfUpdate(getEpochSeconds());
 
             column.getElements().stream().max(Comparator.comparing(KanbanElement::getSerialNumber))
                     .ifPresentOrElse(e -> element.setSerialNumber(e.getSerialNumber() + 1),
@@ -62,6 +64,7 @@ public class KanbanService {
             element.setContent(request.getContent());
             element.setName(request.getName());
             element.setTag(request.getTag());
+            element.setTimeOfUpdate(getEpochSeconds());
 
             element.setLastRedactor(user);
             return Optional.of(elementRepository.save(element));
@@ -81,6 +84,7 @@ public class KanbanService {
             attachment.setElement(element);
             attachment = attachmentRepository.save(attachment);
 
+            element.setTimeOfUpdate(getEpochSeconds());
             element.getKanbanAttachments().add(attachment);
             return Optional.of(elementRepository.save(element));
         }
@@ -106,6 +110,7 @@ public class KanbanService {
             if (attachment.getElement().getStatus() == ElementStatus.UTILISE)
                 throw new IncorrectStatusException();
             KanbanElement element = attachment.getElement();
+            element.setTimeOfUpdate(getEpochSeconds());
             element.getKanbanAttachments().remove(attachment);
             return Optional.of(elementRepository.save(element));
         } else {
@@ -197,6 +202,7 @@ public class KanbanService {
                     toColumn.getElements().add(element);
                 }
                 element.setSerialNumber(request.getToIndex());
+                element.setTimeOfUpdate(getEpochSeconds());
                 return true;
             } else throw new IncorrectStatusException();
         }
@@ -226,6 +232,7 @@ public class KanbanService {
             if(element.getStatus() == ElementStatus.UTILISE)
                 throw new IncorrectStatusException();
 
+            element.setTimeOfUpdate(getEpochSeconds());
             element.setStatus(ElementStatus.UTILISE);
             KanbanColumn column = elementRepository.save(element).getKanbanColumn();
 
@@ -278,6 +285,7 @@ public class KanbanService {
             comment.setDateTime(getEpochSeconds());
             comment = commentRepository.save(comment);
 
+            element.setTimeOfUpdate(getEpochSeconds());
             element.getComments().add(comment);
             elementRepository.save(element);
             return Optional.of(comment);
@@ -296,6 +304,7 @@ public class KanbanService {
             if(comment.getKanbanElement().getStatus() == ElementStatus.UTILISE)
                 throw new IncorrectStatusException();
             KanbanElement element = comment.getKanbanElement();
+            element.setTimeOfUpdate(getEpochSeconds());
             element.getComments().remove(comment);
             element = elementRepository.save(element);
             return Optional.of(element);
@@ -310,16 +319,13 @@ public class KanbanService {
         if (comment.getOwner().equals(user)) {
             if(comment.getKanbanElement().getStatus() == ElementStatus.UTILISE)
                 throw new IncorrectStatusException();
+            comment.getKanbanElement().setTimeOfUpdate(getEpochSeconds());
             comment.setText(request.getText());
             comment.setDateTime(getEpochSeconds());
             return Optional.of(commentRepository.save(comment));
         } else {
             return Optional.empty();
         }
-    }
-
-    private long getEpochSeconds() {
-        return LocalDateTime.now().toEpochSecond(ZoneOffset.systemDefault().getRules().getOffset(Instant.now()));
     }
 
     public Optional<Kanban> findKanban(long id, String userLogin) {
@@ -338,5 +344,9 @@ public class KanbanService {
 
     public Kanban findKanbanFromColumn(long id) {
         return columnRepository.findById(id).get().getKanban();
+    }
+
+    private long getEpochSeconds() {
+        return LocalDateTime.now().toEpochSecond(ZoneOffset.systemDefault().getRules().getOffset(Instant.now()));
     }
 }
