@@ -110,7 +110,7 @@ public class KanbanController {
                     HttpStatus.NOT_ACCEPTABLE);
         } else {
             try {
-                Optional<Kanban> result = kanbanColumnService.findKanban(kanbanRequest.getId(), provider.getLoginFromToken());
+                Optional<Kanban> result = projectService.findKanban(kanbanRequest.getId(), provider.getLoginFromToken());
                 if (result.isPresent()) {
                     return ResponseEntity.ok(new KanbanResponse(result.get(),
                             kanbanRequest.getPageColumnIndex(), kanbanRequest.getCountColumn(),

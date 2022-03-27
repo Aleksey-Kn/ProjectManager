@@ -3,8 +3,10 @@ package ru.manager.ProgectManager.DTO.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import ru.manager.ProgectManager.entitys.KanbanColumn;
+import ru.manager.ProgectManager.entitys.KanbanElement;
 import ru.manager.ProgectManager.enums.ElementStatus;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,6 +30,7 @@ public class KanbanColumnResponse {
                 ? List.of()
                 : kanbanColumn.getElements().stream()
                 .filter(e -> e.getStatus() == ElementStatus.ALIVE)
+                .sorted(Comparator.comparing(KanbanElement::getSerialNumber))
                 .map(KanbanElementMainDataResponse::new)
                 .skip(pageIndex)
                 .limit(count)

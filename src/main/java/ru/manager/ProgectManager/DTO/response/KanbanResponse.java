@@ -6,6 +6,7 @@ import ru.manager.ProgectManager.entitys.Kanban;
 import ru.manager.ProgectManager.entitys.KanbanColumn;
 import ru.manager.ProgectManager.entitys.Project;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,6 +21,7 @@ public class KanbanResponse {
 
     public KanbanResponse(Kanban kanban, int pageIndexColumn, int countColumn, int pageIndexElement, int countElement){
         kanbanColumns = kanban.getKanbanColumns().stream()
+                .sorted(Comparator.comparing(KanbanColumn::getSerialNumber))
                 .map(kanbanColumn -> new KanbanColumnResponse(kanbanColumn, pageIndexElement, countElement))
                 .skip(pageIndexColumn)
                 .limit(countColumn)

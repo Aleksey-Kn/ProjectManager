@@ -27,7 +27,6 @@ public class KanbanElementService {
     private final KanbanColumnRepository columnRepository;
     private final KanbanElementRepository elementRepository;
     private final UserRepository userRepository;
-    private final KanbanRepository kanbanRepository;
     private final KanbanElementCommentRepository commentRepository;
     private final KanbanAttachmentRepository attachmentRepository;
     private final TimeRemoverRepository timeRemoverRepository;
@@ -79,11 +78,12 @@ public class KanbanElementService {
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(request.getId()).get();
         int from = element.getSerialNumber();
-        if (element.getKanbanColumn().getKanban().getProject().getConnectors().stream()
+        KanbanColumn fromColumn = element.getKanbanColumn();
+        if (fromColumn.getKanban().getProject().getConnectors().stream()
                 .anyMatch(c -> c.getUser().equals(user))) {
             if (element.getStatus() == ElementStatus.ALIVE) {
-                if (element.getKanbanColumn().getId() == request.getToColumn()) {
-                    List<KanbanElement> allElements = element.getKanbanColumn().getElements();
+                if (fromColumn.getId() == request.getToColumn()) {
+                    List<KanbanElement> allElements = fromColumn.getElements();
                     if (request.getToIndex() >= allElements.size())
                         throw new IllegalArgumentException();
                     if (request.getToIndex() > from) {
@@ -97,9 +97,13 @@ public class KanbanElementService {
                                 .filter(kanbanElement -> kanbanElement.getSerialNumber() >= request.getToIndex())
                                 .forEach(kanbanElement -> kanbanElement.setSerialNumber(kanbanElement.getSerialNumber() + 1));
                     }
+                    element.setSerialNumber(request.getToIndex());
+                    element.setTimeOfUpdate(getEpochSeconds());
+
+                    elementRepository.saveAll(allElements);
                 } else {
                     KanbanColumn toColumn = columnRepository.findById((long) request.getToColumn()).get();
-                    List<KanbanElement> fromColumnElements = element.getKanbanColumn().getElements();
+                    List<KanbanElement> fromColumnElements = fromColumn.getElements();
                     List<KanbanElement> toColumnElements = toColumn.getElements();
                     fromColumnElements.stream()
                             .filter(e -> e.getSerialNumber() > from)
@@ -107,11 +111,16 @@ public class KanbanElementService {
                     toColumnElements.stream()
                             .filter(e -> e.getSerialNumber() >= request.getToIndex())
                             .forEach(e -> e.setSerialNumber(e.getSerialNumber() + 1));
-                    element.getKanbanColumn().getElements().remove(element);
+                    fromColumn.getElements().remove(element);
                     toColumn.getElements().add(element);
+                    element.setSerialNumber(request.getToIndex());
+                    element.setTimeOfUpdate(getEpochSeconds());
+
+                    elementRepository.saveAll(fromColumnElements);
+                    elementRepository.saveAll(toColumnElements);
+                    columnRepository.save(fromColumn);
+                    columnRepository.save(toColumn);
                 }
-                element.setSerialNumber(request.getToIndex());
-                element.setTimeOfUpdate(getEpochSeconds());
                 return true;
             } else throw new IncorrectStatusException();
         }

@@ -3,11 +3,20 @@ package ru.manager.ProgectManager.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.request.NameRequest;
-import ru.manager.ProgectManager.entitys.*;
-import ru.manager.ProgectManager.repositories.*;
+import ru.manager.ProgectManager.entitys.Kanban;
+import ru.manager.ProgectManager.entitys.Project;
+import ru.manager.ProgectManager.entitys.User;
+import ru.manager.ProgectManager.entitys.UserWithProjectConnector;
+import ru.manager.ProgectManager.repositories.KanbanRepository;
+import ru.manager.ProgectManager.repositories.ProjectRepository;
+import ru.manager.ProgectManager.repositories.UserRepository;
+import ru.manager.ProgectManager.repositories.UserWithProjectConnectorRepository;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -32,7 +41,6 @@ public class ProjectService {
         }
         return Optional.empty();
     }
-
 
     public boolean removeKanban(long id, String userLogin){
         Kanban kanban = kanbanRepository.findById(id).get();
@@ -102,6 +110,16 @@ public class ProjectService {
             return true;
         }
         return false;
+    }
+
+    public Optional<Kanban> findKanban(long id, String userLogin) {
+        Kanban kanban = kanbanRepository.findById(id).get();
+        User user = userRepository.findByUsername(userLogin);
+        if (kanban.getProject().getConnectors().stream().anyMatch(p -> p.getUser().equals(user))) {
+            return Optional.of(kanban);
+        } else {
+            return Optional.empty();
+        }
     }
 
     public boolean deleteProject(long id, String adminLogin){

@@ -12,10 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
-import ru.manager.ProgectManager.DTO.request.GetKanbanRequest;
-import ru.manager.ProgectManager.DTO.request.KanbanColumnRequest;
-import ru.manager.ProgectManager.DTO.request.NameRequest;
-import ru.manager.ProgectManager.DTO.request.TransportColumnRequest;
+import ru.manager.ProgectManager.DTO.request.*;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.KanbanColumnResponse;
 import ru.manager.ProgectManager.DTO.response.KanbanResponse;
@@ -217,6 +214,34 @@ public class KanbanColumnController {
                 return new ResponseEntity<>(new ErrorResponse(Errors.INDEX_MORE_COLLECTION_SIZE),
                         HttpStatus.NOT_ACCEPTABLE);
             }
+        }
+    }
+
+    @Operation(summary = "Сортировка элементов столбца канбана")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Неверный идентификатор колонки", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному проекту"),
+            @ApiResponse(responseCode = "200", description = "Отсортирванная по указанному ключу колонка", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = KanbanColumnResponse.class))
+            })
+    })
+    @PostMapping("/sort")
+    public ResponseEntity<?> sortColumn(@RequestBody SortRequest sortRequest, @RequestParam int pageIndex,
+                                        @RequestParam int rowCount){
+        try{
+            Optional<KanbanColumn> kanbanColumn = kanbanColumnService
+                    .sortColumn(sortRequest, provider.getLoginFromToken());
+            if(kanbanColumn.isPresent()){
+                return ResponseEntity.ok(new KanbanColumnResponse(kanbanColumn.get(), pageIndex, rowCount));
+            } else{
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e){
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.BAD_REQUEST);
         }
     }
 }
