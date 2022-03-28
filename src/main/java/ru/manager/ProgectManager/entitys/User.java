@@ -11,7 +11,6 @@ import javax.persistence.*;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Entity
 @Getter
@@ -37,6 +36,9 @@ public class User implements UserDetails {
     @Column(length = 524_288)
     @Lob
     private byte[] photo;
+
+    @Column
+    private String contentTypePhoto;
 
     @ManyToMany
     @JoinTable(name = "user_role", joinColumns = {@JoinColumn(name = "user_key")},

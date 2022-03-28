@@ -1,15 +1,21 @@
 package ru.manager.ProgectManager.DTO.response;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import ru.manager.ProgectManager.entitys.KanbanAttachment;
 
 import javax.activation.MimetypesFileTypeMap;
 
 @Getter
+@Schema(description = "Полная информация о вложении")
 public class AttachAllDataResponse {
+    @Schema(description = "Идентификатор вложения")
     private final long id;
+    @Schema(description = "Название файла")
     private final String name;
+    @Schema(description = "Тип данных вложения")
     private final String type;
+    @Schema(description = "Контент в формате массива байтов")
     private final byte[] data;
 
     public AttachAllDataResponse(KanbanAttachment attachment){

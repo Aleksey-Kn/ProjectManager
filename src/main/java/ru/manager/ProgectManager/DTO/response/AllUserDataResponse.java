@@ -22,6 +22,8 @@ public class AllUserDataResponse {
     private final List<Project> userProjects;
     @Schema(description = "Фото профиля пользователя", nullable = true)
     private final byte[] photo;
+    @Schema(description = "Тип данных фотографии")
+    private final String datatypePhoto;
 
     public AllUserDataResponse(User user){
         email = user.getEmail();
@@ -31,5 +33,6 @@ public class AllUserDataResponse {
                 .collect(Collectors.toList());
         id = user.getUserId();
         photo = user.getPhoto();
+        datatypePhoto = user.getContentTypePhoto();
     }
 }

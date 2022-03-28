@@ -10,6 +10,7 @@ import ru.manager.ProgectManager.entitys.User;
 import ru.manager.ProgectManager.repositories.RoleRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
 
+import javax.activation.MimetypesFileTypeMap;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Optional;
@@ -85,10 +86,11 @@ public class UserService {
         return false;
     }
 
-    public void setPhoto(String login, byte[] file) throws IOException {
+    public void setPhoto(String login, byte[] file, String filename) throws IOException {
         User user = userRepository.findByUsername(login);
         if(user != null){
             user.setPhoto(file);
+            user.setContentTypePhoto(new MimetypesFileTypeMap().getContentType(filename));
             userRepository.save(user);
         }
     }

@@ -111,7 +111,8 @@ public class UserController {
     @PostMapping("/user/photo")
     public ResponseEntity<?> setPhoto(@ModelAttribute PhotoDTO photoDTO) {
         try {
-            userService.setPhoto(jwtProvider.getLoginFromToken(), compressor.compress(photoDTO.getFile()));
+            userService.setPhoto(jwtProvider.getLoginFromToken(), compressor.compress(photoDTO.getFile()),
+                    photoDTO.getFile().getOriginalFilename());
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (IOException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.BAD_FILE),
