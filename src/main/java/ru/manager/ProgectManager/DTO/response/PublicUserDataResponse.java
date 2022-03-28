@@ -15,11 +15,14 @@ public class PublicUserDataResponse {
     private final String nickname;
     @Schema(description = "Фотография профиля пользователя", nullable = true)
     private final byte[] photo;
+    @Schema(description = "Тип данных фотографии")
+    private final String datatypePhoto;
 
     public PublicUserDataResponse(User user){
         email = user.getEmail();
         nickname = user.getNickname();
         id = user.getUserId();
         photo = user.getPhoto();
+        datatypePhoto = user.getContentTypePhoto();
     }
 }

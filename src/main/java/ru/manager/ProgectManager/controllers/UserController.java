@@ -1,7 +1,6 @@
 package ru.manager.ProgectManager.controllers;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -15,7 +14,6 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.PhotoDTO;
 import ru.manager.ProgectManager.DTO.request.RefreshUserDTO;
-import ru.manager.ProgectManager.DTO.response.AllUserDataResponse;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.PublicUserDataResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
@@ -46,28 +44,20 @@ public class UserController {
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "200",
-                    description = "Возвращение информации о своём профиле, " +
-                            "при доступе к чужому аккаунту не выдаётся информация об его проектах",
-                    content = {
-                            @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = AllUserDataResponse.class))
-                    })
+                    description = "Возвращение информации о профиле", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = PublicUserDataResponse.class))
+            })
     })
     @GetMapping("/user")
-    public ResponseEntity<?> findAllData(@RequestParam @Parameter(description = "Идентификатор пользователя," +
-            " -1 для доступа к своему аккаунту") long id) {
-        Optional<User> user;
-        if (id == -1) { //about yourself
-            user = userService.findByUsername(jwtProvider.getLoginFromToken());
-            return ResponseEntity.ok(new AllUserDataResponse(user.get()));
+    public ResponseEntity<?> findAllData(@RequestParam(defaultValue = "-1") long id) {
+        Optional<User> user = (id == -1 ? userService.findByUsername(jwtProvider.getLoginFromToken()) :
+                userService.findById(id));
+        if (user.isPresent()) {
+            return ResponseEntity.ok(new PublicUserDataResponse(user.get()));
         } else {
-            user = userService.findById(id);
-            if (user.isPresent()) {
-                return ResponseEntity.ok(new PublicUserDataResponse(user.get()));
-            } else {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER),
-                        HttpStatus.BAD_REQUEST);
-            }
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER),
+                    HttpStatus.BAD_REQUEST);
         }
     }
 
