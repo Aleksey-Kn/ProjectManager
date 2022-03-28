@@ -16,4 +16,7 @@ public class TimeRemover {
 
     @Column(nullable = false)
     private long timeToDelete;
+
+    @Column(nullable = false)
+    private boolean hard;
 }

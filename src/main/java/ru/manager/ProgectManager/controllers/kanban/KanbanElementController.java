@@ -201,7 +201,7 @@ public class KanbanElementController {
         }
         try {
             String login = provider.getLoginFromToken();
-            Optional<KanbanColumn> column = kanbanElementService.utilizeElement(id, login);
+            Optional<KanbanColumn> column = kanbanElementService.utilizeElementFromUser(id, login);
             if (column.isPresent()) {
                 return ResponseEntity.ok(new KanbanColumnResponse(column.get(), pageIndex, rowCount));
             } else {

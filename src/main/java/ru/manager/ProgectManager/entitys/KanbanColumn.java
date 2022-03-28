@@ -1,6 +1,9 @@
 package ru.manager.ProgectManager.entitys;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.Hibernate;
 
 import javax.persistence.*;
@@ -23,6 +26,9 @@ public class KanbanColumn {
 
     @Column(nullable = false)
     private String name;
+
+    @Column(nullable = false)
+    private int delayedDays;
 
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<KanbanElement> elements;

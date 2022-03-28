@@ -127,30 +127,40 @@ public class KanbanElementService {
         return false;
     }
 
-    public Optional<KanbanColumn> utilizeElement(long id, String userLogin) {
+    public Optional<KanbanColumn> utilizeElementFromUser(long id, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(id).get();
         if (element.getKanbanColumn().getKanban().getProject().getConnectors().stream()
                 .anyMatch(c -> c.getUser().equals(user))) {
-            if(element.getStatus() == ElementStatus.UTILISE)
-                throw new IncorrectStatusException();
-
-            element.setTimeOfUpdate(getEpochSeconds());
-            element.setStatus(ElementStatus.UTILISE);
-            KanbanColumn column = elementRepository.save(element).getKanbanColumn();
-
-            TimeRemover timeRemover = new TimeRemover();
-            timeRemover.setRemoverId(element.getId());
-            timeRemover.setTimeToDelete(LocalDate.now().plusDays(6).toEpochDay());
-            timeRemoverRepository.save(timeRemover);
-
-            column.getElements().stream()
-                    .filter(e -> e.getSerialNumber() > element.getSerialNumber())
-                    .forEach(e -> e.setSerialNumber(e.getSerialNumber() - 1));
-            return Optional.of(columnRepository.save(column));
+            utiliseElement(element);
+            return Optional.of(element.getKanbanColumn());
         } else {
             return Optional.empty();
         }
+    }
+
+    public void utiliseElementFromSystem(long id){
+        utiliseElement(elementRepository.findById(id).get());
+    }
+
+    private void utiliseElement(KanbanElement element){
+        if(element.getStatus() == ElementStatus.UTILISE)
+            throw new IncorrectStatusException();
+
+        element.setTimeOfUpdate(getEpochSeconds());
+        element.setStatus(ElementStatus.UTILISE);
+        KanbanColumn column = elementRepository.save(element).getKanbanColumn();
+
+        TimeRemover timeRemover = new TimeRemover();
+        timeRemover.setRemoverId(element.getId());
+        timeRemover.setHard(true);
+        timeRemover.setTimeToDelete(LocalDate.now().plusDays(6).toEpochDay());
+        timeRemoverRepository.save(timeRemover);
+
+        column.getElements().stream()
+                .filter(e -> e.getSerialNumber() > element.getSerialNumber())
+                .forEach(e -> e.setSerialNumber(e.getSerialNumber() - 1));
+        elementRepository.saveAll(column.getElements());
     }
 
     public Optional<KanbanElementComment> addComment(KanbanCommentRequest request, String userLogin) {
