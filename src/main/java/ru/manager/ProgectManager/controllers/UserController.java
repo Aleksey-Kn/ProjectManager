@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.PhotoDTO;
 import ru.manager.ProgectManager.DTO.request.RefreshUserDTO;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
+import ru.manager.ProgectManager.DTO.response.ProjectListResponse;
 import ru.manager.ProgectManager.DTO.response.PublicUserDataResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.components.PhotoCompressor;
@@ -108,5 +109,12 @@ public class UserController {
             return new ResponseEntity<>(new ErrorResponse(Errors.BAD_FILE),
                     HttpStatus.NOT_ACCEPTABLE);
         }
+    }
+
+    @Operation(summary = "Список проектов, доступных для данного пользователя")
+    @ApiResponse(responseCode = "200", description = "Список проектов, доступных пользователю")
+    @GetMapping("/user/projects")
+    public ProjectListResponse getUserProjects(){
+        return new ProjectListResponse(userService.allProjectOfThisUser(jwtProvider.getLoginFromToken()));
     }
 }

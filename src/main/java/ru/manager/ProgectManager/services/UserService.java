@@ -5,35 +5,25 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.request.RefreshUserDTO;
 import ru.manager.ProgectManager.DTO.request.UserDTO;
+import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.Role;
 import ru.manager.ProgectManager.entitys.User;
+import ru.manager.ProgectManager.entitys.UserWithProjectConnector;
 import ru.manager.ProgectManager.repositories.RoleRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
 
 import javax.activation.MimetypesFileTypeMap;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
     private RoleRepository roleRepository;
-    @Autowired
-    private void setRoleRepository(RoleRepository r){
-        roleRepository = r;
-    }
-
     private UserRepository userRepository;
-    @Autowired
-    private void setUserRepository(UserRepository u){
-        userRepository = u;
-    }
-
     private PasswordEncoder passwordEncoder;
-    @Autowired
-    private void setPasswordEncoder(PasswordEncoder p){
-        passwordEncoder = p;
-    }
 
     public Optional<User> saveUser(UserDTO userDTO){
         if(userRepository.findByUsername(userDTO.getLogin()) == null) {
@@ -93,5 +83,26 @@ public class UserService {
             user.setContentTypePhoto(new MimetypesFileTypeMap().getContentType(filename));
             userRepository.save(user);
         }
+    }
+
+    public List<Project> allProjectOfThisUser(String login){
+        return userRepository.findByUsername(login).getUserWithProjectConnectors().stream()
+                .map(UserWithProjectConnector::getProject)
+                .collect(Collectors.toList());
+    }
+
+    @Autowired
+    private void setPasswordEncoder(PasswordEncoder p){
+        passwordEncoder = p;
+    }
+
+    @Autowired
+    private void setRoleRepository(RoleRepository r){
+        roleRepository = r;
+    }
+
+    @Autowired
+    private void setUserRepository(UserRepository u){
+        userRepository = u;
     }
 }
