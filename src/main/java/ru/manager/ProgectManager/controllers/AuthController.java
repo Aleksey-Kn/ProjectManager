@@ -21,6 +21,7 @@ import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.User;
 import ru.manager.ProgectManager.enums.Errors;
+import ru.manager.ProgectManager.exception.EmailAlreadyUsedException;
 import ru.manager.ProgectManager.services.RefreshTokenService;
 import ru.manager.ProgectManager.services.UserService;
 
@@ -28,7 +29,6 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -60,23 +60,27 @@ public class AuthController {
     public ResponseEntity<?> registerUser(@Valid @RequestBody UserDTO userDTO, BindingResult bindingResult,
                                           HttpServletResponse response) {
         if (!bindingResult.hasErrors()) {
-            Optional<User> userOptional = userService.saveUser(userDTO);
-            if (userOptional.isPresent()) {
-                AuthResponse authResponse = new AuthResponse();
-                authResponse.setRefresh(refreshTokenService.createToken(userOptional.get().getUsername()));
+            try {
+                Optional<User> userOptional = userService.saveUser(userDTO);
+                if (userOptional.isPresent()) {
+                    AuthResponse authResponse = new AuthResponse();
+                    authResponse.setRefresh(refreshTokenService.createToken(userOptional.get().getUsername()));
 
-                Cookie cookie = new Cookie("access", jwtProvider.generateToken(userOptional.get().getUsername()));
-                cookie.setPath("/");
-                cookie.setMaxAge(900);
-                cookie.setHttpOnly(true);
-                response.addCookie(cookie);//добавляем Cookie в запрос
-                response.setContentType("text/plain");//устанавливаем контекст
+                    Cookie cookie = new Cookie("access", jwtProvider.generateToken(userOptional.get().getUsername()));
+                    cookie.setPath("/");
+                    cookie.setMaxAge(900);
+                    cookie.setHttpOnly(true);
+                    response.addCookie(cookie);//добавляем Cookie в запрос
+                    response.setContentType("text/plain");//устанавливаем контент
 
-                return ResponseEntity.ok(authResponse);
-            } else {
+                    return ResponseEntity.ok(authResponse);
+                } else {
+                    return new ResponseEntity<>(
+                            new ErrorResponse(Errors.USER_WITH_THIS_LOGIN_ALREADY_CREATED), HttpStatus.BAD_REQUEST);
+                }
+            } catch (EmailAlreadyUsedException e) {
                 return new ResponseEntity<>(
-                        new ErrorResponse(Errors.USER_WITH_THIS_LOGIN_ALREADY_CREATED),
-                        HttpStatus.BAD_REQUEST);
+                        new ErrorResponse(Errors.USER_WITH_THIS_EMAIL_ALREADY_CREATED), HttpStatus.BAD_REQUEST);
             }
         } else {
             return new ResponseEntity<>(
@@ -111,7 +115,7 @@ public class AuthController {
             cookie.setMaxAge(900);
             cookie.setHttpOnly(true);
             response.addCookie(cookie);//добавляем Cookie в запрос
-            response.setContentType("text/plain");//устанавливаем контекст
+            response.setContentType("text/plain");//устанавливаем контент
 
             authResponse.setRefresh(refreshTokenService.createToken(userEntity.getUsername()));
             return ResponseEntity.ok(authResponse);
@@ -131,9 +135,9 @@ public class AuthController {
             })
     })
     @PostMapping("/refresh")
-    public ResponseEntity<?> refresh(@RequestBody RefreshTokenRequest tokenRequest, HttpServletResponse response){
+    public ResponseEntity<?> refresh(@RequestBody RefreshTokenRequest tokenRequest, HttpServletResponse response) {
         Optional<String> login = refreshTokenService.findLoginFromToken(tokenRequest.getRefresh());
-        if(login.isPresent()){
+        if (login.isPresent()) {
             AuthResponse authResponse = new AuthResponse();
             authResponse.setRefresh(refreshTokenService.createToken(login.get()));
 
