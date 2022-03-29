@@ -115,16 +115,16 @@ public class KanbanElementService {
                             .forEach(e -> e.setSerialNumber(e.getSerialNumber() + 1));
                     fromColumn.getElements().remove(element);
                     toColumn.getElements().add(element);
+
                     element.setSerialNumber(request.getToIndex());
                     element.setTimeOfUpdate(getEpochSeconds());
+                    element.setKanbanColumn(toColumn);
 
                     if(fromColumn.getDelayedDays() != 0){
                         timeRemoverRepository.deleteById(element.getId());
                     }
                     createSoftRemover(toColumn, element);
 
-                    elementRepository.saveAll(fromColumnElements);
-                    elementRepository.saveAll(toColumnElements);
                     columnRepository.save(fromColumn);
                     columnRepository.save(toColumn);
                 }

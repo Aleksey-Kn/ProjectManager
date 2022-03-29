@@ -183,7 +183,7 @@ public class KanbanElementController {
                     description = "Колонка, в которой находился удалённый элемент, с учётом внесённых изменений",
                     content = {
                             @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = KanbanResponse.class))
+                                    schema = @Schema(implementation = KanbanColumnResponse.class))
                     }),
             @ApiResponse(responseCode = "410",
                     description = "Операция недоступна, поскольку элемент уже в корзине", content = {

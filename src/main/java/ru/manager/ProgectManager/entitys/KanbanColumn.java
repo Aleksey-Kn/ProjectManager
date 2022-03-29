@@ -30,7 +30,7 @@ public class KanbanColumn {
     @Column(nullable = false)
     private int delayedDays; // 0 - значение, обоначающее отстутствие автоочищения столбца
 
-    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<KanbanElement> elements;
 
     @ManyToOne
