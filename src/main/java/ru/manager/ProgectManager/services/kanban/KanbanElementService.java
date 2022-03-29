@@ -46,6 +46,8 @@ public class KanbanElementService {
             element.setTimeOfCreate(getEpochSeconds());
             element.setTimeOfUpdate(getEpochSeconds());
 
+            createSoftRemover(column, element);
+
             column.getElements().stream().max(Comparator.comparing(KanbanElement::getSerialNumber))
                     .ifPresentOrElse(e -> element.setSerialNumber(e.getSerialNumber() + 1),
                             () -> element.setSerialNumber(0));
@@ -116,6 +118,11 @@ public class KanbanElementService {
                     element.setSerialNumber(request.getToIndex());
                     element.setTimeOfUpdate(getEpochSeconds());
 
+                    if(fromColumn.getDelayedDays() != 0){
+                        timeRemoverRepository.deleteById(element.getId());
+                    }
+                    createSoftRemover(toColumn, element);
+
                     elementRepository.saveAll(fromColumnElements);
                     elementRepository.saveAll(toColumnElements);
                     columnRepository.save(fromColumn);
@@ -132,6 +139,16 @@ public class KanbanElementService {
         KanbanElement element = elementRepository.findById(id).get();
         if (element.getKanbanColumn().getKanban().getProject().getConnectors().stream()
                 .anyMatch(c -> c.getUser().equals(user))) {
+            TimeRemover timeRemover;
+            if(element.getKanbanColumn().getDelayedDays() == 0){
+                timeRemover = new TimeRemover();
+                timeRemover.setRemoverId(element.getId());
+            } else{ // если пользователь улаляет элемент из колонки с регулярным удалением вручную, то удалитель уже есть
+                timeRemover = timeRemoverRepository.findById(element.getId()).orElseThrow(NullPointerException::new);
+            }
+            timeRemover.setHard(true);
+            timeRemover.setTimeToDelete(LocalDate.now().plusDays(6).toEpochDay());
+            timeRemoverRepository.save(timeRemover);
             utiliseElement(element);
             return Optional.of(element.getKanbanColumn());
         } else {
@@ -140,6 +157,11 @@ public class KanbanElementService {
     }
 
     public void utiliseElementFromSystem(long id){
+        // при автоматическом перемещении элемента в корзину не происходит удаления timeRemover, поэтому подтягиваем его и только меняем данные
+        TimeRemover timeRemover = timeRemoverRepository.findById(id).orElseThrow(NullPointerException::new);
+        timeRemover.setHard(true);
+        timeRemover.setTimeToDelete(LocalDate.now().plusDays(6).toEpochDay());
+        timeRemoverRepository.save(timeRemover);
         utiliseElement(elementRepository.findById(id).get());
     }
 
@@ -150,12 +172,6 @@ public class KanbanElementService {
         element.setTimeOfUpdate(getEpochSeconds());
         element.setStatus(ElementStatus.UTILISE);
         KanbanColumn column = elementRepository.save(element).getKanbanColumn();
-
-        TimeRemover timeRemover = new TimeRemover();
-        timeRemover.setRemoverId(element.getId());
-        timeRemover.setHard(true);
-        timeRemover.setTimeToDelete(LocalDate.now().plusDays(6).toEpochDay());
-        timeRemoverRepository.save(timeRemover);
 
         column.getElements().stream()
                 .filter(e -> e.getSerialNumber() > element.getSerialNumber())
@@ -285,5 +301,15 @@ public class KanbanElementService {
 
     private long getEpochSeconds() {
         return LocalDateTime.now().toEpochSecond(ZoneOffset.systemDefault().getRules().getOffset(Instant.now()));
+    }
+
+    private void createSoftRemover(KanbanColumn column, KanbanElement element) {
+        if(column.getDelayedDays() != 0){
+            TimeRemover remover = new TimeRemover();
+            remover.setHard(false);
+            remover.setRemoverId(element.getId());
+            remover.setTimeToDelete(LocalDate.now().plusDays(column.getDelayedDays()).toEpochDay());
+            timeRemoverRepository.save(remover);
+        }
     }
 }

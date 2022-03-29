@@ -1,6 +1,7 @@
 package ru.manager.ProgectManager.controllers.kanban;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -241,6 +242,60 @@ public class KanbanColumnController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (NoSuchElementException e){
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @Operation(summary = "Установка интервала очитки столбца в днях")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Неверный идентификатор колонки", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "406",
+                    description = "Передынный интервал очистки является отрицательным числом", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному ресурсу"),
+            @ApiResponse(responseCode = "200", description = "Установка интервала удаления произошла успешно")
+    })
+    @PostMapping("/delay")
+    public ResponseEntity<?> setDelayRemover(@RequestBody @Valid DelayRemoveRequest request, BindingResult bindingResult){
+        if(bindingResult.hasErrors()){
+            return new ResponseEntity<>(new ErrorResponse(Errors.COUNT_MUST_BE_MORE_1), HttpStatus.NOT_ACCEPTABLE);
+        } else {
+            try {
+                if (kanbanColumnService.setDelayDeleter(request.getId(), request.getDelay(),
+                        provider.getLoginFromToken())) {
+                    return new ResponseEntity<>(HttpStatus.OK);
+                } else {
+                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+                }
+            } catch (NoSuchElementException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.BAD_REQUEST);
+            }
+        }
+    }
+
+    @Operation(summary = "Отключение автоматической очистки столбца")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Неверный идентификатор колонки", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному ресурсу"),
+            @ApiResponse(responseCode = "200", description = "Отключение автоматической очистки столбца прошло успешно")
+    })
+    @DeleteMapping("/delay")
+    public ResponseEntity<?> deleteDelayRemover(@RequestParam @Parameter(description = "Идентификатор колонки") long id) {
+        try{
+            if(kanbanColumnService.removeDelayDeleter(id, provider.getLoginFromToken())){
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else{
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.BAD_REQUEST);
         }
     }

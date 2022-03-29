@@ -30,9 +30,9 @@ public class ScheduleRemover {
                 .map(TimeRemover::getRemoverId)
                 .collect(Collectors.toList());
         for (long now : removersIndex) {
+            timeRemoverRepository.deleteById(now);
             try {
                 trashService.finalDeleteElementFromTrash(now);
-                timeRemoverRepository.deleteById(now);
             } catch (Exception ignored) {
             }
         }
@@ -47,11 +47,11 @@ public class ScheduleRemover {
                 .map(TimeRemover::getRemoverId)
                 .collect(Collectors.toList());
 
-        for(long now: utilizeIndex){
+        for (long now : utilizeIndex) {
             try {
                 elementService.utiliseElementFromSystem(now);
-                timeRemoverRepository.deleteById(now);
-            } catch (Exception ignored){}
+            } catch (Exception ignored) {
+            }
         }
     }
 

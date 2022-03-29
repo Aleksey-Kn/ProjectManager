@@ -7,11 +7,9 @@ import ru.manager.ProgectManager.DTO.request.SortRequest;
 import ru.manager.ProgectManager.DTO.request.TransportColumnRequest;
 import ru.manager.ProgectManager.entitys.*;
 import ru.manager.ProgectManager.enums.SortType;
-import ru.manager.ProgectManager.repositories.KanbanColumnRepository;
-import ru.manager.ProgectManager.repositories.KanbanElementRepository;
-import ru.manager.ProgectManager.repositories.KanbanRepository;
-import ru.manager.ProgectManager.repositories.UserRepository;
+import ru.manager.ProgectManager.repositories.*;
 
+import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -23,6 +21,7 @@ public class KanbanColumnService {
     private final UserRepository userRepository;
     private final KanbanRepository kanbanRepository;
     private final KanbanElementRepository elementRepository;
+    private final TimeRemoverRepository timeRemoverRepository;
 
     public boolean transportColumn(TransportColumnRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
@@ -85,6 +84,7 @@ public class KanbanColumnService {
             KanbanColumn kanbanColumn = new KanbanColumn();
             kanbanColumn.setName(request.getName());
             kanbanColumn.setKanban(kanban);
+            kanbanColumn.setDelayedDays(0);
             kanban.getKanbanColumns().stream()
                     .max(Comparator.comparing(KanbanColumn::getSerialNumber))
                     .ifPresentOrElse(c -> kanbanColumn.setSerialNumber(c.getSerialNumber() + 1),
@@ -121,6 +121,34 @@ public class KanbanColumnService {
             return Optional.of(column);
         } else{
             return Optional.empty();
+        }
+    }
+
+    public boolean setDelayDeleter(long id, int delay, String userLogin){
+        KanbanColumn column = columnRepository.findById(id).get();
+        User user = userRepository.findByUsername(userLogin);
+        if(column.getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
+            column.setDelayedDays(delay);
+            column.getElements().stream().map(KanbanElement::getId).forEach(identity -> {
+                TimeRemover timeRemover = timeRemoverRepository.findById(identity).get();
+                timeRemover.setTimeToDelete(LocalDate.now().plusDays(delay).toEpochDay());
+                timeRemoverRepository.save(timeRemover);
+            });
+            return true;
+        } else{
+            return false;
+        }
+    }
+
+    public boolean removeDelayDeleter(long id, String userLogin){
+        KanbanColumn column = columnRepository.findById(id).get();
+        User user = userRepository.findByUsername(userLogin);
+        if(column.getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
+            column.setDelayedDays(0);
+            column.getElements().stream().map(KanbanElement::getId).forEach(timeRemoverRepository::deleteById);
+            return true;
+        } else{
+            return false;
         }
     }
 
