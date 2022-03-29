@@ -13,6 +13,6 @@ public class ExceptionController {
     @ExceptionHandler(ExpiredTokenException.class)
     public ResponseEntity<ErrorResponse> expiredToken(){
         return new ResponseEntity<>(new ErrorResponse(Errors.TOKEN_EXPIRED),
-                HttpStatus.FORBIDDEN);
+                HttpStatus.UNAUTHORIZED);
     }
 }

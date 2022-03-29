@@ -112,7 +112,10 @@ public class UserController {
     }
 
     @Operation(summary = "Список проектов, доступных для данного пользователя")
-    @ApiResponse(responseCode = "200", description = "Список проектов, доступных пользователю")
+    @ApiResponse(responseCode = "200", description = "Список проектов, доступных пользователю", content = {
+            @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = ProjectListResponse.class))
+    })
     @GetMapping("/user/projects")
     public ProjectListResponse getUserProjects(){
         return new ProjectListResponse(userService.allProjectOfThisUser(jwtProvider.getLoginFromToken()));

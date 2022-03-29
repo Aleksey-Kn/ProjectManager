@@ -1,6 +1,7 @@
 package ru.manager.ProgectManager.controllers;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -15,15 +16,18 @@ import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.NameRequest;
 import ru.manager.ProgectManager.DTO.request.PhotoDTO;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
+import ru.manager.ProgectManager.DTO.response.KanbanListResponse;
 import ru.manager.ProgectManager.DTO.response.ProjectResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.components.PhotoCompressor;
+import ru.manager.ProgectManager.entitys.Kanban;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.ProjectService;
 
 import javax.validation.Valid;
 import java.io.IOException;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -155,6 +159,35 @@ public class ProjectController {
             return new ResponseEntity<>(
                     new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT),
                     HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @Operation(summary = "Получение списка канбанов проекта",
+            description = "Отображаются только канбаны, доступные пользователю в соответствии с его ролью")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Обращание к несуществующему проекту", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к указанному проекту"),
+            @ApiResponse(responseCode = "200",
+                    description = "Список канбан досок в данном проекте, доступных текщему пользователю", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = KanbanListResponse.class))
+            })
+    })
+    @GetMapping("/project/kanbans")
+    public ResponseEntity<?> allKanbanOfThisUser(@RequestParam @Parameter(description = "Идентификатор проекта")
+                                                              long id){
+        try {
+            Optional<List<Kanban>> kanbans = projectService.findAllKanban(id, provider.getLoginFromToken());
+            if (kanbans.isPresent()) {
+                return ResponseEntity.ok(new KanbanListResponse(kanbans.get()));
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e){
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.BAD_REQUEST);
         }
     }
 
