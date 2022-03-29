@@ -11,10 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
-import ru.manager.ProgectManager.DTO.request.NameRequest;
 import ru.manager.ProgectManager.DTO.request.PhotoDTO;
+import ru.manager.ProgectManager.DTO.request.ProjectDataRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.KanbanListResponse;
 import ru.manager.ProgectManager.DTO.response.ProjectResponse;
@@ -30,7 +29,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -53,17 +51,13 @@ public class ProjectController {
             })
     })
     @PostMapping("/project")
-    public ResponseEntity<?> addProject(@RequestBody @Valid NameRequest requestDTO, BindingResult bindingResult){
+    public ResponseEntity<?> addProject(@RequestBody @Valid ProjectDataRequest request, BindingResult bindingResult){
         if(bindingResult.hasErrors()){
-            return new ResponseEntity<>(new ErrorResponse(bindingResult.getAllErrors().stream()
-                    .map(ObjectError::getDefaultMessage)
-                    .map(Errors::valueOf)
-                    .map(Errors::getNumValue)
-                    .collect(Collectors.toList())),
-                    HttpStatus.NOT_ACCEPTABLE);
+            return new ResponseEntity<>(
+                    new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS), HttpStatus.NOT_ACCEPTABLE);
         } else{
             return ResponseEntity.ok(
-                    new ProjectResponse(projectService.addProject(requestDTO, provider.getLoginFromToken())));
+                    new ProjectResponse(projectService.addProject(request, provider.getLoginFromToken())));
         }
     }
 
@@ -108,18 +102,14 @@ public class ProjectController {
             @ApiResponse(responseCode = "200", description = "Название проекта изменено")
     })
     @PutMapping("/project")
-    public ResponseEntity<?> setName(@RequestParam long id, @RequestBody @Valid NameRequest requestDTO,
+    public ResponseEntity<?> setData(@RequestParam long id, @RequestBody @Valid ProjectDataRequest request,
                                      BindingResult bindingResult){
         if(bindingResult.hasErrors()){
-            return new ResponseEntity<>(new ErrorResponse(bindingResult.getAllErrors().stream()
-                    .map(ObjectError::getDefaultMessage)
-                    .map(Errors::valueOf)
-                    .map(Errors::getNumValue)
-                    .collect(Collectors.toList())),
-                    HttpStatus.NOT_ACCEPTABLE);
+            return new ResponseEntity<>(
+                    new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS), HttpStatus.NOT_ACCEPTABLE);
         } else{
             try {
-                if(projectService.setName(id, requestDTO, provider.getLoginFromToken()))
+                if(projectService.setData(id, request, provider.getLoginFromToken()))
                     return new ResponseEntity<>(HttpStatus.OK);
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             } catch (NoSuchElementException e){

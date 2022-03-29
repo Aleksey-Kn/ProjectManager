@@ -2,7 +2,7 @@ package ru.manager.ProgectManager.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.manager.ProgectManager.DTO.request.NameRequest;
+import ru.manager.ProgectManager.DTO.request.ProjectDataRequest;
 import ru.manager.ProgectManager.entitys.Kanban;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.User;
@@ -65,11 +65,16 @@ public class ProjectService {
         return Optional.empty();
     }
 
-    public Project addProject(NameRequest requestDTO, String userLogin) {
+    public Project addProject(ProjectDataRequest request, String userLogin) {
         User owner = userRepository.findByUsername(userLogin);
 
         Project project = new Project();
-        project.setName(requestDTO.getName());
+        project.setName(request.getName());
+        project.setStatus(request.getStatus());
+        project.setStatusColor(request.getStatusColor());
+        project.setDescription(request.getDescription());
+        project.setStartDate(request.getStartDate());
+        project.setDeadline(request.getDeadline());
 
         UserWithProjectConnector connector = new UserWithProjectConnector();
         connector.setAdmin(true);
@@ -101,13 +106,18 @@ public class ProjectService {
         return false;
     }
 
-    public boolean setName(long id, NameRequest name, String userLogin) {
+    public boolean setData(long id, ProjectDataRequest request, String userLogin) {
         Project project = projectRepository.findById(id).get();
         User admin = userRepository.findByUsername(userLogin);
         if (project.getConnectors().stream()
                 .filter(UserWithProjectConnector::isAdmin)
                 .anyMatch(c -> c.getUser().equals(admin))) {
-            project.setName(name.getName());
+            project.setName(request.getName());
+            project.setStatus(request.getStatus());
+            project.setStatusColor(request.getStatusColor());
+            project.setDescription(request.getDescription());
+            project.setStartDate(request.getStartDate());
+            project.setDeadline(request.getDeadline());
             projectRepository.save(project);
             return true;
         }

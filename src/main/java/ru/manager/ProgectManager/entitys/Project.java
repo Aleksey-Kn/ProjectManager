@@ -26,6 +26,21 @@ public class Project {
     @Column
     private String datatypePhoto;
 
+    @Column
+    private String description;
+
+    @Column
+    private String status;
+
+    @Column
+    private String statusColor;
+
+    @Column
+    private String startDate;
+
+    @Column
+    private String deadline;
+
     @JsonIgnore
     @OneToMany
     private List<UserWithProjectConnector> connectors;

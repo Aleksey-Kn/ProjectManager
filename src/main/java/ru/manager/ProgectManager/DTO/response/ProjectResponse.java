@@ -21,6 +21,16 @@ public class ProjectResponse {
     private final List<PublicUserDataResponse> participants;
     @Schema(description = "Тип данных фотографии")
     private final String datatypePhoto;
+    @Schema(description = "Описание проекта")
+    private final String description;
+    @Schema(description = "Статус проекта")
+    private final String status;
+    @Schema(description = "Цвет статуса проекта")
+    private final String statusColor;
+    @Schema(description = "Дата начала проекта")
+    private final String startDate;
+    @Schema(description = "Дедлайн проекта")
+    private final String deadline;
 
     public ProjectResponse(Project project){
         name = project.getName();
@@ -31,5 +41,10 @@ public class ProjectResponse {
                 .map(PublicUserDataResponse::new)
                 .collect(Collectors.toList());
         datatypePhoto = project.getDatatypePhoto();
+        description = project.getDescription();
+        status = project.getStatus();
+        statusColor = project.getStatusColor();
+        startDate = project.getStartDate();
+        deadline = project.getDeadline();
     }
 }
