@@ -33,6 +33,7 @@ public class ArchiveAndTrashService {
 
         KanbanColumn column = element.getKanbanColumn();
         column.getElements().remove(element);
+        elementRepository.delete(element);
         columnRepository.save(column);
     }
 
