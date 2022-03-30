@@ -20,7 +20,7 @@ public class UserDTO {
     @Schema(description = "Пароль пользователя")
     private String password;
     @Email(message = "EMAIL_HAVE_INCORRECT_FORMAT")
-    @Schema(description = "Электронная почта пользователя")
+    @Schema(description = "Электронная почта пользователя", required = true)
     private String email;
     @NotBlank(message = "NICKNAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS")
     @Schema(description = "Отображаемое имя пользователя")
