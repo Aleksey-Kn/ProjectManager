@@ -48,7 +48,6 @@ public class ProjectService {
         Project project = kanban.getProject();
         if (userRepository.findByUsername(userLogin).getUserWithProjectConnectors()
                 .stream().anyMatch(c -> c.getProject().equals(project))) {
-            kanban.setProject(null);
             project.getKanbans().remove(kanban);
             projectRepository.save(project);
             return true;
@@ -154,7 +153,10 @@ public class ProjectService {
             project.getConnectors().clear();
             removable.stream()
                     .map(UserWithProjectConnector::getUser)
-                    .forEach(u -> u.getUserWithProjectConnectors().removeIf(c -> c.getProject().equals(project)));
+                    .forEach(u -> {
+                        u.getUserWithProjectConnectors().removeIf(c -> c.getProject().equals(project));
+                        userRepository.save(u);
+                    });
             connectorRepository.deleteAll(removable);
             projectRepository.delete(project);
             return true;

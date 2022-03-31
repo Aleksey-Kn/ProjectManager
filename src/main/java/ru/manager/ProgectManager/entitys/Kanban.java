@@ -22,7 +22,7 @@ public class Kanban {
     private List<KanbanColumn> kanbanColumns;
 
     @JsonIgnore
-    @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @ManyToOne
     @JoinColumn(name = "project_id")
     private Project project;
 }

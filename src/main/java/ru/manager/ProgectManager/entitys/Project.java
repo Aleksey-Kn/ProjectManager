@@ -46,7 +46,7 @@ public class Project {
     private List<UserWithProjectConnector> connectors;
 
     @JsonIgnore
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Kanban> kanbans;
 
     @Override
