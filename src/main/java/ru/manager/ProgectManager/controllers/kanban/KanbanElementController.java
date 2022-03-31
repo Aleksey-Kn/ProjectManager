@@ -19,7 +19,6 @@ import ru.manager.ProgectManager.DTO.request.UpdateKanbanElementRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.KanbanColumnResponse;
 import ru.manager.ProgectManager.DTO.response.KanbanElementContentResponse;
-import ru.manager.ProgectManager.DTO.response.KanbanResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.KanbanColumn;
 import ru.manager.ProgectManager.entitys.KanbanElement;
@@ -229,10 +228,7 @@ public class KanbanElementController {
                             @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ErrorResponse.class))
                     }),
-            @ApiResponse(responseCode = "200", description = "Канбан доска с учётом внесённых изменений", content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = KanbanResponse.class))
-            }),
+            @ApiResponse(responseCode = "200", description = "Указанный элемент успешно перенесён"),
             @ApiResponse(responseCode = "410",
                     description = "Операция недоступна, поскольку элемент перемещён в корзину или архив", content = {
                     @Content(mediaType = "application/json",
@@ -253,12 +249,7 @@ public class KanbanElementController {
         } else {
             try {
                 if (kanbanElementService.transportElement(transportElementRequest, provider.getLoginFromToken())) {
-                    return ResponseEntity.ok(
-                            new KanbanResponse(kanbanElementService.findKanbanFromElement(transportElementRequest.getId()),
-                                    transportElementRequest.getPageColumnIndex(),
-                                    transportElementRequest.getCountColumn(),
-                                    transportElementRequest.getPageElementIndex(),
-                                    transportElementRequest.getCountElement()));
+                    return new ResponseEntity<>(HttpStatus.OK);
                 }
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             } catch (NoSuchElementException e) {

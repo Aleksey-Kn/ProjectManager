@@ -182,10 +182,7 @@ public class KanbanColumnController {
                             @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ErrorResponse.class))
                     }),
-            @ApiResponse(responseCode = "200", description = "Канбан доска с учётом внесённых изменений", content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = KanbanResponse.class))
-            })
+            @ApiResponse(responseCode = "200", description = "Указанный столбец успешно перенесён")
     })
     @PutMapping("/transport")
     public ResponseEntity<?> transportColumn(@RequestBody @Valid TransportColumnRequest transportColumnRequest,
@@ -202,10 +199,7 @@ public class KanbanColumnController {
             String login = provider.getLoginFromToken();
             try {
                 if (kanbanColumnService.transportColumn(transportColumnRequest, login)) {
-                    return ResponseEntity.ok(
-                            new KanbanResponse(kanbanColumnService.findKanbanFromColumn(transportColumnRequest.getId()),
-                                    transportColumnRequest.getPageColumnIndex(), transportColumnRequest.getCountColumn(),
-                                    transportColumnRequest.getPageElementIndex(), transportColumnRequest.getCountElement()));
+                    return new ResponseEntity<>(HttpStatus.OK);
                 }
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             } catch (NoSuchElementException e) {
