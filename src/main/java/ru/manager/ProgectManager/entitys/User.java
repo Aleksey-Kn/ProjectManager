@@ -9,8 +9,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
 import java.util.Collection;
-import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -43,10 +43,10 @@ public class User implements UserDetails {
     @ManyToMany
     @JoinTable(name = "user_role", joinColumns = {@JoinColumn(name = "user_key")},
             inverseJoinColumns = {@JoinColumn(name = "role_key")})
-    private List<Role> userWithRoleConnectors;
+    private Set<Role> userWithRoleConnectors;
 
     @OneToMany
-    private List<UserWithProjectConnector> userWithProjectConnectors;
+    private Set<UserWithProjectConnector> userWithProjectConnectors;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

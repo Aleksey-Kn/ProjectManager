@@ -6,6 +6,7 @@ import lombok.Setter;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import java.util.Objects;
 
 @Entity
 @Getter
@@ -19,4 +20,17 @@ public class TimeRemover {
 
     @Column(nullable = false)
     private boolean hard;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TimeRemover that = (TimeRemover) o;
+        return removerId == that.removerId;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(removerId);
+    }
 }

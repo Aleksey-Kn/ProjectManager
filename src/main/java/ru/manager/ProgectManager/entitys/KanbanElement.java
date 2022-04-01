@@ -5,7 +5,8 @@ import lombok.Setter;
 import ru.manager.ProgectManager.enums.ElementStatus;
 
 import javax.persistence.*;
-import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Table(name = "kanban_element")
@@ -46,12 +47,25 @@ public class KanbanElement {
     private ElementStatus status;
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true)
-    private List<KanbanAttachment> kanbanAttachments;
+    private Set<KanbanAttachment> kanbanAttachments;
 
     @ManyToOne
     @JoinColumn(name = "kanban_column_id")
     private KanbanColumn kanbanColumn;
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true)
-    private List<KanbanElementComment> comments;
+    private Set<KanbanElementComment> comments;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        KanbanElement element = (KanbanElement) o;
+        return id == element.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 }
