@@ -1,6 +1,7 @@
 package ru.manager.ProgectManager.entitys;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.Hibernate;
 
 import javax.persistence.Column;
@@ -11,7 +12,6 @@ import java.util.Objects;
 @Entity
 @Getter
 @Setter
-@RequiredArgsConstructor
 public class RefreshToken {
     @Id
     private String token;
@@ -32,6 +32,6 @@ public class RefreshToken {
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return Objects.hash(token);
     }
 }

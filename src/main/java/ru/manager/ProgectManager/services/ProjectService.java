@@ -7,6 +7,7 @@ import ru.manager.ProgectManager.entitys.Kanban;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.User;
 import ru.manager.ProgectManager.entitys.UserWithProjectConnector;
+import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.repositories.KanbanRepository;
 import ru.manager.ProgectManager.repositories.ProjectRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
@@ -76,7 +77,7 @@ public class ProjectService {
         project.setDeadline(request.getDeadline());
 
         UserWithProjectConnector connector = new UserWithProjectConnector();
-        connector.setAdmin(true);
+        connector.setRoleType(TypeRoleProject.ADMIN);
         connector = connectorRepository.save(connector);
 
         project.setConnectors(Collections.singletonList(connector));
@@ -95,7 +96,7 @@ public class ProjectService {
         User admin = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(id).get();
         if (project.getConnectors().stream()
-                .filter(UserWithProjectConnector::isAdmin)
+                .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
                 .anyMatch(c -> c.getUser().equals(admin))) {
             project.setPhoto(photo);
             project.setDatatypePhoto(new MimetypesFileTypeMap().getContentType(filename));
@@ -109,7 +110,7 @@ public class ProjectService {
         Project project = projectRepository.findById(id).get();
         User admin = userRepository.findByUsername(userLogin);
         if (project.getConnectors().stream()
-                .filter(UserWithProjectConnector::isAdmin)
+                .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
                 .anyMatch(c -> c.getUser().equals(admin))) {
             project.setName(request.getName());
             project.setStatus(request.getStatus());
@@ -147,7 +148,7 @@ public class ProjectService {
         User admin = userRepository.findByUsername(adminLogin);
         Project project = projectRepository.findById(id).get();
         if (project.getConnectors().stream()
-                .filter(UserWithProjectConnector::isAdmin)
+                .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
                 .anyMatch(c -> c.getUser().equals(admin))) {
             List<UserWithProjectConnector> removable = new LinkedList<>(project.getConnectors());
             project.getConnectors().clear();

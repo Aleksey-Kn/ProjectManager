@@ -2,8 +2,10 @@ package ru.manager.ProgectManager.entitys;
 
 import lombok.Getter;
 import lombok.Setter;
+import ru.manager.ProgectManager.enums.TypeRoleProject;
 
 import javax.persistence.*;
+import java.util.List;
 
 @Entity
 @Getter
@@ -13,8 +15,13 @@ public class UserWithProjectConnector {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
 
-    @Column(nullable = false)
-    private boolean isAdmin;
+    @Enumerated
+    private TypeRoleProject roleType;
+
+    private boolean canEditResource;
+
+    @OneToMany
+    private List<KanbanConnector> kanbanConnectors;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

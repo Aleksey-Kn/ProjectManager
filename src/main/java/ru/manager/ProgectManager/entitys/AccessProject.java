@@ -1,6 +1,7 @@
 package ru.manager.ProgectManager.entitys;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.Hibernate;
 
 import javax.persistence.*;
@@ -9,7 +10,6 @@ import java.util.Objects;
 @Entity
 @Getter
 @Setter
-@RequiredArgsConstructor
 public class AccessProject {
     @Id
     private String code;
@@ -37,6 +37,6 @@ public class AccessProject {
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return Objects.hash(code);
     }
 }

@@ -9,6 +9,7 @@ import ru.manager.ProgectManager.DTO.request.TransportElementRequest;
 import ru.manager.ProgectManager.DTO.request.UpdateKanbanElementRequest;
 import ru.manager.ProgectManager.entitys.*;
 import ru.manager.ProgectManager.enums.ElementStatus;
+import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.IncorrectStatusException;
 import ru.manager.ProgectManager.repositories.*;
 
@@ -207,7 +208,7 @@ public class KanbanElementService {
         KanbanElementComment comment = commentRepository.findById(id).get();
         if (comment.getOwner().equals(user)
                 || comment.getKanbanElement().getKanbanColumn().getKanban().getProject().getConnectors().stream()
-                .filter(UserWithProjectConnector::isAdmin)
+                .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
                 .anyMatch(c -> c.getUser().equals(user))) {
             if(comment.getKanbanElement().getStatus() == ElementStatus.UTILISE)
                 throw new IncorrectStatusException();
