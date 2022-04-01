@@ -6,6 +6,7 @@ import ru.manager.ProgectManager.entitys.AccessProject;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.User;
 import ru.manager.ProgectManager.entitys.UserWithProjectConnector;
+import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.repositories.AccessProjectRepository;
 import ru.manager.ProgectManager.repositories.ProjectRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
@@ -34,7 +35,7 @@ public class AccessService {
         if (hasAdmin && !disposable)
             throw new IllegalArgumentException();
         if (user.getUserWithProjectConnectors().stream()
-                .filter(UserWithProjectConnector::isAdmin)
+                .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
                 .anyMatch(c -> c.getProject().equals(project))) {
             AccessProject accessProject = new AccessProject();
             accessProject.setProject(project);
@@ -58,12 +59,12 @@ public class AccessService {
             if(user.getUserWithProjectConnectors().stream().noneMatch(c -> c.getProject().equals(project))
                     || user.getUserWithProjectConnectors().stream()
                     .filter(c -> c.getProject().equals(project))
-                    .noneMatch(UserWithProjectConnector::isAdmin)
+                    .noneMatch(c -> c.getRoleType() == TypeRoleProject.ADMIN)
                     && accessProject.isAdmin()) {
                 UserWithProjectConnector connector = new UserWithProjectConnector();
                 connector.setUser(user);
                 connector.setProject(project);
-                connector.setAdmin(accessProject.isAdmin());
+                connector.setRoleType(TypeRoleProject.ADMIN);
                 connector = connectorRepository.save(connector);
 
                 project.getConnectors().add(connector);

@@ -5,7 +5,7 @@ import lombok.Setter;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 
 import javax.persistence.*;
-import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -21,7 +21,7 @@ public class UserWithProjectConnector {
     private boolean canEditResource;
 
     @OneToMany
-    private List<KanbanConnector> kanbanConnectors;
+    private Set<KanbanConnector> kanbanConnectors;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

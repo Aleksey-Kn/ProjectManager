@@ -6,6 +6,7 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import java.util.List;
+import java.util.Objects;
 
 @Entity
 @Getter
@@ -25,4 +26,17 @@ public class Kanban {
     @ManyToOne
     @JoinColumn(name = "project_id")
     private Project project;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Kanban kanban = (Kanban) o;
+        return id == kanban.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 }
