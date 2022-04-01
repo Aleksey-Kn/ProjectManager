@@ -15,10 +15,7 @@ import ru.manager.ProgectManager.repositories.UserWithProjectConnectorRepository
 
 import javax.activation.MimetypesFileTypeMap;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -80,7 +77,7 @@ public class ProjectService {
         connector.setRoleType(TypeRoleProject.ADMIN);
         connector = connectorRepository.save(connector);
 
-        project.setConnectors(Collections.singletonList(connector));
+        project.setConnectors(Collections.singleton(connector));
         project = projectRepository.save(project);
 
         owner.getUserWithProjectConnectors().add(connector);
@@ -134,7 +131,7 @@ public class ProjectService {
         }
     }
 
-    public Optional<List<Kanban>> findAllKanban(long id, String userLogin) {
+    public Optional<Set<Kanban>> findAllKanban(long id, String userLogin) {
         Project project = projectRepository.findById(id).get();
         User user = userRepository.findByUsername(userLogin);
         if (project.getConnectors().stream().anyMatch(p -> p.getUser().equals(user))) {

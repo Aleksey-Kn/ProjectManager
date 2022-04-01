@@ -2,44 +2,69 @@ package ru.manager.ProgectManager.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.manager.ProgectManager.entitys.AccessProject;
-import ru.manager.ProgectManager.entitys.Project;
-import ru.manager.ProgectManager.entitys.User;
-import ru.manager.ProgectManager.entitys.UserWithProjectConnector;
+import ru.manager.ProgectManager.DTO.request.CreateCustomRoleRequest;
+import ru.manager.ProgectManager.entitys.*;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
-import ru.manager.ProgectManager.repositories.AccessProjectRepository;
-import ru.manager.ProgectManager.repositories.ProjectRepository;
-import ru.manager.ProgectManager.repositories.UserRepository;
-import ru.manager.ProgectManager.repositories.UserWithProjectConnectorRepository;
+import ru.manager.ProgectManager.exception.NoSuchResourceException;
+import ru.manager.ProgectManager.repositories.*;
 
 import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 
 @Service
 @RequiredArgsConstructor
-public class AccessService {
+public class AccessProjectService {
     private final UserRepository userRepository;
+    private final KanbanRepository kanbanRepository;
     private final AccessProjectRepository accessProjectRepository;
     private final ProjectRepository projectRepository;
     private final UserWithProjectConnectorRepository connectorRepository;
+    private final CustomProjectRoleRepository customProjectRoleRepository;
+    private final KanbanConnectorRepository kanbanConnectorRepository;
+
+    public boolean createCustomRole(long projectId, CreateCustomRoleRequest request, String userLogin){
+        User user = userRepository.findByUsername(userLogin);
+        Project project = projectRepository.findById(projectId).get();
+        if(user.getUserWithProjectConnectors().stream().filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
+                .anyMatch(c -> c.getProject().equals(project))) {
+            CustomProjectRole customProjectRole = new CustomProjectRole();
+            customProjectRole.setName(request.getName());
+            customProjectRole.setCanEditResources(request.isCanEditResource());
+            customProjectRole.setKanbanConnectors(request.getKanbanConnectorRequests().stream().map(kr -> {
+                KanbanConnector kanbanConnector = new KanbanConnector();
+                kanbanConnector.setCanEdit(kr.isCanEdit());
+                kanbanConnector.setKanban(kanbanRepository.findById(kr.getId())
+                        .orElseThrow(() -> new NoSuchResourceException(Long.toString(kr.getId()))));
+                return kanbanConnectorRepository.save(kanbanConnector);
+            }).collect(Collectors.toSet()));
+            return true;
+        }
+        return false;
+    }
 
     public Optional<AccessProject> generateTokenForAccessProject(String fromUser,
                                                           long projectId,
-                                                          boolean hasAdmin,
+                                                          TypeRoleProject typeRoleProject,
+                                                          String customProjectRoleName,
                                                           boolean disposable,
                                                           int liveTime) {
         User user = userRepository.findByUsername(fromUser);
         Project project = projectRepository.findById(projectId).get();
-        if (hasAdmin && !disposable)
+        if (typeRoleProject == TypeRoleProject.ADMIN && !disposable)
             throw new IllegalArgumentException();
         if (user.getUserWithProjectConnectors().stream()
                 .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
                 .anyMatch(c -> c.getProject().equals(project))) {
             AccessProject accessProject = new AccessProject();
             accessProject.setProject(project);
-            accessProject.setAdmin(hasAdmin);
+            accessProject.setTypeRoleProject(typeRoleProject);
+            if(typeRoleProject == TypeRoleProject.CUSTOM_ROLE) {
+                accessProject.setProjectRole(customProjectRoleRepository.findByName(customProjectRoleName)
+                        .orElseThrow(() -> new NoSuchResourceException(customProjectRoleName)));
+            }
             accessProject.setDisposable(disposable);
             accessProject.setCode(UUID.randomUUID().toString());
             accessProject.setTimeForDie(LocalDate.now().plusDays(liveTime).toEpochDay());
@@ -60,11 +85,12 @@ public class AccessService {
                     || user.getUserWithProjectConnectors().stream()
                     .filter(c -> c.getProject().equals(project))
                     .noneMatch(c -> c.getRoleType() == TypeRoleProject.ADMIN)
-                    && accessProject.isAdmin()) {
+                    && accessProject.getTypeRoleProject() == TypeRoleProject.ADMIN) {
                 UserWithProjectConnector connector = new UserWithProjectConnector();
                 connector.setUser(user);
                 connector.setProject(project);
-                connector.setRoleType(TypeRoleProject.ADMIN);
+                connector.setRoleType(accessProject.getTypeRoleProject());
+                connector.setCustomProjectRole(accessProject.getProjectRole());
                 connector = connectorRepository.save(connector);
 
                 project.getConnectors().add(connector);

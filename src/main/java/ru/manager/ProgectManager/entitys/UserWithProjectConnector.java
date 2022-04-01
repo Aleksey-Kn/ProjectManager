@@ -6,7 +6,6 @@ import ru.manager.ProgectManager.enums.TypeRoleProject;
 
 import javax.persistence.*;
 import java.util.Objects;
-import java.util.Set;
 
 @Entity
 @Getter
@@ -19,10 +18,9 @@ public class UserWithProjectConnector {
     @Enumerated
     private TypeRoleProject roleType;
 
-    private boolean canEditResource;
-
-    @OneToMany
-    private Set<KanbanConnector> kanbanConnectors;
+    @ManyToOne
+    @JoinColumn(name = "project_role_id")
+    private CustomProjectRole customProjectRole;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

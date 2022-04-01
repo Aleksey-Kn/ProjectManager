@@ -26,9 +26,9 @@ import ru.manager.ProgectManager.services.ProjectService;
 
 import javax.validation.Valid;
 import java.io.IOException;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
@@ -170,7 +170,7 @@ public class ProjectController {
     public ResponseEntity<?> allKanbanOfThisUser(@RequestParam @Parameter(description = "Идентификатор проекта")
                                                               long id){
         try {
-            Optional<List<Kanban>> kanbans = projectService.findAllKanban(id, provider.getLoginFromToken());
+            Optional<Set<Kanban>> kanbans = projectService.findAllKanban(id, provider.getLoginFromToken());
             if (kanbans.isPresent()) {
                 return ResponseEntity.ok(new KanbanListResponse(kanbans.get()));
             } else {

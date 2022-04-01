@@ -38,7 +38,7 @@ public class UserService {
             user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
             user.setEmail(userDTO.getEmail());
             user.setNickname(userDTO.getNickname());
-            user.setUserWithRoleConnectors(Collections.singletonList(role));
+            user.setUserWithRoleConnectors(Collections.singleton(role));
 
             return Optional.of(userRepository.save(user));
         }

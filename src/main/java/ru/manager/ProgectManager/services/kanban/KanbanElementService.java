@@ -11,6 +11,7 @@ import ru.manager.ProgectManager.entitys.*;
 import ru.manager.ProgectManager.enums.ElementStatus;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.IncorrectStatusException;
+import ru.manager.ProgectManager.exception.NoSuchResourceException;
 import ru.manager.ProgectManager.repositories.*;
 
 import java.io.IOException;
@@ -19,8 +20,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @RequiredArgsConstructor
 @Service
@@ -86,7 +87,7 @@ public class KanbanElementService {
                 .anyMatch(c -> c.getUser().equals(user))) {
             if (element.getStatus() == ElementStatus.ALIVE) {
                 if (fromColumn.getId() == request.getToColumn()) {
-                    List<KanbanElement> allElements = fromColumn.getElements();
+                    Set<KanbanElement> allElements = fromColumn.getElements();
                     if (request.getToIndex() >= allElements.size())
                         throw new IllegalArgumentException();
                     if (request.getToIndex() > from) {
@@ -106,8 +107,8 @@ public class KanbanElementService {
                     elementRepository.saveAll(allElements);
                 } else {
                     KanbanColumn toColumn = columnRepository.findById((long) request.getToColumn()).get();
-                    List<KanbanElement> fromColumnElements = fromColumn.getElements();
-                    List<KanbanElement> toColumnElements = toColumn.getElements();
+                    Set<KanbanElement> fromColumnElements = fromColumn.getElements();
+                    Set<KanbanElement> toColumnElements = toColumn.getElements();
                     fromColumnElements.stream()
                             .filter(e -> e.getSerialNumber() > from)
                             .forEach(e -> e.setSerialNumber(e.getSerialNumber() - 1));
@@ -145,7 +146,8 @@ public class KanbanElementService {
                 timeRemover = new TimeRemover();
                 timeRemover.setRemoverId(element.getId());
             } else{ // если пользователь улаляет элемент из колонки с регулярным удалением вручную, то удалитель уже есть
-                timeRemover = timeRemoverRepository.findById(element.getId()).orElseThrow(NullPointerException::new);
+                timeRemover = timeRemoverRepository.findById(element.getId())
+                        .orElseThrow(() -> new NoSuchResourceException("Remover " + element.getId()));
             }
             timeRemover.setHard(true);
             timeRemover.setTimeToDelete(LocalDate.now().plusDays(6).toEpochDay());
@@ -159,7 +161,8 @@ public class KanbanElementService {
 
     public void utiliseElementFromSystem(long id){
         // при автоматическом перемещении элемента в корзину не происходит удаления timeRemover, поэтому подтягиваем его и только меняем данные
-        TimeRemover timeRemover = timeRemoverRepository.findById(id).orElseThrow(NullPointerException::new);
+        TimeRemover timeRemover = timeRemoverRepository.findById(id)
+                .orElse(new TimeRemover());
         timeRemover.setHard(true);
         timeRemover.setTimeToDelete(LocalDate.now().plusDays(6).toEpochDay());
         timeRemoverRepository.save(timeRemover);

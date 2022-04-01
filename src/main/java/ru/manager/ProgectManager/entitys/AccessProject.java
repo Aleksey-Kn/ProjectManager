@@ -3,6 +3,7 @@ package ru.manager.ProgectManager.entitys;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.Hibernate;
+import ru.manager.ProgectManager.enums.TypeRoleProject;
 
 import javax.persistence.*;
 import java.util.Objects;
@@ -14,8 +15,12 @@ public class AccessProject {
     @Id
     private String code;
 
-    @Column
-    private boolean isAdmin;
+    @Enumerated
+    private TypeRoleProject typeRoleProject;
+
+    @ManyToOne
+    @JoinColumn(name = "project_role_id")
+    private CustomProjectRole projectRole;
 
     @Column
     private boolean disposable;

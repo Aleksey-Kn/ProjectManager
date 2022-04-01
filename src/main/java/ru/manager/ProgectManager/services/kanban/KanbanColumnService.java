@@ -10,9 +10,10 @@ import ru.manager.ProgectManager.enums.SortType;
 import ru.manager.ProgectManager.repositories.*;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -28,7 +29,7 @@ public class KanbanColumnService {
         KanbanColumn column = columnRepository.findById(request.getId()).get();
         int from = column.getSerialNumber();
         if (column.getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))) {
-            List<KanbanColumn> allColumns = column.getKanban().getKanbanColumns();
+            Set<KanbanColumn> allColumns = column.getKanban().getKanbanColumns();
             if (request.getTo() >= allColumns.size())
                 throw new IllegalArgumentException();
             if (request.getTo() > from) {
@@ -112,12 +113,12 @@ public class KanbanColumnService {
             if(sortRequest.isReverse()){
                 comparator = comparator.reversed();
             }
-            List<KanbanElement> elements = column.getElements();
-            elements.sort(comparator);
-            for(int i = 0; i < elements.size(); i++){
-                elements.get(i).setSerialNumber(i);
+            KanbanElement[] elements = column.getElements().toArray(KanbanElement[]::new);
+            Arrays.sort(elements, comparator);
+            for(int i = 0; i < elements.length; i++){
+                elements[i].setSerialNumber(i);
             }
-            elementRepository.saveAll(elements);
+            elementRepository.saveAll(Set.of(elements));
             return Optional.of(column);
         } else{
             return Optional.empty();
