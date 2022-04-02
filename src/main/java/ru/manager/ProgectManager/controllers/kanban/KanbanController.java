@@ -19,8 +19,8 @@ import ru.manager.ProgectManager.DTO.response.KanbanResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.Kanban;
 import ru.manager.ProgectManager.enums.Errors;
+import ru.manager.ProgectManager.services.AccessProjectService;
 import ru.manager.ProgectManager.services.ProjectService;
-import ru.manager.ProgectManager.services.kanban.KanbanColumnService;
 
 import javax.validation.Valid;
 import java.util.NoSuchElementException;
@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 @Tag(name = "Манипуляции с канбан-доской")
 public class KanbanController {
     private final ProjectService projectService;
-    private final KanbanColumnService kanbanColumnService;
+    private final AccessProjectService accessProjectService;
     private final JwtProvider provider;
 
     @Operation(summary = "Добавление новой канбан-доски в проект")
@@ -110,11 +110,13 @@ public class KanbanController {
                     HttpStatus.NOT_ACCEPTABLE);
         } else {
             try {
-                Optional<Kanban> result = projectService.findKanban(kanbanRequest.getId(), provider.getLoginFromToken());
+                String login = provider.getLoginFromToken();
+                Optional<Kanban> result = projectService.findKanban(kanbanRequest.getId(), login);
                 if (result.isPresent()) {
                     return ResponseEntity.ok(new KanbanResponse(result.get(),
                             kanbanRequest.getPageColumnIndex(), kanbanRequest.getCountColumn(),
-                            kanbanRequest.getPageElementIndex(), kanbanRequest.getCountElement()));
+                            kanbanRequest.getPageElementIndex(), kanbanRequest.getCountElement(),
+                            accessProjectService.canEditKanban(kanbanRequest.getId(), login)));
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }

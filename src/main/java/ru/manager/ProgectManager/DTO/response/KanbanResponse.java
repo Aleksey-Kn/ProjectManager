@@ -12,14 +12,16 @@ import java.util.stream.Collectors;
 @Getter
 @Schema(description = "Возвращаемая информация о канбане")
 public class KanbanResponse {
-    @Schema(description = "Список колонок канбана")
-    private final List<KanbanColumnResponse> kanbanColumns;
     @Schema(description = "Название канбана")
     private final String name;
     @Schema(description = "Идентификатор канбана")
     private final long id;
-
-    public KanbanResponse(Kanban kanban, int pageIndexColumn, int countColumn, int pageIndexElement, int countElement){
+    @Schema(description = "Может ли пользовватель изменять информацию в данной доске")
+    private final boolean canEdit;
+    @Schema(description = "Список колонок канбана")
+    private final List<KanbanColumnResponse> kanbanColumns;
+    public KanbanResponse(Kanban kanban, int pageIndexColumn, int countColumn, int pageIndexElement, int countElement,
+                          boolean canEditKanban){
         kanbanColumns = kanban.getKanbanColumns().stream()
                 .sorted(Comparator.comparing(KanbanColumn::getSerialNumber))
                 .map(kanbanColumn -> new KanbanColumnResponse(kanbanColumn, pageIndexElement, countElement))
@@ -28,5 +30,6 @@ public class KanbanResponse {
                 .collect(Collectors.toList());
         name = kanban.getName();
         id = kanban.getId();
+        canEdit = canEditKanban;
     }
 }

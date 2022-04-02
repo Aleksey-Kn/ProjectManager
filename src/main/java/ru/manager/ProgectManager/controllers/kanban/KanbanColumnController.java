@@ -159,7 +159,7 @@ public class KanbanColumnController {
                 if (kanbanColumnService.deleteColumn(request.getId(), login)) {
                     return ResponseEntity.ok(new KanbanResponse(kanbanColumnService.findKanbanFromColumn(request.getId()),
                             request.getPageColumnIndex(), request.getCountColumn(),
-                            request.getPageElementIndex(), request.getCountElement()));
+                            request.getPageElementIndex(), request.getCountElement(), true));
                 }
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             } catch (NoSuchElementException e) {

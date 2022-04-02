@@ -73,7 +73,7 @@ public class AccessProjectService {
         }
     }
 
-    public boolean changeRole(long projectId, long roleId, CreateCustomRoleRequest newCustomRole, String userLogin){
+    public boolean changeRole(long projectId, long roleId, CreateCustomRoleRequest newCustomRole, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(projectId).get();
         if (user.getUserWithProjectConnectors().stream().filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
@@ -86,12 +86,12 @@ public class AccessProjectService {
             setCustomProjectRoleData(customProjectRole, newCustomRole);
             customProjectRoleRepository.save(customProjectRole);
             return true;
-        } else{
+        } else {
             return false;
         }
     }
 
-    private void setCustomProjectRoleData(CustomProjectRole customProjectRole, CreateCustomRoleRequest request){
+    private void setCustomProjectRoleData(CustomProjectRole customProjectRole, CreateCustomRoleRequest request) {
         customProjectRole.setName(request.getName());
         customProjectRole.setCanEditResources(request.isCanEditResource());
         customProjectRole.setKanbanConnectors(request.getKanbanConnectorRequests().stream().map(kr -> {
@@ -104,7 +104,7 @@ public class AccessProjectService {
     }
 
     public boolean editUserRole(long projectId, TypeRoleProject typeRoleProject, long customRoleId, long userId,
-                                String adminLogin){
+                                String adminLogin) {
         User admin = userRepository.findByUsername(adminLogin);
         Project project = projectRepository.findById(projectId).get();
         if (admin.getUserWithProjectConnectors().stream().filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
@@ -114,11 +114,11 @@ public class AccessProjectService {
             UserWithProjectConnector connector = targetUser.getUserWithProjectConnectors().stream()
                     .filter(c -> c.getProject().equals(project)).findAny().orElseThrow(IllegalArgumentException::new);
             connector.setRoleType(typeRoleProject);
-            if(typeRoleProject == TypeRoleProject.CUSTOM_ROLE){
+            if (typeRoleProject == TypeRoleProject.CUSTOM_ROLE) {
                 connector.setCustomProjectRole(project.getAvailableRole().stream()
                         .filter(r -> r.getId() == customRoleId)
                         .findAny().orElseThrow(NullPointerException::new));
-            } else{
+            } else {
                 connector.setCustomProjectRole(null);
             }
             return true;
@@ -180,5 +180,15 @@ public class AccessProjectService {
             return true;
         }
         return false;
+    }
+
+    public boolean canEditKanban(long id, String userLogin) {
+        Kanban kanban = kanbanRepository.findById(id).get();
+        return userRepository.findByUsername(userLogin).getUserWithProjectConnectors().stream()
+                .filter(c -> c.getProject().getKanbans().contains(kanban))
+                .anyMatch(c -> (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                                || c.getCustomProjectRole().getKanbanConnectors().stream()
+                                .filter(KanbanConnector::isCanEdit)
+                                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))));
     }
 }
