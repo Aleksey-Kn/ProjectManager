@@ -8,10 +8,7 @@ import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.User;
 import ru.manager.ProgectManager.entitys.UserWithProjectConnector;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
-import ru.manager.ProgectManager.repositories.KanbanRepository;
-import ru.manager.ProgectManager.repositories.ProjectRepository;
-import ru.manager.ProgectManager.repositories.UserRepository;
-import ru.manager.ProgectManager.repositories.UserWithProjectConnectorRepository;
+import ru.manager.ProgectManager.repositories.*;
 
 import javax.activation.MimetypesFileTypeMap;
 import java.io.IOException;
@@ -24,6 +21,7 @@ public class ProjectService {
     private final UserRepository userRepository;
     private final UserWithProjectConnectorRepository connectorRepository;
     private final KanbanRepository kanbanRepository;
+    private final CustomProjectRoleRepository customProjectRoleRepository;
 
     public Optional<Kanban> createKanban(long projectId, String name, String userLogin) {
         Project project = projectRepository.findById(projectId).get();
@@ -46,6 +44,12 @@ public class ProjectService {
         Project project = kanban.getProject();
         if (userRepository.findByUsername(userLogin).getUserWithProjectConnectors()
                 .stream().anyMatch(c -> c.getProject().equals(project))) {
+            project.getAvailableRole().forEach(r -> {
+                if(r.getKanbanConnectors().stream().anyMatch(c -> c.getKanban().equals(kanban))) {
+                    r.getKanbanConnectors().removeIf(c -> c.getKanban().equals(kanban));
+                    customProjectRoleRepository.save(r);
+                }
+            });
             project.getKanbans().remove(kanban);
             projectRepository.save(project);
             return true;

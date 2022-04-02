@@ -22,7 +22,7 @@ public class CustomProjectRole {
     @Column
     private boolean canEditResources;
 
-    @OneToMany
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true)
     private Set<KanbanConnector> kanbanConnectors;
 
     @Override

@@ -2,11 +2,9 @@ package ru.manager.ProgectManager.services.kanban;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.manager.ProgectManager.entitys.Kanban;
-import ru.manager.ProgectManager.entitys.KanbanColumn;
-import ru.manager.ProgectManager.entitys.KanbanElement;
-import ru.manager.ProgectManager.entitys.User;
+import ru.manager.ProgectManager.entitys.*;
 import ru.manager.ProgectManager.enums.ElementStatus;
+import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.IncorrectStatusException;
 import ru.manager.ProgectManager.repositories.*;
 
@@ -40,8 +38,12 @@ public class ArchiveAndTrashService {
     public boolean archive(long id, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(id).get();
-        if (element.getKanbanColumn().getKanban().getProject().getConnectors().stream()
-                .anyMatch(c -> c.getUser().equals(user))) {
+        Kanban kanban = element.getKanbanColumn().getKanban();
+        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getKanbanConnectors().stream()
+                .filter(KanbanConnector::isCanEdit)
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
             if (element.getStatus() == ElementStatus.ARCHIVED)
                 throw new IncorrectStatusException();
 
@@ -63,8 +65,12 @@ public class ArchiveAndTrashService {
     public boolean reestablish(long id, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(id).get();
-        if (element.getKanbanColumn().getKanban().getProject().getConnectors().stream()
-                .anyMatch(c -> c.getUser().equals(user))) {
+        Kanban kanban = element.getKanbanColumn().getKanban();
+        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getKanbanConnectors().stream()
+                .filter(KanbanConnector::isCanEdit)
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
             if (element.getStatus() == ElementStatus.ALIVE)
                 throw new IncorrectStatusException();
 
@@ -83,28 +89,34 @@ public class ArchiveAndTrashService {
         }
     }
 
-    public Optional<List<KanbanElement>> findArchive(long kanbanId, String userLogin){
+    public Optional<List<KanbanElement>> findArchive(long kanbanId, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = kanbanRepository.findById(kanbanId).get();
-        if(kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
+        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getKanbanConnectors().stream()
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
             return Optional.of(kanban.getKanbanColumns().stream()
                     .flatMap(c -> c.getElements().stream())
                     .filter(e -> e.getStatus() == ElementStatus.ARCHIVED)
                     .collect(Collectors.toList()));
-        } else{
+        } else {
             return Optional.empty();
         }
     }
 
-    public Optional<List<KanbanElement>> findTrash(long kanbanId, String userLogin){
+    public Optional<List<KanbanElement>> findTrash(long kanbanId, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = kanbanRepository.findById(kanbanId).get();
-        if(kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
+        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getKanbanConnectors().stream()
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
             return Optional.of(kanban.getKanbanColumns().stream()
                     .flatMap(c -> c.getElements().stream())
                     .filter(e -> e.getStatus() == ElementStatus.UTILISE)
                     .collect(Collectors.toList()));
-        } else{
+        } else {
             return Optional.empty();
         }
     }

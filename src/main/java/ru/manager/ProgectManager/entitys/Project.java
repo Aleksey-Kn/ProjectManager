@@ -42,7 +42,11 @@ public class Project {
     private String deadline;
 
     @JsonIgnore
-    @OneToMany
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<CustomProjectRole> availableRole;
+
+    @JsonIgnore
+    @OneToMany(cascade = CascadeType.PERSIST)
     private Set<UserWithProjectConnector> connectors;
 
     @JsonIgnore
