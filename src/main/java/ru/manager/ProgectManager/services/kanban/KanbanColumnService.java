@@ -7,6 +7,7 @@ import ru.manager.ProgectManager.DTO.request.SortRequest;
 import ru.manager.ProgectManager.DTO.request.TransportColumnRequest;
 import ru.manager.ProgectManager.entitys.*;
 import ru.manager.ProgectManager.enums.SortType;
+import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.repositories.*;
 
 import java.time.LocalDate;
@@ -27,8 +28,13 @@ public class KanbanColumnService {
     public boolean transportColumn(TransportColumnRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         KanbanColumn column = columnRepository.findById(request.getId()).get();
+        Kanban kanban = column.getKanban();
         int from = column.getSerialNumber();
-        if (column.getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))) {
+        if (column.getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getKanbanConnectors().stream()
+                .filter(KanbanConnector::isCanEdit)
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
             Set<KanbanColumn> allColumns = column.getKanban().getKanbanColumns();
             if (request.getTo() >= allColumns.size())
                 throw new IllegalArgumentException();
@@ -54,7 +60,12 @@ public class KanbanColumnService {
     public Optional<KanbanColumn> renameColumn(long id, String name, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         KanbanColumn kanbanColumn = columnRepository.findById(id).get();
-        if (kanbanColumn.getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))) {
+        Kanban kanban = kanbanColumn.getKanban();
+        if (kanbanColumn.getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getKanbanConnectors().stream()
+                .filter(KanbanConnector::isCanEdit)
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
             kanbanColumn.setName(name);
             return Optional.of(columnRepository.save(kanbanColumn));
         }
@@ -65,7 +76,11 @@ public class KanbanColumnService {
         User user = userRepository.findByUsername(userLogin);
         KanbanColumn column = columnRepository.findById(id).get();
         Kanban kanban = column.getKanban();
-        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))) {
+        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getKanbanConnectors().stream()
+                .filter(KanbanConnector::isCanEdit)
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
             kanban.getKanbanColumns().stream()
                     .filter(kanbanColumn -> kanbanColumn.getSerialNumber() > column.getSerialNumber())
                     .forEach(kanbanColumn -> kanbanColumn.setSerialNumber(kanbanColumn.getSerialNumber() - 1));
@@ -81,7 +96,11 @@ public class KanbanColumnService {
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = kanbanRepository.findById(request.getKanbanId()).get();
         Project project = kanban.getProject();
-        if (user.getUserWithProjectConnectors().stream().anyMatch(c -> c.getProject().equals(project))) {
+        if (user.getUserWithProjectConnectors().stream().anyMatch(c -> c.getProject().equals(project)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getKanbanConnectors().stream()
+                .filter(KanbanConnector::isCanEdit)
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
             KanbanColumn kanbanColumn = new KanbanColumn();
             kanbanColumn.setName(request.getName());
             kanbanColumn.setKanban(kanban);
@@ -99,36 +118,46 @@ public class KanbanColumnService {
         return Optional.empty();
     }
 
-    public Optional<KanbanColumn> sortColumn(SortRequest sortRequest, String userLogin){
+    public Optional<KanbanColumn> sortColumn(SortRequest sortRequest, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         KanbanColumn column = columnRepository.findById(sortRequest.getId()).get();
-        if(column.getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
+        Kanban kanban = column.getKanban();
+        if (column.getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getKanbanConnectors().stream()
+                .filter(KanbanConnector::isCanEdit)
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
             Comparator<KanbanElement> comparator;
-            if(sortRequest.getType() == SortType.ALPHABET){
+            if (sortRequest.getType() == SortType.ALPHABET) {
                 comparator = Comparator.comparing(KanbanElement::getName);
             } else {
-                comparator = Comparator.comparing(sortRequest.getType() == SortType.TIME_CREATE?
-                        KanbanElement::getTimeOfCreate: KanbanElement::getTimeOfUpdate);
+                comparator = Comparator.comparing(sortRequest.getType() == SortType.TIME_CREATE ?
+                        KanbanElement::getTimeOfCreate : KanbanElement::getTimeOfUpdate);
             }
-            if(sortRequest.isReverse()){
+            if (sortRequest.isReverse()) {
                 comparator = comparator.reversed();
             }
             KanbanElement[] elements = column.getElements().toArray(KanbanElement[]::new);
             Arrays.sort(elements, comparator);
-            for(int i = 0; i < elements.length; i++){
+            for (int i = 0; i < elements.length; i++) {
                 elements[i].setSerialNumber(i);
             }
             elementRepository.saveAll(Set.of(elements));
             return Optional.of(column);
-        } else{
+        } else {
             return Optional.empty();
         }
     }
 
-    public boolean setDelayDeleter(long id, int delay, String userLogin){
+    public boolean setDelayDeleter(long id, int delay, String userLogin) {
         KanbanColumn column = columnRepository.findById(id).get();
         User user = userRepository.findByUsername(userLogin);
-        if(column.getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
+        Kanban kanban = column.getKanban();
+        if (column.getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getKanbanConnectors().stream()
+                .filter(KanbanConnector::isCanEdit)
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
             column.setDelayedDays(delay);
             column.getElements().stream().map(KanbanElement::getId).forEach(identity -> {
                 TimeRemover timeRemover = timeRemoverRepository.findById(identity).get();
@@ -136,19 +165,24 @@ public class KanbanColumnService {
                 timeRemoverRepository.save(timeRemover);
             });
             return true;
-        } else{
+        } else {
             return false;
         }
     }
 
-    public boolean removeDelayDeleter(long id, String userLogin){
+    public boolean removeDelayDeleter(long id, String userLogin) {
         KanbanColumn column = columnRepository.findById(id).get();
         User user = userRepository.findByUsername(userLogin);
-        if(column.getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))){
+        Kanban kanban = column.getKanban();
+        if (column.getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getKanbanConnectors().stream()
+                .filter(KanbanConnector::isCanEdit)
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
             column.setDelayedDays(0);
             column.getElements().stream().map(KanbanElement::getId).forEach(timeRemoverRepository::deleteById);
             return true;
-        } else{
+        } else {
             return false;
         }
     }

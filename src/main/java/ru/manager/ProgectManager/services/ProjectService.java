@@ -3,16 +3,14 @@ package ru.manager.ProgectManager.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.request.ProjectDataRequest;
-import ru.manager.ProgectManager.entitys.Kanban;
-import ru.manager.ProgectManager.entitys.Project;
-import ru.manager.ProgectManager.entitys.User;
-import ru.manager.ProgectManager.entitys.UserWithProjectConnector;
+import ru.manager.ProgectManager.entitys.*;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.repositories.*;
 
 import javax.activation.MimetypesFileTypeMap;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,7 +24,8 @@ public class ProjectService {
     public Optional<Kanban> createKanban(long projectId, String name, String userLogin) {
         Project project = projectRepository.findById(projectId).get();
         if (userRepository.findByUsername(userLogin).getUserWithProjectConnectors()
-                .stream().anyMatch(c -> c.getProject().equals(project))) {
+                .stream().anyMatch(c -> c.getProject().equals(project)
+                        && (c.getRoleType() == TypeRoleProject.ADMIN || c.getCustomProjectRole().isCanEditResources()))) {
             Kanban kanban = new Kanban();
             kanban.setProject(project);
             kanban.setName(name);
@@ -43,9 +42,10 @@ public class ProjectService {
         Kanban kanban = kanbanRepository.findById(id).get();
         Project project = kanban.getProject();
         if (userRepository.findByUsername(userLogin).getUserWithProjectConnectors()
-                .stream().anyMatch(c -> c.getProject().equals(project))) {
+                .stream().anyMatch(c -> c.getProject().equals(project)
+                        && (c.getRoleType() == TypeRoleProject.ADMIN || c.getCustomProjectRole().isCanEditResources()))) {
             project.getAvailableRole().forEach(r -> {
-                if(r.getKanbanConnectors().stream().anyMatch(c -> c.getKanban().equals(kanban))) {
+                if (r.getKanbanConnectors().stream().anyMatch(c -> c.getKanban().equals(kanban))) {
                     r.getKanbanConnectors().removeIf(c -> c.getKanban().equals(kanban));
                     customProjectRoleRepository.save(r);
                 }
@@ -128,7 +128,10 @@ public class ProjectService {
     public Optional<Kanban> findKanban(long id, String userLogin) {
         Kanban kanban = kanbanRepository.findById(id).get();
         User user = userRepository.findByUsername(userLogin);
-        if (kanban.getProject().getConnectors().stream().anyMatch(p -> p.getUser().equals(user))) {
+        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getKanbanConnectors().parallelStream()
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
             return Optional.of(kanban);
         } else {
             return Optional.empty();
@@ -138,8 +141,17 @@ public class ProjectService {
     public Optional<Set<Kanban>> findAllKanban(long id, String userLogin) {
         Project project = projectRepository.findById(id).get();
         User user = userRepository.findByUsername(userLogin);
-        if (project.getConnectors().stream().anyMatch(p -> p.getUser().equals(user))) {
-            return Optional.of(project.getKanbans());
+        Optional<UserWithProjectConnector> connector = user.getUserWithProjectConnectors().stream()
+                .filter(c -> c.getProject().equals(project))
+                .findAny();
+        if (connector.isPresent()) {
+            if(connector.get().getRoleType() == TypeRoleProject.CUSTOM_ROLE) {
+                return Optional.of(connector.get().getCustomProjectRole().getKanbanConnectors().parallelStream()
+                        .map(KanbanConnector::getKanban)
+                        .collect(Collectors.toSet()));
+            } else{
+                return Optional.of(project.getKanbans());
+            }
         } else {
             return Optional.empty();
         }

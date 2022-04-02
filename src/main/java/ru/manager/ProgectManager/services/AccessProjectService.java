@@ -164,11 +164,7 @@ public class AccessProjectService {
         if (LocalDate.ofEpochDay(accessProject.getTimeForDie()).isAfter(LocalDate.now())) {
             User user = userRepository.findByUsername(toUser);
             Project project = accessProject.getProject();
-            if (user.getUserWithProjectConnectors().stream().noneMatch(c -> c.getProject().equals(project))
-                    || user.getUserWithProjectConnectors().stream()
-                    .filter(c -> c.getProject().equals(project))
-                    .noneMatch(c -> c.getRoleType() == TypeRoleProject.ADMIN)
-                    && accessProject.getTypeRoleProject() == TypeRoleProject.ADMIN) {
+            if (user.getUserWithProjectConnectors().stream().noneMatch(c -> c.getProject().equals(project))) {
                 UserWithProjectConnector connector = new UserWithProjectConnector();
                 connector.setUser(user);
                 connector.setProject(project);
