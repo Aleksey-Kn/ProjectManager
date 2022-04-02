@@ -3,6 +3,7 @@ package ru.manager.ProgectManager.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.request.CreateCustomRoleRequest;
+import ru.manager.ProgectManager.DTO.request.EditUserRoleRequest;
 import ru.manager.ProgectManager.entitys.*;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.NoSuchResourceException;
@@ -26,9 +27,9 @@ public class AccessProjectService {
     private final KanbanConnectorRepository kanbanConnectorRepository;
     private final CustomProjectRoleRepository customProjectRoleRepository;
 
-    public boolean createCustomRole(long projectId, CreateCustomRoleRequest request, String userLogin) {
+    public boolean createCustomRole(CreateCustomRoleRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        Project project = projectRepository.findById(projectId).get();
+        Project project = projectRepository.findById(request.getProjectId()).get();
         if (user.getUserWithProjectConnectors().stream().filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
                 .anyMatch(c -> c.getProject().equals(project))) {
             CustomProjectRole customProjectRole = new CustomProjectRole();
@@ -56,8 +57,9 @@ public class AccessProjectService {
         Project project = projectRepository.findById(projectId).get();
         if (user.getUserWithProjectConnectors().stream().filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
                 .anyMatch(c -> c.getProject().equals(project))) {
-            CustomProjectRole role = customProjectRoleRepository.findById(roleId)
-                    .orElseThrow(() -> new NoSuchResourceException("Custom project role: " + roleId));
+            CustomProjectRole role = project.getAvailableRole().stream()
+                    .filter(r -> r.getId() == roleId)
+                    .findAny().orElseThrow(IllegalArgumentException::new);
             project.getConnectors().parallelStream()
                     .filter(c -> c.getRoleType() == TypeRoleProject.CUSTOM_ROLE)
                     .filter(c -> c.getCustomProjectRole().equals(role))
@@ -73,15 +75,14 @@ public class AccessProjectService {
         }
     }
 
-    public boolean changeRole(long projectId, long roleId, CreateCustomRoleRequest newCustomRole, String userLogin) {
+    public boolean changeRole(long roleId, CreateCustomRoleRequest newCustomRole, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        Project project = projectRepository.findById(projectId).get();
+        Project project = projectRepository.findById(newCustomRole.getProjectId()).get();
         if (user.getUserWithProjectConnectors().stream().filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
                 .anyMatch(c -> c.getProject().equals(project))) {
             CustomProjectRole customProjectRole = project.getAvailableRole().stream()
                     .filter(r -> r.getId() == roleId)
-                    .findAny()
-                    .orElseThrow(() -> new NoSuchResourceException("Custom project role: " + roleId));
+                    .findAny().orElseThrow(IllegalArgumentException::new);
             customProjectRole.getKanbanConnectors().clear();
             setCustomProjectRoleData(customProjectRole, newCustomRole);
             customProjectRoleRepository.save(customProjectRole);
@@ -98,26 +99,27 @@ public class AccessProjectService {
             KanbanConnector kanbanConnector = new KanbanConnector();
             kanbanConnector.setCanEdit(kr.isCanEdit());
             kanbanConnector.setKanban(kanbanRepository.findById(kr.getId())
-                    .orElseThrow(() -> new NoSuchResourceException(Long.toString(kr.getId()))));
+                    .orElseThrow(() -> new NoSuchResourceException("Kanban: " + kr.getId())));
             return kanbanConnectorRepository.save(kanbanConnector);
         }).collect(Collectors.toSet()));
     }
 
-    public boolean editUserRole(long projectId, TypeRoleProject typeRoleProject, long customRoleId, long userId,
-                                String adminLogin) {
+    public boolean editUserRole(EditUserRoleRequest request, String adminLogin) {
         User admin = userRepository.findByUsername(adminLogin);
-        Project project = projectRepository.findById(projectId).get();
+        Project project = projectRepository.findById(request.getProjectId()).get();
         if (admin.getUserWithProjectConnectors().stream().filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
                 .anyMatch(c -> c.getProject().equals(project))) {
-            User targetUser = userRepository.findById(userId)
-                    .orElseThrow(() -> new NoSuchResourceException("User: " + userId));
+            User targetUser = userRepository.findById(request.getUserId())
+                    .orElseThrow(() -> new NoSuchResourceException("User: " + request.getUserId()));
             UserWithProjectConnector connector = targetUser.getUserWithProjectConnectors().stream()
-                    .filter(c -> c.getProject().equals(project)).findAny().orElseThrow(IllegalArgumentException::new);
-            connector.setRoleType(typeRoleProject);
-            if (typeRoleProject == TypeRoleProject.CUSTOM_ROLE) {
+                    .filter(c -> c.getProject().equals(project))
+                    .findAny()
+                    .orElseThrow(() -> new NoSuchResourceException("Project connect with user: " + request.getUserId()));
+            connector.setRoleType(request.getTypeRoleProject());
+            if (request.getTypeRoleProject() == TypeRoleProject.CUSTOM_ROLE) {
                 connector.setCustomProjectRole(project.getAvailableRole().stream()
-                        .filter(r -> r.getId() == customRoleId)
-                        .findAny().orElseThrow(NullPointerException::new));
+                        .filter(r -> r.getId() == request.getCustomRoleId())
+                        .findAny().orElseThrow(IllegalArgumentException::new));
             } else {
                 connector.setCustomProjectRole(null);
             }

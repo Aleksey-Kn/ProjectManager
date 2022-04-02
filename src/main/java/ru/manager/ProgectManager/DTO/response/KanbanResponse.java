@@ -20,6 +20,7 @@ public class KanbanResponse {
     private final boolean canEdit;
     @Schema(description = "Список колонок канбана")
     private final List<KanbanColumnResponse> kanbanColumns;
+
     public KanbanResponse(Kanban kanban, int pageIndexColumn, int countColumn, int pageIndexElement, int countElement,
                           boolean canEditKanban){
         kanbanColumns = kanban.getKanbanColumns().stream()
