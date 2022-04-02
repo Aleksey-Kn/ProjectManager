@@ -36,7 +36,12 @@ public class KanbanElementService {
     public Optional<KanbanElement> addElement(CreateKanbanElementRequest request, String userLogin) {
         KanbanColumn column = columnRepository.findById(request.getColumnId()).get();
         User user = userRepository.findByUsername(userLogin);
-        if (column.getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))) {
+        Kanban kanban = column.getKanban();
+        if (column.getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getKanbanConnectors().stream()
+                .filter(KanbanConnector::isCanEdit)
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
             KanbanElement element = new KanbanElement();
             element.setContent(request.getContent());
             element.setName(request.getName());
@@ -64,7 +69,12 @@ public class KanbanElementService {
     public Optional<KanbanElement> setElement(long id, UpdateKanbanElementRequest request, String userLogin) {
         KanbanElement element = elementRepository.findById(id).get();
         User user = userRepository.findByUsername(userLogin);
-        if (element.getKanbanColumn().getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))) {
+        Kanban kanban = element.getKanbanColumn().getKanban();
+        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getKanbanConnectors().stream()
+                .filter(KanbanConnector::isCanEdit)
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
             if (element.getStatus() == ElementStatus.UTILISE)
                 throw new IncorrectStatusException();
             element.setContent(request.getContent());
@@ -83,8 +93,12 @@ public class KanbanElementService {
         KanbanElement element = elementRepository.findById(request.getId()).get();
         int from = element.getSerialNumber();
         KanbanColumn fromColumn = element.getKanbanColumn();
-        if (fromColumn.getKanban().getProject().getConnectors().stream()
-                .anyMatch(c -> c.getUser().equals(user))) {
+        Kanban kanban = fromColumn.getKanban();
+        if (fromColumn.getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getKanbanConnectors().stream()
+                .filter(KanbanConnector::isCanEdit)
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
             if (element.getStatus() == ElementStatus.ALIVE) {
                 if (fromColumn.getId() == request.getToColumn()) {
                     Set<KanbanElement> allElements = fromColumn.getElements();
@@ -122,7 +136,7 @@ public class KanbanElementService {
                     element.setTimeOfUpdate(getEpochSeconds());
                     element.setKanbanColumn(toColumn);
 
-                    if(fromColumn.getDelayedDays() != 0){
+                    if (fromColumn.getDelayedDays() != 0) {
                         timeRemoverRepository.deleteById(element.getId());
                     }
                     createSoftRemover(toColumn, element);
@@ -139,13 +153,17 @@ public class KanbanElementService {
     public Optional<KanbanColumn> utilizeElementFromUser(long id, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(id).get();
-        if (element.getKanbanColumn().getKanban().getProject().getConnectors().stream()
-                .anyMatch(c -> c.getUser().equals(user))) {
+        Kanban kanban = element.getKanbanColumn().getKanban();
+        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getKanbanConnectors().stream()
+                .filter(KanbanConnector::isCanEdit)
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
             TimeRemover timeRemover;
-            if(element.getKanbanColumn().getDelayedDays() == 0){
+            if (element.getKanbanColumn().getDelayedDays() == 0) {
                 timeRemover = new TimeRemover();
                 timeRemover.setRemoverId(element.getId());
-            } else{ // если пользователь улаляет элемент из колонки с регулярным удалением вручную, то удалитель уже есть
+            } else { // если пользователь улаляет элемент из колонки с регулярным удалением вручную, то удалитель уже есть
                 timeRemover = timeRemoverRepository.findById(element.getId())
                         .orElseThrow(() -> new NoSuchResourceException("Remover " + element.getId()));
             }
@@ -159,7 +177,7 @@ public class KanbanElementService {
         }
     }
 
-    public void utiliseElementFromSystem(long id){
+    public void utiliseElementFromSystem(long id) {
         // при автоматическом перемещении элемента в корзину не происходит удаления timeRemover, поэтому подтягиваем его и только меняем данные
         TimeRemover timeRemover = timeRemoverRepository.findById(id)
                 .orElse(new TimeRemover());
@@ -169,8 +187,8 @@ public class KanbanElementService {
         utiliseElement(elementRepository.findById(id).get());
     }
 
-    private void utiliseElement(KanbanElement element){
-        if(element.getStatus() == ElementStatus.UTILISE)
+    private void utiliseElement(KanbanElement element) {
+        if (element.getStatus() == ElementStatus.UTILISE)
             throw new IncorrectStatusException();
 
         element.setTimeOfUpdate(getEpochSeconds());
@@ -186,8 +204,12 @@ public class KanbanElementService {
     public Optional<KanbanElementComment> addComment(KanbanCommentRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(request.getId()).get();
-        if (element.getKanbanColumn().getKanban().getProject().getConnectors().stream()
-                .anyMatch(c -> c.getUser().equals(user))) {
+        Kanban kanban = element.getKanbanColumn().getKanban();
+        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getKanbanConnectors().stream()
+                .filter(KanbanConnector::isCanEdit)
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
             if (element.getStatus() == ElementStatus.UTILISE)
                 throw new IncorrectStatusException();
             KanbanElementComment comment = new KanbanElementComment();
@@ -213,7 +235,7 @@ public class KanbanElementService {
                 || comment.getKanbanElement().getKanbanColumn().getKanban().getProject().getConnectors().stream()
                 .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
                 .anyMatch(c -> c.getUser().equals(user))) {
-            if(comment.getKanbanElement().getStatus() == ElementStatus.UTILISE)
+            if (comment.getKanbanElement().getStatus() == ElementStatus.UTILISE)
                 throw new IncorrectStatusException();
             KanbanElement element = comment.getKanbanElement();
             element.setTimeOfUpdate(getEpochSeconds());
@@ -229,7 +251,7 @@ public class KanbanElementService {
         User user = userRepository.findByUsername(userLogin);
         KanbanElementComment comment = commentRepository.findById(request.getId()).get();
         if (comment.getOwner().equals(user)) {
-            if(comment.getKanbanElement().getStatus() == ElementStatus.UTILISE)
+            if (comment.getKanbanElement().getStatus() == ElementStatus.UTILISE)
                 throw new IncorrectStatusException();
             comment.getKanbanElement().setTimeOfUpdate(getEpochSeconds());
             comment.setText(request.getText());
@@ -243,7 +265,12 @@ public class KanbanElementService {
     public Optional<KanbanElement> addAttachment(long id, String userLogin, MultipartFile file) throws IOException {
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(id).get();
-        if (element.getKanbanColumn().getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user))) {
+        Kanban kanban = element.getKanbanColumn().getKanban();
+        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getKanbanConnectors().stream()
+                .filter(KanbanConnector::isCanEdit)
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
             if (element.getStatus() == ElementStatus.UTILISE)
                 throw new IncorrectStatusException();
             KanbanAttachment attachment = new KanbanAttachment();
@@ -262,8 +289,11 @@ public class KanbanElementService {
     public Optional<KanbanAttachment> getAttachment(long id, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         KanbanAttachment attachment = attachmentRepository.findById(id).get();
-        if (attachment.getElement().getKanbanColumn().getKanban().getProject().getConnectors().stream()
-                .anyMatch(c -> c.getUser().equals(user))) {
+        Kanban kanban = attachment.getElement().getKanbanColumn().getKanban();
+        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getKanbanConnectors().stream()
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
             return Optional.of(attachment);
         } else {
             return Optional.empty();
@@ -273,8 +303,12 @@ public class KanbanElementService {
     public Optional<KanbanElement> deleteAttachment(long id, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         KanbanAttachment attachment = attachmentRepository.findById(id).get();
-        if (attachment.getElement().getKanbanColumn().getKanban().getProject().getConnectors().stream()
-                .anyMatch(c -> c.getUser().equals(user))) {
+        Kanban kanban = attachment.getElement().getKanbanColumn().getKanban();
+        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getKanbanConnectors().stream()
+                .filter(KanbanConnector::isCanEdit)
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
             if (attachment.getElement().getStatus() == ElementStatus.UTILISE)
                 throw new IncorrectStatusException();
             KanbanElement element = attachment.getElement();
@@ -289,11 +323,11 @@ public class KanbanElementService {
     public Optional<KanbanElement> getContentFromElement(long id, String userLogin) {
         KanbanElement kanbanElement = elementRepository.findById(id).get();
         User user = userRepository.findByUsername(userLogin);
-        if (kanbanElement
-                .getKanbanColumn()
-                .getKanban()
-                .getProject()
-                .getConnectors().stream().anyMatch(c -> c.getUser().equals(user))) {
+        Kanban kanban = kanbanElement.getKanbanColumn().getKanban();
+        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getKanbanConnectors().stream()
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
             return Optional.of(kanbanElement);
         }
         return Optional.empty();
@@ -308,7 +342,7 @@ public class KanbanElementService {
     }
 
     private void createSoftRemover(KanbanColumn column, KanbanElement element) {
-        if(column.getDelayedDays() != 0){
+        if (column.getDelayedDays() != 0) {
             TimeRemover remover = new TimeRemover();
             remover.setHard(false);
             remover.setRemoverId(element.getId());
