@@ -84,7 +84,7 @@ public class AccessController {
         try {
             Optional<AccessProject> accessProject = accessProjectService.generateTokenForAccessProject(provider.getLoginFromToken(),
                     accessProjectRequest.getProjectId(), accessProjectRequest.getTypeRoleProject(),
-                    accessProjectRequest.getRoleName(), accessProjectRequest.isDisposable(),
+                    accessProjectRequest.getRoleId(), accessProjectRequest.isDisposable(),
                     accessProjectRequest.getLiveTimeInDays());
             return accessProject.map(s -> ResponseEntity.ok(new AccessProjectResponse(s)))
                     .orElseGet(() -> new ResponseEntity<>(HttpStatus.FORBIDDEN));

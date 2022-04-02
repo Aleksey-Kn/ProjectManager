@@ -48,7 +48,7 @@ public class AccessProjectService {
     public Optional<AccessProject> generateTokenForAccessProject(String fromUser,
                                                           long projectId,
                                                           TypeRoleProject typeRoleProject,
-                                                          String customProjectRoleName,
+                                                          long customProjectRoleId,
                                                           boolean disposable,
                                                           int liveTime) {
         User user = userRepository.findByUsername(fromUser);
@@ -62,8 +62,8 @@ public class AccessProjectService {
             accessProject.setProject(project);
             accessProject.setTypeRoleProject(typeRoleProject);
             if(typeRoleProject == TypeRoleProject.CUSTOM_ROLE) {
-                accessProject.setProjectRole(customProjectRoleRepository.findByName(customProjectRoleName)
-                        .orElseThrow(() -> new NoSuchResourceException(customProjectRoleName)));
+                accessProject.setProjectRole(customProjectRoleRepository.findById(customProjectRoleId)
+                        .orElseThrow(() -> new NoSuchResourceException("Custom project role: " + customProjectRoleId)));
             }
             accessProject.setDisposable(disposable);
             accessProject.setCode(UUID.randomUUID().toString());

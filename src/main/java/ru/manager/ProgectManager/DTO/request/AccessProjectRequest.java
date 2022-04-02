@@ -13,7 +13,7 @@ public class AccessProjectRequest {
     private TypeRoleProject typeRoleProject;
     @Schema(description =
             "Название кастомной роли. Необходимый параметр только в случае, если typeRoleProject выбран CUSTOM_ROLE")
-    private String roleName;
+    private long roleId;
     @Schema(description = "Булевая величина, отображающая, будет ли сгенерированная ссылка многоразовой", required = true)
     private boolean disposable;
     @Schema(description = "Срок действия ссылки в днях. По умолчанию ссылка действет в течении дня")
