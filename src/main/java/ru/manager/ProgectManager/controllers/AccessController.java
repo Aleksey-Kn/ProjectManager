@@ -34,82 +34,159 @@ import java.util.Set;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users")
-@Tag(name = "Предоставление доступа к проекту",
-        description = "Позволяет приглашать пользователя в проект с помощью токена доступа")
+@Tag(name = "Предоставление доступа к проекту и манипулирование ролями внутри проекта",
+        description = "Позволяет приглашать пользователя в проект с помощью токена доступа, а так же изменять уровни доступа участников к ресурсам проекта")
 public class AccessController {
     private final AccessProjectService accessProjectService;
     private final JwtProvider provider;
 
+    @Operation(summary = "Получение всех кастомных ролей проекта")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Список кастомных ролей", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = CustomProjectRoleResponseList.class))
+            }),
+            @ApiResponse(responseCode = "403",
+                    description = "Пользователь не имеет достаточных прав доступа для совершения даннного действия"),
+            @ApiResponse(responseCode = "400", description = "Указанного проекта не существует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
+    })
     @GetMapping("/roles")
-    public ResponseEntity<?> findAllCustomRole(@RequestParam @Parameter(description = "Идентификатор проекта") long id){
+    public ResponseEntity<?> findAllCustomRole(@RequestParam @Parameter(description = "Идентификатор проекта") long id) {
         try {
             Optional<Set<CustomProjectRole>> roles = accessProjectService
                     .findAllCustomProjectRole(id, provider.getLoginFromToken());
-            if(roles.isPresent()){
+            if (roles.isPresent()) {
                 return ResponseEntity.ok(new CustomProjectRoleResponseList(roles.get()));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
-        } catch (NoSuchElementException e){
+        } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.BAD_REQUEST);
         }
     }
 
+    @Operation(summary = "Добавление новой роли в проект")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Новая роль успешно создана"),
+            @ApiResponse(responseCode = "403",
+                    description = "Пользователь не имеет достаточных прав доступа для совершения даннного действия"),
+            @ApiResponse(responseCode = "400", description = "Указанного проекта или канбана не существует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "406", description = "Название роли должно содержать видимые символы",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    })
+    })
     @PostMapping("/role")
-    public ResponseEntity<?> addRole(@RequestBody @Valid CreateCustomRoleRequest request, BindingResult bindingResult){
-        if(bindingResult.hasErrors()){
+    public ResponseEntity<?> addRole(@RequestBody @Valid CreateCustomRoleRequest request, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
                     HttpStatus.NOT_ACCEPTABLE);
-        } else{
-            try{
-                if(accessProjectService.createCustomRole(request, provider.getLoginFromToken())){
+        } else {
+            try {
+                if (accessProjectService.createCustomRole(request, provider.getLoginFromToken())) {
                     return new ResponseEntity<>(HttpStatus.OK);
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
-            } catch (NoSuchElementException e){
+            } catch (NoSuchElementException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.BAD_REQUEST);
-            } catch (NoSuchResourceException e){
+            } catch (NoSuchResourceException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.BAD_REQUEST);
             }
         }
     }
 
+    @Operation(summary = "Удаление кастомной роли")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Роль успешно удалена"),
+            @ApiResponse(responseCode = "403",
+                    description = "Пользователь не имеет достаточных прав доступа для совершения даннного действия"),
+            @ApiResponse(responseCode = "400", description = "Указанного проекта или роли не существует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
+    })
     @DeleteMapping("/role")
-    public ResponseEntity<?> deleteRole(@RequestParam long projectId, @RequestParam long roleId){
+    public ResponseEntity<?> deleteRole(@RequestParam long projectId, @RequestParam long roleId) {
         try {
-            if(accessProjectService.deleteCustomRole(projectId, roleId, provider.getLoginFromToken())){
-                return new ResponseEntity<>(HttpStatus.OK);
-            } else{
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e){
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.BAD_REQUEST);
-        } catch (IllegalArgumentException e){
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CUSTOM_ROLE), HttpStatus.BAD_REQUEST);
-        }
-    }
-
-    @PutMapping("/role")
-    public ResponseEntity<?> editRole(@RequestBody CreateCustomRoleRequest request, @RequestParam long roleId){
-        try{
-            if(accessProjectService.changeRole(roleId, request, provider.getLoginFromToken())){
+            if (accessProjectService.deleteCustomRole(projectId, roleId, provider.getLoginFromToken())) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
-        } catch (NoSuchElementException e){
+        } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.BAD_REQUEST);
-        } catch (NoSuchResourceException e){
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.BAD_REQUEST);
-        } catch (IllegalArgumentException e){
+        } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CUSTOM_ROLE), HttpStatus.BAD_REQUEST);
         }
     }
 
+    @Operation(summary = "Редактирование существующей роли")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Роль успешно изменена"),
+            @ApiResponse(responseCode = "403",
+                    description = "Пользователь не имеет достаточных прав доступа для совершения даннного действия"),
+            @ApiResponse(responseCode = "400", description = "Указанного проекта, канбана или роли не существует",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
+            @ApiResponse(responseCode = "406", description = "Название роли должно содержать видимые символы",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    })
+    })
+    @PutMapping("/role")
+    public ResponseEntity<?> editRole(@RequestBody @Valid CreateCustomRoleRequest request, BindingResult bindingResult,
+                                      @RequestParam long roleId) {
+        if (bindingResult.hasErrors()) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
+                    HttpStatus.NOT_ACCEPTABLE);
+        } else {
+            try {
+                if (accessProjectService.changeRole(roleId, request, provider.getLoginFromToken())) {
+                    return new ResponseEntity<>(HttpStatus.OK);
+                } else {
+                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+                }
+            } catch (NoSuchElementException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.BAD_REQUEST);
+            } catch (NoSuchResourceException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.BAD_REQUEST);
+            } catch (IllegalArgumentException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CUSTOM_ROLE),
+                        HttpStatus.BAD_REQUEST);
+            }
+        }
+    }
+
+    @Operation(summary = "Изменение роли участиника проекта")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Указанная роль успешно применена к участнику"),
+            @ApiResponse(responseCode = "403",
+                    description = "Пользователь не имеет достаточных прав доступа для совершения даннного действия"),
+            @ApiResponse(responseCode = "400", description = "Указанного проекта, участника или роли не существует",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
+            @ApiResponse(responseCode = "406", description = "Не задан тип роли пользователя",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    })
+    })
     @PutMapping("/edit_user_role")
-    public ResponseEntity<?> editUserRole(@RequestBody @Valid EditUserRoleRequest request, BindingResult bindingResult){
-        if(bindingResult.hasErrors()){
+    public ResponseEntity<?> editUserRole(@RequestBody @Valid EditUserRoleRequest request, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
                     HttpStatus.NOT_ACCEPTABLE);
         } else {
@@ -137,7 +214,7 @@ public class AccessController {
                             @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ErrorResponse.class))
                     }),
-            @ApiResponse(responseCode = "200")
+            @ApiResponse(responseCode = "200", description = "Подключение к проекту произошло успешно")
     })
     @GetMapping("/access")
     public ResponseEntity<?> getAccess(@RequestParam String token) {
@@ -149,8 +226,7 @@ public class AccessController {
                     new ErrorResponse(Errors.PROJECT_ACCESS_TOKEN_IS_DEPRECATED),
                     HttpStatus.FORBIDDEN);
         } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(
-                    new ErrorResponse(Errors.PROJECT_ACCESS_TOKEN_IS_INVALID_OR_NO_LONGER_AVAILABLE),
+            return new ResponseEntity<>(new ErrorResponse(Errors.PROJECT_ACCESS_TOKEN_IS_INVALID_OR_NO_LONGER_AVAILABLE),
                     HttpStatus.FORBIDDEN);
         }
     }
@@ -174,14 +250,14 @@ public class AccessController {
                             @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ErrorResponse.class))
                     }),
-            @ApiResponse(responseCode = "200", content = {
+            @ApiResponse(responseCode = "200", description = "Создание токена доступа произошло успешно", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = AccessProjectResponse.class))})
     })
     @PostMapping("/access")
     public ResponseEntity<?> postAccess(@RequestBody @Valid AccessProjectRequest accessProjectRequest,
                                         BindingResult bindingResult) {
-        if(bindingResult.hasErrors()){
+        if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
                     HttpStatus.NOT_ACCEPTABLE);
         } else {
