@@ -33,7 +33,7 @@ public class AccessProjectService {
         if (user.getUserWithProjectConnectors().stream().filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
                 .anyMatch(c -> c.getProject().equals(project))) {
             CustomProjectRole customProjectRole = new CustomProjectRole();
-            setCustomProjectRoleData(customProjectRole, request);
+            setCustomProjectRoleData(project, customProjectRole, request);
             project.getAvailableRole().add(customProjectRole);
             projectRepository.save(project);
             return true;
@@ -84,7 +84,7 @@ public class AccessProjectService {
                     .filter(r -> r.getId() == roleId)
                     .findAny().orElseThrow(IllegalArgumentException::new);
             customProjectRole.getKanbanConnectors().clear();
-            setCustomProjectRoleData(customProjectRole, newCustomRole);
+            setCustomProjectRoleData(project, customProjectRole, newCustomRole);
             customProjectRoleRepository.save(customProjectRole);
             return true;
         } else {
@@ -92,13 +92,13 @@ public class AccessProjectService {
         }
     }
 
-    private void setCustomProjectRoleData(CustomProjectRole customProjectRole, CreateCustomRoleRequest request) {
+    private void setCustomProjectRoleData(Project project, CustomProjectRole customProjectRole, CreateCustomRoleRequest request) {
         customProjectRole.setName(request.getName());
         customProjectRole.setCanEditResources(request.isCanEditResource());
         customProjectRole.setKanbanConnectors(request.getKanbanConnectorRequests().stream().map(kr -> {
             KanbanConnector kanbanConnector = new KanbanConnector();
             kanbanConnector.setCanEdit(kr.isCanEdit());
-            kanbanConnector.setKanban(kanbanRepository.findById(kr.getId())
+            kanbanConnector.setKanban(project.getKanbans().stream().filter(k -> k.getId() == kr.getId()).findAny()
                     .orElseThrow(() -> new NoSuchResourceException("Kanban: " + kr.getId())));
             return kanbanConnectorRepository.save(kanbanConnector);
         }).collect(Collectors.toSet()));
