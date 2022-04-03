@@ -1,5 +1,6 @@
 package ru.manager.ProgectManager.DTO.response;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import ru.manager.ProgectManager.entitys.CustomProjectRole;
 
@@ -8,7 +9,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Getter
+@Schema(description = "Список всех кастомных ролей проекта")
 public class CustomProjectRoleResponseList {
+    @Schema(description = "Список ролей")
     private final List<CustomProjectRoleResponse> roles;
 
     public CustomProjectRoleResponseList(Set<CustomProjectRole> roleSet){

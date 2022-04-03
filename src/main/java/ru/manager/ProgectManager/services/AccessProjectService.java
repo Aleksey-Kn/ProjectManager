@@ -100,7 +100,7 @@ public class AccessProjectService {
     private void setCustomProjectRoleData(Project project, CustomProjectRole customProjectRole, CreateCustomRoleRequest request) {
         customProjectRole.setName(request.getName());
         customProjectRole.setCanEditResources(request.isCanEditResource());
-        customProjectRole.setCustomRoleWithKanbanConnectors(request.getKanbanConnectorRequests().stream().map(kr -> {
+        customProjectRole.setCustomRoleWithKanbanConnectors(request.getCustomRoleWithKanbanConnectorRequests().stream().map(kr -> {
             CustomRoleWithKanbanConnector customRoleWithKanbanConnector = new CustomRoleWithKanbanConnector();
             customRoleWithKanbanConnector.setCanEdit(kr.isCanEdit());
             customRoleWithKanbanConnector.setKanban(project.getKanbans().stream().filter(k -> k.getId() == kr.getId())
