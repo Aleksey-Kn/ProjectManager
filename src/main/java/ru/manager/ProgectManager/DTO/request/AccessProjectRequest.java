@@ -2,14 +2,19 @@ package ru.manager.ProgectManager.DTO.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
+import org.springframework.validation.annotation.Validated;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 
+import javax.validation.constraints.NotNull;
+
 @Getter
+@Validated
 @Schema(description = "Запрос на предоставление доступа к проекту")
 public class AccessProjectRequest {
     @Schema(description = "Идентификатор проекта, к которому будет предоставлен доступ", required = true)
     private long projectId;
-    @Schema(description = "Тип роли приглашённого пользователя", required = true)
+    @NotNull
+    @Schema(description = "Тип роли приглашённого пользователя")
     private TypeRoleProject typeRoleProject;
     @Schema(description =
             "Название кастомной роли. Необходимый параметр только в случае, если typeRoleProject выбран CUSTOM_ROLE")

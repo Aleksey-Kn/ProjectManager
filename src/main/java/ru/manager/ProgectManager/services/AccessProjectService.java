@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 
 @Service
@@ -67,6 +68,10 @@ public class AccessProjectService {
                         c.setRoleType(TypeRoleProject.STANDARD_USER);
                         c.setCustomProjectRole(null);
                     });
+            StreamSupport.stream(accessProjectRepository.findAll().spliterator(), true)
+                    .filter(accessProject -> accessProject.getTypeRoleProject() == TypeRoleProject.CUSTOM_ROLE)
+                    .filter(accessProject -> accessProject.getProjectRole().equals(role))
+                    .forEach(accessProjectRepository::delete);
             project.getAvailableRole().remove(role);
             projectRepository.save(project);
             return true;
@@ -83,7 +88,7 @@ public class AccessProjectService {
             CustomProjectRole customProjectRole = project.getAvailableRole().stream()
                     .filter(r -> r.getId() == roleId)
                     .findAny().orElseThrow(IllegalArgumentException::new);
-            customProjectRole.getKanbanConnectors().clear();
+            customProjectRole.getCustomRoleWithKanbanConnectors().clear();
             setCustomProjectRoleData(project, customProjectRole, newCustomRole);
             customProjectRoleRepository.save(customProjectRole);
             return true;
@@ -95,12 +100,12 @@ public class AccessProjectService {
     private void setCustomProjectRoleData(Project project, CustomProjectRole customProjectRole, CreateCustomRoleRequest request) {
         customProjectRole.setName(request.getName());
         customProjectRole.setCanEditResources(request.isCanEditResource());
-        customProjectRole.setKanbanConnectors(request.getKanbanConnectorRequests().stream().map(kr -> {
-            KanbanConnector kanbanConnector = new KanbanConnector();
-            kanbanConnector.setCanEdit(kr.isCanEdit());
-            kanbanConnector.setKanban(project.getKanbans().stream().filter(k -> k.getId() == kr.getId()).findAny()
-                    .orElseThrow(() -> new NoSuchResourceException("Kanban: " + kr.getId())));
-            return kanbanConnectorRepository.save(kanbanConnector);
+        customProjectRole.setCustomRoleWithKanbanConnectors(request.getKanbanConnectorRequests().stream().map(kr -> {
+            CustomRoleWithKanbanConnector customRoleWithKanbanConnector = new CustomRoleWithKanbanConnector();
+            customRoleWithKanbanConnector.setCanEdit(kr.isCanEdit());
+            customRoleWithKanbanConnector.setKanban(project.getKanbans().stream().filter(k -> k.getId() == kr.getId())
+                    .findAny().orElseThrow(() -> new NoSuchResourceException("Kanban: " + kr.getId())));
+            return kanbanConnectorRepository.save(customRoleWithKanbanConnector);
         }).collect(Collectors.toSet()));
     }
 
@@ -123,6 +128,7 @@ public class AccessProjectService {
             } else {
                 connector.setCustomProjectRole(null);
             }
+            connectorRepository.save(connector);
             return true;
         }
         return false;
@@ -189,8 +195,8 @@ public class AccessProjectService {
         return userRepository.findByUsername(userLogin).getUserWithProjectConnectors().stream()
                 .filter(c -> c.getProject().getKanbans().contains(kanban))
                 .anyMatch(c -> (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
-                                || c.getCustomProjectRole().getKanbanConnectors().stream()
-                                .filter(KanbanConnector::isCanEdit)
-                                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))));
+                        || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
+                        .filter(CustomRoleWithKanbanConnector::isCanEdit)
+                        .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))));
     }
 }

@@ -10,7 +10,7 @@ import java.util.Objects;
 @Entity
 @Getter
 @Setter
-public class KanbanConnector {
+public class CustomRoleWithKanbanConnector {
     @Id
     @GeneratedValue
     private long id;
@@ -25,7 +25,7 @@ public class KanbanConnector {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
-        KanbanConnector that = (KanbanConnector) o;
+        CustomRoleWithKanbanConnector that = (CustomRoleWithKanbanConnector) o;
         return Objects.equals(id, that.id);
     }
 

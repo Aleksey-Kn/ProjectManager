@@ -20,6 +20,7 @@ public class ProjectService {
     private final UserWithProjectConnectorRepository connectorRepository;
     private final KanbanRepository kanbanRepository;
     private final CustomProjectRoleRepository customProjectRoleRepository;
+    private final KanbanConnectorRepository kanbanConnectorRepository;
 
     public Optional<Kanban> createKanban(long projectId, String name, String userLogin) {
         Project project = projectRepository.findById(projectId).get();
@@ -45,8 +46,11 @@ public class ProjectService {
                 .stream().anyMatch(c -> c.getProject().equals(project)
                         && (c.getRoleType() == TypeRoleProject.ADMIN || c.getCustomProjectRole().isCanEditResources()))) {
             project.getAvailableRole().forEach(r -> {
-                if (r.getKanbanConnectors().stream().anyMatch(c -> c.getKanban().equals(kanban))) {
-                    r.getKanbanConnectors().removeIf(c -> c.getKanban().equals(kanban));
+                Optional<CustomRoleWithKanbanConnector> removeConnector = r.getCustomRoleWithKanbanConnectors().stream()
+                                .filter(c -> c.getKanban().getId() == id).findAny();
+                if(removeConnector.isPresent()) {
+                    r.getCustomRoleWithKanbanConnectors().remove(removeConnector.get());
+                    kanbanConnectorRepository.delete(removeConnector.get());
                     customProjectRoleRepository.save(r);
                 }
             });
@@ -130,7 +134,7 @@ public class ProjectService {
         User user = userRepository.findByUsername(userLogin);
         if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
                 && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
-                || c.getCustomProjectRole().getKanbanConnectors().parallelStream()
+                || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().parallelStream()
                 .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
             return Optional.of(kanban);
         } else {
@@ -146,8 +150,8 @@ public class ProjectService {
                 .findAny();
         if (connector.isPresent()) {
             if(connector.get().getRoleType() == TypeRoleProject.CUSTOM_ROLE) {
-                return Optional.of(connector.get().getCustomProjectRole().getKanbanConnectors().parallelStream()
-                        .map(KanbanConnector::getKanban)
+                return Optional.of(connector.get().getCustomProjectRole().getCustomRoleWithKanbanConnectors().parallelStream()
+                        .map(CustomRoleWithKanbanConnector::getKanban)
                         .collect(Collectors.toSet()));
             } else{
                 return Optional.of(project.getKanbans());

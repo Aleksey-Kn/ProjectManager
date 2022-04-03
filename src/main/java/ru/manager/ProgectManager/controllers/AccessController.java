@@ -108,19 +108,24 @@ public class AccessController {
     }
 
     @PutMapping("/edit_user_role")
-    public ResponseEntity<?> editUserRole(@RequestBody EditUserRoleRequest request){
-        try{
-            if(accessProjectService.editUserRole(request, provider.getLoginFromToken())){
-                return new ResponseEntity<>(HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+    public ResponseEntity<?> editUserRole(@RequestBody @Valid EditUserRoleRequest request, BindingResult bindingResult){
+        if(bindingResult.hasErrors()){
+            return new ResponseEntity<>(new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
+                    HttpStatus.NOT_ACCEPTABLE);
+        } else {
+            try {
+                if (accessProjectService.editUserRole(request, provider.getLoginFromToken())) {
+                    return new ResponseEntity<>(HttpStatus.OK);
+                } else {
+                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+                }
+            } catch (NoSuchElementException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.BAD_REQUEST);
+            } catch (NoSuchResourceException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER), HttpStatus.BAD_REQUEST);
+            } catch (IllegalArgumentException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CUSTOM_ROLE), HttpStatus.BAD_REQUEST);
             }
-        } catch (NoSuchElementException e){
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.BAD_REQUEST);
-        } catch (NoSuchResourceException e){
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER), HttpStatus.BAD_REQUEST);
-        } catch (IllegalArgumentException e){
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CUSTOM_ROLE), HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -163,7 +168,8 @@ public class AccessController {
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "406",
-                    description = "Попытка создать многоразовую ссылку для приглашения пользователя, как администратора",
+                    description = "Роль пользователя не указана или " +
+                            "попытка создать многоразовую ссылку для приглашения пользователя, как администратора",
                     content = {
                             @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ErrorResponse.class))
@@ -173,21 +179,27 @@ public class AccessController {
                             schema = @Schema(implementation = AccessProjectResponse.class))})
     })
     @PostMapping("/access")
-    public ResponseEntity<?> postAccess(@RequestBody AccessProjectRequest accessProjectRequest) {
-        try {
-            Optional<AccessProject> accessProject = accessProjectService.generateTokenForAccessProject(provider.getLoginFromToken(),
-                    accessProjectRequest.getProjectId(), accessProjectRequest.getTypeRoleProject(),
-                    accessProjectRequest.getRoleId(), accessProjectRequest.isDisposable(),
-                    accessProjectRequest.getLiveTimeInDays());
-            return accessProject.map(s -> ResponseEntity.ok(new AccessProjectResponse(s)))
-                    .orElseGet(() -> new ResponseEntity<>(HttpStatus.FORBIDDEN));
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT),
-                    HttpStatus.BAD_REQUEST);
-        } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(
-                    new ErrorResponse(Errors.TOKEN_FOR_ACCESS_WITH_PROJECT_AS_ADMIN_MUST_BE_DISPOSABLE),
+    public ResponseEntity<?> postAccess(@RequestBody @Valid AccessProjectRequest accessProjectRequest,
+                                        BindingResult bindingResult) {
+        if(bindingResult.hasErrors()){
+            return new ResponseEntity<>(new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
                     HttpStatus.NOT_ACCEPTABLE);
+        } else {
+            try {
+                Optional<AccessProject> accessProject = accessProjectService.generateTokenForAccessProject(provider.getLoginFromToken(),
+                        accessProjectRequest.getProjectId(), accessProjectRequest.getTypeRoleProject(),
+                        accessProjectRequest.getRoleId(), accessProjectRequest.isDisposable(),
+                        accessProjectRequest.getLiveTimeInDays());
+                return accessProject.map(s -> ResponseEntity.ok(new AccessProjectResponse(s)))
+                        .orElseGet(() -> new ResponseEntity<>(HttpStatus.FORBIDDEN));
+            } catch (NoSuchElementException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT),
+                        HttpStatus.BAD_REQUEST);
+            } catch (IllegalArgumentException e) {
+                return new ResponseEntity<>(
+                        new ErrorResponse(Errors.TOKEN_FOR_ACCESS_WITH_PROJECT_AS_ADMIN_MUST_BE_DISPOSABLE),
+                        HttpStatus.NOT_ACCEPTABLE);
+            }
         }
     }
 }
