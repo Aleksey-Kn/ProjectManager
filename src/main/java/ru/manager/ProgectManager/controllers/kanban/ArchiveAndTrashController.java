@@ -11,10 +11,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.manager.ProgectManager.DTO.response.Elements;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
+import ru.manager.ProgectManager.DTO.response.kanban.KanbanElements;
 import ru.manager.ProgectManager.components.JwtProvider;
-import ru.manager.ProgectManager.entitys.KanbanElement;
+import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.exception.IncorrectStatusException;
 import ru.manager.ProgectManager.services.kanban.ArchiveAndTrashService;
@@ -96,7 +96,7 @@ public class ArchiveAndTrashController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Элементы, содержащиеся в архиве", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Elements.class))
+                            schema = @Schema(implementation = KanbanElements.class))
             }),
             @ApiResponse(responseCode = "403", description = "Польлзователь не имеет доступа к этому проекту"),
             @ApiResponse(responseCode = "400", description = "Канбана с указанным идентификатором не существует",
@@ -111,7 +111,7 @@ public class ArchiveAndTrashController {
         try {
             Optional<List<KanbanElement>> elements = trashService.findArchive(id, provider.getLoginFromToken());
             if(elements.isPresent()){
-                return ResponseEntity.ok(new Elements(elements.get(), pageIndex, rowCount));
+                return ResponseEntity.ok(new KanbanElements(elements.get(), pageIndex, rowCount));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
@@ -124,7 +124,7 @@ public class ArchiveAndTrashController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Элементы, содержащиеся в корзине", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Elements.class))
+                            schema = @Schema(implementation = KanbanElements.class))
             }),
             @ApiResponse(responseCode = "403", description = "Польлзователь не имеет доступа к этому проекту"),
             @ApiResponse(responseCode = "400", description = "Канбана с указанным идентификатором не существует",
@@ -139,7 +139,7 @@ public class ArchiveAndTrashController {
         try {
             Optional<List<KanbanElement>> elements = trashService.findTrash(id, provider.getLoginFromToken());
             if(elements.isPresent()){
-                return ResponseEntity.ok(new Elements(elements.get(), pageIndex, rowCount));
+                return ResponseEntity.ok(new KanbanElements(elements.get(), pageIndex, rowCount));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }

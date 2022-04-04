@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
-import ru.manager.ProgectManager.entitys.TimeRemover;
+import ru.manager.ProgectManager.entitys.kanban.TimeRemover;
 import ru.manager.ProgectManager.repositories.TimeRemoverRepository;
 import ru.manager.ProgectManager.services.kanban.ArchiveAndTrashService;
 import ru.manager.ProgectManager.services.kanban.KanbanElementService;

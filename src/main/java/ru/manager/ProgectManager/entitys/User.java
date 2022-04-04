@@ -6,6 +6,7 @@ import lombok.Setter;
 import org.hibernate.Hibernate;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
 
 import javax.persistence.*;
 import java.util.Collection;

@@ -8,7 +8,7 @@ import ru.manager.ProgectManager.DTO.request.UserDTO;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.Role;
 import ru.manager.ProgectManager.entitys.User;
-import ru.manager.ProgectManager.entitys.UserWithProjectConnector;
+import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
 import ru.manager.ProgectManager.exception.EmailAlreadyUsedException;
 import ru.manager.ProgectManager.repositories.RoleRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;

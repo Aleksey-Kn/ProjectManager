@@ -1,7 +1,6 @@
 package ru.manager.ProgectManager.controllers.kanban;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -13,16 +12,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
-import ru.manager.ProgectManager.DTO.request.KanbanCommentRequest;
 import ru.manager.ProgectManager.DTO.request.PhotoDTO;
-import ru.manager.ProgectManager.DTO.response.AttachAllDataResponse;
+import ru.manager.ProgectManager.DTO.request.kanban.KanbanCommentRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
-import ru.manager.ProgectManager.DTO.response.KanbanElementCommentResponse;
-import ru.manager.ProgectManager.DTO.response.KanbanElementContentResponse;
+import ru.manager.ProgectManager.DTO.response.kanban.AttachAllDataResponse;
+import ru.manager.ProgectManager.DTO.response.kanban.AttachMainDataResponse;
+import ru.manager.ProgectManager.DTO.response.kanban.KanbanElementCommentResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
-import ru.manager.ProgectManager.entitys.KanbanAttachment;
-import ru.manager.ProgectManager.entitys.KanbanElement;
-import ru.manager.ProgectManager.entitys.KanbanElementComment;
+import ru.manager.ProgectManager.entitys.kanban.KanbanAttachment;
+import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
+import ru.manager.ProgectManager.entitys.kanban.KanbanElementComment;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.exception.IncorrectStatusException;
 import ru.manager.ProgectManager.services.kanban.KanbanElementService;
@@ -146,10 +145,7 @@ public class KanbanElementAttributesController {
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному комментарию"),
-            @ApiResponse(responseCode = "200", description = "Элемент канбана с учётом внесённых изменений", content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = KanbanElementContentResponse.class))
-            }),
+            @ApiResponse(responseCode = "200", description = "Комментарий успешно удалён"),
             @ApiResponse(responseCode = "410",
                     description = "Операция недоступна, поскольку элемент перемещён в корзину", content = {
                     @Content(mediaType = "application/json",
@@ -157,12 +153,11 @@ public class KanbanElementAttributesController {
             })
     })
     @DeleteMapping("/comment")
-    public ResponseEntity<?> removeComment(@RequestParam long id,
-                                           @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId) {
+    public ResponseEntity<?> removeComment(@RequestParam long id) {
         try {
             Optional<KanbanElement> element = kanbanElementService.deleteComment(id, provider.getLoginFromToken());
             if (element.isPresent()) {
-                return ResponseEntity.ok(new KanbanElementContentResponse(element.get(), zoneId));
+                return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
@@ -181,9 +176,9 @@ public class KanbanElementAttributesController {
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
-            @ApiResponse(responseCode = "200", description = "Элемент с учётом добавленного вложения", content = {
+            @ApiResponse(responseCode = "200", description = "Информация о добавленном вложении", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = KanbanElementContentResponse.class))
+                            schema = @Schema(implementation = AttachMainDataResponse.class))
             }),
             @ApiResponse(responseCode = "406", description = "Ошибка чтения файла", content = {
                     @Content(mediaType = "application/json",
@@ -196,13 +191,12 @@ public class KanbanElementAttributesController {
             })
     })
     @PostMapping("/attachment")
-    public ResponseEntity<?> addAttachment(@RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId,
-                                           @RequestParam long id, @ModelAttribute PhotoDTO photoDTO) {
+    public ResponseEntity<?> addAttachment(@RequestParam long id, @ModelAttribute PhotoDTO photoDTO) {
         try {
-            Optional<KanbanElement> element =
+            Optional<KanbanAttachment> attachment =
                     kanbanElementService.addAttachment(id, provider.getLoginFromToken(), photoDTO.getFile());
-            if (element.isPresent()) {
-                return ResponseEntity.ok(new KanbanElementContentResponse(element.get(), zoneId));
+            if (attachment.isPresent()) {
+                return ResponseEntity.ok(new AttachMainDataResponse(attachment.get()));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
@@ -250,10 +244,7 @@ public class KanbanElementAttributesController {
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
-            @ApiResponse(responseCode = "200", description = "Элемент, в котором произошло изменение", content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = KanbanElementContentResponse.class))
-            }),
+            @ApiResponse(responseCode = "200", description = "Вложение успешно удалено"),
             @ApiResponse(responseCode = "410",
                     description = "Операция недоступна, поскольку элемент перемещён в корзину", content = {
                     @Content(mediaType = "application/json",
@@ -261,12 +252,11 @@ public class KanbanElementAttributesController {
             })
     })
     @DeleteMapping("/attachment")
-    public ResponseEntity<?> deleteAttachment(@RequestParam long id,
-                                              @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId) {
+    public ResponseEntity<?> deleteAttachment(@RequestParam long id) {
         try {
             Optional<KanbanElement> element = kanbanElementService.deleteAttachment(id, provider.getLoginFromToken());
             if (element.isPresent()) {
-                return ResponseEntity.ok(new KanbanElementContentResponse(element.get(), zoneId));
+                return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }

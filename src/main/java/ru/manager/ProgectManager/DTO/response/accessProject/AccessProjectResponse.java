@@ -1,0 +1,22 @@
+package ru.manager.ProgectManager.DTO.response.accessProject;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Getter;
+import ru.manager.ProgectManager.entitys.accessProject.AccessProject;
+
+@Getter
+@Schema(description = "Ответ для предоставления доступа к проекту")
+public class AccessProjectResponse {
+    @Schema(description = "Идентификатор проекта")
+    private final long id;
+    @Schema(description = "Токен доступа к проекту")
+    private final String token;
+    @Schema(description = "Название проекта, к которому предоставляется доступ")
+    private final String projectName;
+
+    public AccessProjectResponse(AccessProject accessProject){
+        id = accessProject.getProject().getId();
+        projectName = accessProject.getProject().getName();
+        token = accessProject.getCode();
+    }
+}

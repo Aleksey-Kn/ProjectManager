@@ -2,10 +2,16 @@ package ru.manager.ProgectManager.services.kanban;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.manager.ProgectManager.DTO.request.KanbanColumnRequest;
-import ru.manager.ProgectManager.DTO.request.SortRequest;
-import ru.manager.ProgectManager.DTO.request.TransportColumnRequest;
-import ru.manager.ProgectManager.entitys.*;
+import ru.manager.ProgectManager.DTO.request.kanban.KanbanColumnRequest;
+import ru.manager.ProgectManager.DTO.request.kanban.SortColumnRequest;
+import ru.manager.ProgectManager.DTO.request.kanban.TransportColumnRequest;
+import ru.manager.ProgectManager.entitys.Project;
+import ru.manager.ProgectManager.entitys.User;
+import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
+import ru.manager.ProgectManager.entitys.kanban.Kanban;
+import ru.manager.ProgectManager.entitys.kanban.KanbanColumn;
+import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
+import ru.manager.ProgectManager.entitys.kanban.TimeRemover;
 import ru.manager.ProgectManager.enums.SortType;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.repositories.*;
@@ -118,9 +124,9 @@ public class KanbanColumnService {
         return Optional.empty();
     }
 
-    public Optional<KanbanColumn> sortColumn(SortRequest sortRequest, String userLogin) {
+    public Optional<KanbanColumn> sortColumn(SortColumnRequest sortColumnRequest, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        KanbanColumn column = columnRepository.findById(sortRequest.getId()).get();
+        KanbanColumn column = columnRepository.findById(sortColumnRequest.getId()).get();
         Kanban kanban = column.getKanban();
         if (column.getKanban().getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
                 && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
@@ -128,13 +134,13 @@ public class KanbanColumnService {
                 .filter(CustomRoleWithKanbanConnector::isCanEdit)
                 .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
             Comparator<KanbanElement> comparator;
-            if (sortRequest.getType() == SortType.ALPHABET) {
+            if (sortColumnRequest.getType() == SortType.ALPHABET) {
                 comparator = Comparator.comparing(KanbanElement::getName);
             } else {
-                comparator = Comparator.comparing(sortRequest.getType() == SortType.TIME_CREATE ?
+                comparator = Comparator.comparing(sortColumnRequest.getType() == SortType.TIME_CREATE ?
                         KanbanElement::getTimeOfCreate : KanbanElement::getTimeOfUpdate);
             }
-            if (sortRequest.isReverse()) {
+            if (sortColumnRequest.isReverse()) {
                 comparator = comparator.reversed();
             }
             KanbanElement[] elements = column.getElements().toArray(KanbanElement[]::new);

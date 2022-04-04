@@ -15,12 +15,12 @@ import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.PhotoDTO;
 import ru.manager.ProgectManager.DTO.request.ProjectDataRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
-import ru.manager.ProgectManager.DTO.response.KanbanListResponse;
 import ru.manager.ProgectManager.DTO.response.ProjectResponse;
+import ru.manager.ProgectManager.DTO.response.kanban.KanbanListResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.components.PhotoCompressor;
-import ru.manager.ProgectManager.entitys.Kanban;
 import ru.manager.ProgectManager.entitys.Project;
+import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.ProjectService;
 

@@ -3,6 +3,9 @@ package ru.manager.ProgectManager.entitys;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
+import ru.manager.ProgectManager.entitys.accessProject.CustomProjectRole;
+import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
+import ru.manager.ProgectManager.entitys.kanban.Kanban;
 
 import javax.persistence.*;
 import java.util.Objects;

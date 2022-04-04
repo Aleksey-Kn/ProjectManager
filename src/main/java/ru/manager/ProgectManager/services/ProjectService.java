@@ -3,7 +3,11 @@ package ru.manager.ProgectManager.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.request.ProjectDataRequest;
-import ru.manager.ProgectManager.entitys.*;
+import ru.manager.ProgectManager.entitys.Project;
+import ru.manager.ProgectManager.entitys.User;
+import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
+import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
+import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.repositories.*;
 

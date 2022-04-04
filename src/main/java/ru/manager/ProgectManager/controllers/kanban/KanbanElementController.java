@@ -13,15 +13,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
-import ru.manager.ProgectManager.DTO.request.CreateKanbanElementRequest;
-import ru.manager.ProgectManager.DTO.request.TransportElementRequest;
-import ru.manager.ProgectManager.DTO.request.UpdateKanbanElementRequest;
+import ru.manager.ProgectManager.DTO.request.kanban.CreateKanbanElementRequest;
+import ru.manager.ProgectManager.DTO.request.kanban.TransportElementRequest;
+import ru.manager.ProgectManager.DTO.request.kanban.UpdateKanbanElementRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
-import ru.manager.ProgectManager.DTO.response.KanbanColumnResponse;
-import ru.manager.ProgectManager.DTO.response.KanbanElementContentResponse;
+import ru.manager.ProgectManager.DTO.response.kanban.KanbanElementContentResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
-import ru.manager.ProgectManager.entitys.KanbanColumn;
-import ru.manager.ProgectManager.entitys.KanbanElement;
+import ru.manager.ProgectManager.entitys.kanban.KanbanColumn;
+import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.exception.IncorrectStatusException;
 import ru.manager.ProgectManager.services.kanban.KanbanElementService;
@@ -124,10 +123,7 @@ public class KanbanElementController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "200", description = "Елемент с учётом внесённых изменений", content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = KanbanElementContentResponse.class))
-            }),
+            @ApiResponse(responseCode = "200", description = "Элемент успешно изменён"),
             @ApiResponse(responseCode = "410",
                     description = "Операция недоступна, поскольку элемент перемещён в корзину", content = {
                     @Content(mediaType = "application/json",
@@ -135,9 +131,7 @@ public class KanbanElementController {
             })
     })
     @PutMapping("/put")
-    public ResponseEntity<?> editElement(@RequestParam long id,
-                                         @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId,
-                                         @RequestBody @Valid UpdateKanbanElementRequest request,
+    public ResponseEntity<?> editElement(@RequestParam long id, @RequestBody @Valid UpdateKanbanElementRequest request,
                                          BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(
@@ -149,10 +143,10 @@ public class KanbanElementController {
                     HttpStatus.NOT_ACCEPTABLE);
         } else {
             try {
-                String login = provider.getLoginFromToken();
-                Optional<KanbanElement> element = kanbanElementService.setElement(id, request, login);
+                Optional<KanbanElement> element = kanbanElementService.setElement(id, request,
+                        provider.getLoginFromToken());
                 if (element.isPresent()) {
-                    return ResponseEntity.ok(new KanbanElementContentResponse(element.get(), zoneId));
+                    return new ResponseEntity<>(HttpStatus.OK);
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
@@ -173,17 +167,7 @@ public class KanbanElementController {
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
-            @ApiResponse(responseCode = "406", description = "Указаны некорректные индекс или количество элементов",
-                    content = {
-                            @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ErrorResponse.class))
-                    }),
-            @ApiResponse(responseCode = "200",
-                    description = "Колонка, в которой находился удалённый элемент, с учётом внесённых изменений",
-                    content = {
-                            @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = KanbanColumnResponse.class))
-                    }),
+            @ApiResponse(responseCode = "200", description = "Элемент успешно удлён"),
             @ApiResponse(responseCode = "410",
                     description = "Операция недоступна, поскольку элемент уже в корзине", content = {
                     @Content(mediaType = "application/json",
@@ -191,18 +175,12 @@ public class KanbanElementController {
             })
     })
     @DeleteMapping("/delete")
-    public ResponseEntity<?> removeElement(@RequestParam long id, @RequestParam int pageIndex, @RequestParam int rowCount) {
-        if (pageIndex < 0) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.INDEX_MUST_BE_MORE_0), HttpStatus.NOT_ACCEPTABLE);
-        }
-        if (rowCount < 1) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.COUNT_MUST_BE_MORE_1), HttpStatus.NOT_ACCEPTABLE);
-        }
+    public ResponseEntity<?> removeElement(@RequestParam long id) {
         try {
             String login = provider.getLoginFromToken();
             Optional<KanbanColumn> column = kanbanElementService.utilizeElementFromUser(id, login);
             if (column.isPresent()) {
-                return ResponseEntity.ok(new KanbanColumnResponse(column.get(), pageIndex, rowCount));
+                return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }

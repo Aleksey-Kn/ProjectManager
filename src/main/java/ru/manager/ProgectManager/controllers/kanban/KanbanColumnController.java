@@ -13,12 +13,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
-import ru.manager.ProgectManager.DTO.request.*;
+import ru.manager.ProgectManager.DTO.request.NameRequest;
+import ru.manager.ProgectManager.DTO.request.kanban.DelayRemoveRequest;
+import ru.manager.ProgectManager.DTO.request.kanban.KanbanColumnRequest;
+import ru.manager.ProgectManager.DTO.request.kanban.SortColumnRequest;
+import ru.manager.ProgectManager.DTO.request.kanban.TransportColumnRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
-import ru.manager.ProgectManager.DTO.response.KanbanColumnResponse;
-import ru.manager.ProgectManager.DTO.response.KanbanResponse;
+import ru.manager.ProgectManager.DTO.response.kanban.KanbanColumnResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
-import ru.manager.ProgectManager.entitys.KanbanColumn;
+import ru.manager.ProgectManager.entitys.kanban.KanbanColumn;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.kanban.KanbanColumnService;
 
@@ -88,14 +91,11 @@ public class KanbanColumnController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "200", description = "Колонка с учётом внесённых изменений", content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = KanbanColumnResponse.class))
-            })
+            @ApiResponse(responseCode = "200", description = "Название упешно изменено")
     })
     @PutMapping("/put")
-    public ResponseEntity<?> renameColumn(@RequestParam long id, @RequestParam int pageIndex, @RequestParam int rowCount,
-                                          @RequestBody @Valid NameRequest name, BindingResult bindingResult) {
+    public ResponseEntity<?> renameColumn(@RequestParam long id, @RequestBody @Valid NameRequest name,
+                                          BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(
                     new ErrorResponse(bindingResult.getAllErrors().stream()
@@ -105,17 +105,11 @@ public class KanbanColumnController {
                             .collect(Collectors.toList())),
                     HttpStatus.NOT_ACCEPTABLE);
         } else {
-            if (pageIndex < 0) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.INDEX_MUST_BE_MORE_0), HttpStatus.NOT_ACCEPTABLE);
-            }
-            if (rowCount < 1) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.COUNT_MUST_BE_MORE_1), HttpStatus.NOT_ACCEPTABLE);
-            }
             try {
                 String login = provider.getLoginFromToken();
                 Optional<KanbanColumn> column = kanbanColumnService.renameColumn(id, name.getName(), login);
                 if (column.isPresent()) {
-                    return ResponseEntity.ok(new KanbanColumnResponse(column.get(), pageIndex, rowCount));
+                    return new ResponseEntity<>(HttpStatus.OK);
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
@@ -133,39 +127,20 @@ public class KanbanColumnController {
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
-            @ApiResponse(responseCode = "406", description = "Указаны некорректные индекс или количество элементов",
-                    content = {
-                            @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ErrorResponse.class))
-                    }),
-            @ApiResponse(responseCode = "200", description = "Канбан доска с учётом внесённых изменений", content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = KanbanResponse.class))
-            })
+            @ApiResponse(responseCode = "200", description = "Колонка успешно удалена")
     })
     @DeleteMapping("/delete")
-    public ResponseEntity<?> removeColumn(@RequestBody @Valid GetKanbanRequest request, BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            return new ResponseEntity<>(
-                    new ErrorResponse(bindingResult.getAllErrors().stream()
-                            .map(ObjectError::getDefaultMessage)
-                            .map(Errors::valueOf)
-                            .map(Errors::getNumValue)
-                            .collect(Collectors.toList())),
-                    HttpStatus.NOT_ACCEPTABLE);
-        } else {
-            try {
-                String login = provider.getLoginFromToken();
-                if (kanbanColumnService.deleteColumn(request.getId(), login)) {
-                    return ResponseEntity.ok(new KanbanResponse(kanbanColumnService.findKanbanFromColumn(request.getId()),
-                            request.getPageColumnIndex(), request.getCountColumn(),
-                            request.getPageElementIndex(), request.getCountElement(), true));
-                }
+    public ResponseEntity<?> removeColumn(@RequestParam long id) {
+        try {
+            String login = provider.getLoginFromToken();
+            if (kanbanColumnService.deleteColumn(id, login)) {
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN),
-                        HttpStatus.BAD_REQUEST);
             }
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN),
+                    HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -225,17 +200,17 @@ public class KanbanColumnController {
             })
     })
     @PostMapping("/sort")
-    public ResponseEntity<?> sortColumn(@RequestBody SortRequest sortRequest, @RequestParam int pageIndex,
-                                        @RequestParam int rowCount){
-        try{
+    public ResponseEntity<?> sortColumn(@RequestBody SortColumnRequest sortColumnRequest, @RequestParam int pageIndex,
+                                        @RequestParam int rowCount) {
+        try {
             Optional<KanbanColumn> kanbanColumn = kanbanColumnService
-                    .sortColumn(sortRequest, provider.getLoginFromToken());
-            if(kanbanColumn.isPresent()){
+                    .sortColumn(sortColumnRequest, provider.getLoginFromToken());
+            if (kanbanColumn.isPresent()) {
                 return ResponseEntity.ok(new KanbanColumnResponse(kanbanColumn.get(), pageIndex, rowCount));
-            } else{
+            } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
-        } catch (NoSuchElementException e){
+        } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.BAD_REQUEST);
         }
     }
@@ -255,8 +230,8 @@ public class KanbanColumnController {
             @ApiResponse(responseCode = "200", description = "Установка интервала удаления произошла успешно")
     })
     @PostMapping("/delay")
-    public ResponseEntity<?> setDelayRemover(@RequestBody @Valid DelayRemoveRequest request, BindingResult bindingResult){
-        if(bindingResult.hasErrors()){
+    public ResponseEntity<?> setDelayRemover(@RequestBody @Valid DelayRemoveRequest request, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.COUNT_MUST_BE_MORE_1), HttpStatus.NOT_ACCEPTABLE);
         } else {
             try {
@@ -283,10 +258,10 @@ public class KanbanColumnController {
     })
     @DeleteMapping("/delay")
     public ResponseEntity<?> deleteDelayRemover(@RequestParam @Parameter(description = "Идентификатор колонки") long id) {
-        try{
-            if(kanbanColumnService.removeDelayDeleter(id, provider.getLoginFromToken())){
+        try {
+            if (kanbanColumnService.removeDelayDeleter(id, provider.getLoginFromToken())) {
                 return new ResponseEntity<>(HttpStatus.OK);
-            } else{
+            } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (NoSuchElementException e) {

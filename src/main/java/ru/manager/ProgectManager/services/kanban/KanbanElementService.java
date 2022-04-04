@@ -3,11 +3,13 @@ package ru.manager.ProgectManager.services.kanban;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import ru.manager.ProgectManager.DTO.request.CreateKanbanElementRequest;
-import ru.manager.ProgectManager.DTO.request.KanbanCommentRequest;
-import ru.manager.ProgectManager.DTO.request.TransportElementRequest;
-import ru.manager.ProgectManager.DTO.request.UpdateKanbanElementRequest;
-import ru.manager.ProgectManager.entitys.*;
+import ru.manager.ProgectManager.DTO.request.kanban.CreateKanbanElementRequest;
+import ru.manager.ProgectManager.DTO.request.kanban.KanbanCommentRequest;
+import ru.manager.ProgectManager.DTO.request.kanban.TransportElementRequest;
+import ru.manager.ProgectManager.DTO.request.kanban.UpdateKanbanElementRequest;
+import ru.manager.ProgectManager.entitys.User;
+import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
+import ru.manager.ProgectManager.entitys.kanban.*;
 import ru.manager.ProgectManager.enums.ElementStatus;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.IncorrectStatusException;
@@ -262,7 +264,7 @@ public class KanbanElementService {
         }
     }
 
-    public Optional<KanbanElement> addAttachment(long id, String userLogin, MultipartFile file) throws IOException {
+    public Optional<KanbanAttachment> addAttachment(long id, String userLogin, MultipartFile file) throws IOException {
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(id).get();
         Kanban kanban = element.getKanbanColumn().getKanban();
@@ -281,7 +283,8 @@ public class KanbanElementService {
 
             element.setTimeOfUpdate(getEpochSeconds());
             element.getKanbanAttachments().add(attachment);
-            return Optional.of(elementRepository.save(element));
+            elementRepository.save(element);
+            return Optional.of(attachment);
         }
         return Optional.empty();
     }
