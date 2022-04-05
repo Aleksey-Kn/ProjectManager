@@ -17,4 +17,6 @@ public class UpdateKanbanElementRequest {
     private String name;
     @Schema(description = "Тег элемента")
     private String tag;
+    @Schema(description = "Выбранная пользователем дата, которая будет отображаться в данной ячейке")
+    private String date;
 }

@@ -37,6 +37,8 @@ public class KanbanElementContentResponse {
     private final String createDate;
     @Schema(description = "Дата и время последнего изменения элемента")
     private final String updateDate;
+    @Schema(description = "Выбранная пользователем дата")
+    private final String selectedDate;
 
     public KanbanElementContentResponse(KanbanElement kanbanElement, int zoneId) {
         id = kanbanElement.getId();
@@ -46,6 +48,7 @@ public class KanbanElementContentResponse {
         creator = new PublicUserDataResponse(kanbanElement.getOwner());
         lastRedactor = new PublicUserDataResponse(kanbanElement.getLastRedactor());
         content = kanbanElement.getContent();
+        selectedDate = kanbanElement.getSelectedDate();
         comments = (kanbanElement.getComments() == null? List.of():
                 kanbanElement.getComments().stream()
                 .sorted(Comparator.comparing(KanbanElementComment::getId))

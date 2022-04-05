@@ -47,6 +47,9 @@ public class KanbanElement {
     @Enumerated(EnumType.ORDINAL)
     private ElementStatus status;
 
+    @Column
+    private String selectedDate;
+
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true)
     private Set<KanbanAttachment> kanbanAttachments;
 

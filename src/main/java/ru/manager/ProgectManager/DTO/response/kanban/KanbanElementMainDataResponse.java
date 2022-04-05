@@ -24,12 +24,15 @@ public class KanbanElementMainDataResponse {
     private final int commentCount;
     @Schema(description = "Количество вложений в ячейке")
     private final int attachCount;
+    @Schema(description = "Выбранная пользователем дата")
+    private final String selectedDate;
 
     public KanbanElementMainDataResponse(KanbanElement kanbanElement) {
         id = kanbanElement.getId();
         serialNumber = kanbanElement.getSerialNumber();
         name = kanbanElement.getName();
         tag = kanbanElement.getTag();
+        selectedDate = kanbanElement.getSelectedDate();
         creator = new PublicUserDataResponse(kanbanElement.getOwner());
         lastRedactor = new PublicUserDataResponse(kanbanElement.getLastRedactor());
         commentCount = (kanbanElement.getComments() == null? 0: kanbanElement.getComments().size());
