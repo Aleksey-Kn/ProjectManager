@@ -20,7 +20,7 @@ public class Kanban {
     private String name;
 
     @JsonIgnore
-    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.REMOVE)
     private Set<Tag> availableTags;
 
     @JsonIgnore
