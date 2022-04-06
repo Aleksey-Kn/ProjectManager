@@ -39,9 +39,6 @@ public class KanbanElement {
     private String name;
 
     @Column
-    private String tag;
-
-    @Column
     private String content;
 
     @Enumerated(EnumType.ORDINAL)
@@ -59,6 +56,10 @@ public class KanbanElement {
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true)
     private Set<KanbanElementComment> comments;
+
+    @ManyToOne
+    @JoinColumn(name = "tag_id")
+    private Tag tag;
 
     @Override
     public boolean equals(Object o) {
