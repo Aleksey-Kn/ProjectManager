@@ -57,9 +57,15 @@ public class KanbanElement {
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true)
     private Set<KanbanElementComment> comments;
 
-    @ManyToOne
-    @JoinColumn(name = "tag_id")
-    private Tag tag;
+    @ManyToMany(cascade = {
+            CascadeType.REFRESH,
+            CascadeType.MERGE
+    })
+    @JoinTable(name = "kanban_element_with_tag_connector",
+            joinColumns = {@JoinColumn(name = "kanban_element_id")},
+            inverseJoinColumns = {@JoinColumn(name = "tag_id")}
+    )
+    private Set<Tag> tags;
 
     @Override
     public boolean equals(Object o) {

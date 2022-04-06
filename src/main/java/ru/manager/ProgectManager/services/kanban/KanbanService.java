@@ -115,4 +115,22 @@ public class KanbanService {
             return false;
         }
     }
+
+    public boolean removeTag(long kanbanId, long tagId, String userLogin){
+        Kanban kanban = kanbanRepository.findById(kanbanId).get();
+        User user = userRepository.findByUsername(userLogin);
+        if(kanban.getProject().getConnectors().parallelStream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().parallelStream()
+                .filter(CustomRoleWithKanbanConnector::isCanEdit)
+                .anyMatch(customRoleWithKanbanConnector -> customRoleWithKanbanConnector.getKanban().equals(kanban))))){
+            Tag tag = tagRepository.findById(tagId).orElseThrow(IllegalArgumentException::new);
+            kanban.getAvailableTags().remove(tag);
+            tagRepository.delete(tag);
+            kanbanRepository.save(kanban);
+            return true;
+        } else{
+            return false;
+        }
+    }
 }

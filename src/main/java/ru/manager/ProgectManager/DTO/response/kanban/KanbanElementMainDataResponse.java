@@ -6,6 +6,8 @@ import ru.manager.ProgectManager.DTO.response.PublicUserDataResponse;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
 import ru.manager.ProgectManager.entitys.kanban.Tag;
 
+import java.util.Set;
+
 @Getter
 @Schema(description = "Ответ, содержащий основную информацию об элементе канбана")
 public class KanbanElementMainDataResponse {
@@ -16,7 +18,7 @@ public class KanbanElementMainDataResponse {
     @Schema(description = "Название элемента")
     private final String name;
     @Schema(description = "Тег элемента")
-    private final Tag tag;
+    private final Set<Tag> tags;
     @Schema(description = "Информация об аккаунте создателя ячейки")
     private final PublicUserDataResponse creator;
     @Schema(description = "Информация об акаунте последнего редактора ячейки")
@@ -32,7 +34,7 @@ public class KanbanElementMainDataResponse {
         id = kanbanElement.getId();
         serialNumber = kanbanElement.getSerialNumber();
         name = kanbanElement.getName();
-        tag = kanbanElement.getTag();
+        tags = kanbanElement.getTags();
         selectedDate = kanbanElement.getSelectedDate();
         creator = new PublicUserDataResponse(kanbanElement.getOwner());
         lastRedactor = new PublicUserDataResponse(kanbanElement.getLastRedactor());

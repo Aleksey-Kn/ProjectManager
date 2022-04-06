@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Getter
@@ -25,7 +26,7 @@ public class KanbanElementContentResponse {
     @Schema(description = "Название элемента")
     private final String name;
     @Schema(description = "Тег элемента")
-    private final Tag tag;
+    private final Set<Tag> tags;
     @Schema(description = "Информация об аккаунте создателя ячейки")
     private final PublicUserDataResponse creator;
     @Schema(description = "Информация об акаунте последнего редактора ячейки")
@@ -45,7 +46,7 @@ public class KanbanElementContentResponse {
         id = kanbanElement.getId();
         serialNumber = kanbanElement.getSerialNumber();
         name = kanbanElement.getName();
-        tag = kanbanElement.getTag();
+        tags = kanbanElement.getTags();
         creator = new PublicUserDataResponse(kanbanElement.getOwner());
         lastRedactor = new PublicUserDataResponse(kanbanElement.getLastRedactor());
         content = kanbanElement.getContent();
