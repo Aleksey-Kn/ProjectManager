@@ -20,6 +20,10 @@ public class Kanban {
     private String name;
 
     @JsonIgnore
+    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private Set<Tag> availableTags;
+
+    @JsonIgnore
     @OneToMany(cascade = CascadeType.ALL)
     private Set<KanbanColumn> kanbanColumns;
 

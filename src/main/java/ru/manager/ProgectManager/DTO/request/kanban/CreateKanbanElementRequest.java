@@ -17,8 +17,6 @@ public class CreateKanbanElementRequest {
     @NotBlank(message = "NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS")
     @Schema(description = "Имя элемента")
     private String name;
-    @Schema(description = "Тег элемента")
-    private String tag;
     @Schema(description = "Выбранная пользователем дата, которая будет отображаться в данной ячейке")
     private String date;
 }

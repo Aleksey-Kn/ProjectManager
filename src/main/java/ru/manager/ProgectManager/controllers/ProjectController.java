@@ -23,6 +23,7 @@ import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.ProjectService;
+import ru.manager.ProgectManager.services.kanban.KanbanService;
 
 import javax.validation.Valid;
 import java.io.IOException;
@@ -38,6 +39,7 @@ public class ProjectController {
     private final ProjectService projectService;
     private final JwtProvider provider;
     private final PhotoCompressor compressor;
+    private final KanbanService kanbanService;
 
     @Operation(summary = "Создание проекта")
     @ApiResponses(value = {
@@ -170,7 +172,7 @@ public class ProjectController {
     public ResponseEntity<?> allKanbanOfThisUser(@RequestParam @Parameter(description = "Идентификатор проекта")
                                                               long id){
         try {
-            Optional<Set<Kanban>> kanbans = projectService.findAllKanban(id, provider.getLoginFromToken());
+            Optional<Set<Kanban>> kanbans = kanbanService.findAllKanban(id, provider.getLoginFromToken());
             if (kanbans.isPresent()) {
                 return ResponseEntity.ok(new KanbanListResponse(kanbans.get()));
             } else {

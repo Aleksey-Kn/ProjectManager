@@ -6,7 +6,6 @@ import lombok.Setter;
 import ru.manager.ProgectManager.entitys.accessProject.CustomProjectRole;
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
-import ru.manager.ProgectManager.entitys.kanban.Tag;
 
 import javax.persistence.*;
 import java.util.Objects;
@@ -48,10 +47,6 @@ public class Project {
     @JsonIgnore
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<CustomProjectRole> availableRole;
-
-    @JsonIgnore
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Tag> availableTags;
 
     @JsonIgnore
     @OneToMany(cascade = CascadeType.PERSIST)

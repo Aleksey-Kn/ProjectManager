@@ -20,7 +20,7 @@ import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.AccessProjectService;
-import ru.manager.ProgectManager.services.ProjectService;
+import ru.manager.ProgectManager.services.kanban.KanbanService;
 
 import javax.validation.Valid;
 import java.util.NoSuchElementException;
@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/users/kanban")
 @Tag(name = "Манипуляции с канбан-доской")
 public class KanbanController {
-    private final ProjectService projectService;
+    private final KanbanService kanbanService;
     private final AccessProjectService accessProjectService;
     private final JwtProvider provider;
 
@@ -67,7 +67,7 @@ public class KanbanController {
         } else {
             try {
                 Optional<Kanban> kanban =
-                        projectService.createKanban(projectId, name.getName(), provider.getLoginFromToken());
+                        kanbanService.createKanban(projectId, name.getName(), provider.getLoginFromToken());
                 if (kanban.isPresent()) {
                     return ResponseEntity.ok(kanban.get());
                 } else {
@@ -111,7 +111,7 @@ public class KanbanController {
         } else {
             try {
                 String login = provider.getLoginFromToken();
-                Optional<Kanban> result = projectService.findKanban(kanbanRequest.getId(), login);
+                Optional<Kanban> result = kanbanService.findKanban(kanbanRequest.getId(), login);
                 if (result.isPresent()) {
                     return ResponseEntity.ok(new KanbanResponse(result.get(),
                             kanbanRequest.getPageColumnIndex(), kanbanRequest.getCountColumn(),
@@ -139,7 +139,7 @@ public class KanbanController {
     @DeleteMapping("/all_kanban")
     public ResponseEntity<?> removeKanban(@RequestParam long id) {
         try {
-            if (projectService.removeKanban(id, provider.getLoginFromToken())) {
+            if (kanbanService.removeKanban(id, provider.getLoginFromToken())) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);

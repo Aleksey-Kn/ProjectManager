@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import ru.manager.ProgectManager.DTO.response.PublicUserDataResponse;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
+import ru.manager.ProgectManager.entitys.kanban.Tag;
 
 @Getter
 @Schema(description = "Ответ, содержащий основную информацию об элементе канбана")
@@ -15,7 +16,7 @@ public class KanbanElementMainDataResponse {
     @Schema(description = "Название элемента")
     private final String name;
     @Schema(description = "Тег элемента")
-    private final String tag;
+    private final Tag tag;
     @Schema(description = "Информация об аккаунте создателя ячейки")
     private final PublicUserDataResponse creator;
     @Schema(description = "Информация об акаунте последнего редактора ячейки")

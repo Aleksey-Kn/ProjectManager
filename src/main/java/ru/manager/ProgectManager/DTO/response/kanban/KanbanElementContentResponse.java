@@ -5,6 +5,7 @@ import lombok.Getter;
 import ru.manager.ProgectManager.DTO.response.PublicUserDataResponse;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElementComment;
+import ru.manager.ProgectManager.entitys.kanban.Tag;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -24,7 +25,7 @@ public class KanbanElementContentResponse {
     @Schema(description = "Название элемента")
     private final String name;
     @Schema(description = "Тег элемента")
-    private final String tag;
+    private final Tag tag;
     @Schema(description = "Информация об аккаунте создателя ячейки")
     private final PublicUserDataResponse creator;
     @Schema(description = "Информация об акаунте последнего редактора ячейки")
