@@ -167,7 +167,7 @@ public class KanbanElementController {
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
-            @ApiResponse(responseCode = "200", description = "Элемент успешно удлён"),
+            @ApiResponse(responseCode = "200", description = "Элемент успешно удалён"),
             @ApiResponse(responseCode = "410",
                     description = "Операция недоступна, поскольку элемент уже в корзине", content = {
                     @Content(mediaType = "application/json",
@@ -240,6 +240,54 @@ public class KanbanElementController {
                 return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
                         HttpStatus.GONE);
             }
+        }
+    }
+
+    @Operation(summary = "Добавление существующего в этом канбане тега к указанному элементу")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Обращение к несуществующему элементу или тегу",
+                    content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному ресурсу"),
+            @ApiResponse(responseCode = "200", description = "Тег успешно добавлен"),
+    })
+    @PostMapping("/tag")
+    public ResponseEntity<?> addTag(@RequestParam long elementId, @RequestParam long tagId){
+        try{
+            if(kanbanElementService.addTag(elementId, tagId, provider.getLoginFromToken())){
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else{
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e){
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.BAD_REQUEST);
+        } catch (IllegalArgumentException e){
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_TAG), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @Operation(summary = "Удаление тега из элемента")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Обращение к несуществующему элементу",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному ресурсу"),
+            @ApiResponse(responseCode = "200", description = "Тег успешно удалён"),
+    })
+    @DeleteMapping("/tag")
+    public ResponseEntity<?> removeTag(@RequestParam long elementId, @RequestParam long tagId){
+        try{
+            if(kanbanElementService.removeTag(elementId, tagId, provider.getLoginFromToken())){
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else{
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e){
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.BAD_REQUEST);
         }
     }
 }

@@ -52,7 +52,7 @@ public class KanbanService {
             project.getAvailableRole().forEach(r -> {
                 Optional<CustomRoleWithKanbanConnector> removeConnector = r.getCustomRoleWithKanbanConnectors().stream()
                         .filter(c -> c.getKanban().getId() == id).findAny();
-                if(removeConnector.isPresent()) {
+                if (removeConnector.isPresent()) {
                     r.getCustomRoleWithKanbanConnectors().remove(removeConnector.get());
                     kanbanConnectorRepository.delete(removeConnector.get());
                     customProjectRoleRepository.save(r);
@@ -85,11 +85,11 @@ public class KanbanService {
                 .filter(c -> c.getProject().equals(project))
                 .findAny();
         if (connector.isPresent()) {
-            if(connector.get().getRoleType() == TypeRoleProject.CUSTOM_ROLE) {
+            if (connector.get().getRoleType() == TypeRoleProject.CUSTOM_ROLE) {
                 return Optional.of(connector.get().getCustomProjectRole().getCustomRoleWithKanbanConnectors().parallelStream()
                         .map(CustomRoleWithKanbanConnector::getKanban)
                         .collect(Collectors.toSet()));
-            } else{
+            } else {
                 return Optional.of(project.getKanbans());
             }
         } else {
@@ -97,18 +97,41 @@ public class KanbanService {
         }
     }
 
-    public boolean addTag(long id, TagRequest request, String userLogin){
+    public Optional<Tag> addTag(long id, TagRequest request, String userLogin) {
         Kanban kanban = kanbanRepository.findById(id).get();
         User user = userRepository.findByUsername(userLogin);
-        if(kanban.getProject().getConnectors().parallelStream().anyMatch(c -> c.getUser().equals(user)
+        if (kanban.getProject().getConnectors().parallelStream().anyMatch(c -> c.getUser().equals(user)
                 && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
                 || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().parallelStream()
                 .filter(CustomRoleWithKanbanConnector::isCanEdit)
-                .anyMatch(connector -> connector.getKanban().equals(kanban))))){
+                .anyMatch(connector -> connector.getKanban().equals(kanban))))) {
             Tag tag = new Tag();
             tag.setColor(request.getColor());
             tag.setText(request.getText());
-            kanban.getAvailableTags().add(tagRepository.save(tag));
+            tag = tagRepository.save(tag);
+            kanban.getAvailableTags().add(tag);
+            kanbanRepository.save(kanban);
+            return Optional.of(tag);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    public boolean removeTag(long kanbanId, long tagId, String userLogin) {
+        Kanban kanban = kanbanRepository.findById(kanbanId).get();
+        User user = userRepository.findByUsername(userLogin);
+        if (kanban.getProject().getConnectors().parallelStream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().parallelStream()
+                .filter(CustomRoleWithKanbanConnector::isCanEdit)
+                .anyMatch(customRoleWithKanbanConnector -> customRoleWithKanbanConnector.getKanban().equals(kanban))))) {
+            Tag tag = kanban.getAvailableTags().stream().filter(t -> t.getId() == tagId)
+                    .findAny().orElseThrow(IllegalArgumentException::new);
+            kanban.getAvailableTags().remove(tag);
+            kanban.getKanbanColumns().stream().flatMap(c -> c.getElements().stream())
+                    .filter(e -> e.getTags().contains(tag))
+                    .forEach(e -> e.getTags().remove(tag));
+            tagRepository.delete(tag);
             kanbanRepository.save(kanban);
             return true;
         } else {
@@ -116,21 +139,16 @@ public class KanbanService {
         }
     }
 
-    public boolean removeTag(long kanbanId, long tagId, String userLogin){
+    public Optional<Set<Tag>> findAllAvailableTags(long kanbanId, String userLogin) {
         Kanban kanban = kanbanRepository.findById(kanbanId).get();
         User user = userRepository.findByUsername(userLogin);
-        if(kanban.getProject().getConnectors().parallelStream().anyMatch(c -> c.getUser().equals(user)
+        if (kanban.getProject().getConnectors().parallelStream().anyMatch(c -> c.getUser().equals(user)
                 && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
                 || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().parallelStream()
-                .filter(CustomRoleWithKanbanConnector::isCanEdit)
-                .anyMatch(customRoleWithKanbanConnector -> customRoleWithKanbanConnector.getKanban().equals(kanban))))){
-            Tag tag = tagRepository.findById(tagId).orElseThrow(IllegalArgumentException::new);
-            kanban.getAvailableTags().remove(tag);
-            tagRepository.delete(tag);
-            kanbanRepository.save(kanban);
-            return true;
-        } else{
-            return false;
+                .anyMatch(customRoleWithKanbanConnector -> customRoleWithKanbanConnector.getKanban().equals(kanban))))) {
+            return Optional.of(kanban.getAvailableTags());
+        } else {
+            return Optional.empty();
         }
     }
 }

@@ -25,7 +25,7 @@ public class KanbanElementContentResponse {
     private final int serialNumber;
     @Schema(description = "Название элемента")
     private final String name;
-    @Schema(description = "Тег элемента")
+    @Schema(description = "Теги элемента")
     private final Set<Tag> tags;
     @Schema(description = "Информация об аккаунте создателя ячейки")
     private final PublicUserDataResponse creator;

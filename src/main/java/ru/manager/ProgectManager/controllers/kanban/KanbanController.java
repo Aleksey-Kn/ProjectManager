@@ -14,8 +14,10 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.NameRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.GetKanbanRequest;
+import ru.manager.ProgectManager.DTO.request.kanban.TagRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanResponse;
+import ru.manager.ProgectManager.DTO.response.kanban.TagListResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.enums.Errors;
@@ -25,6 +27,7 @@ import ru.manager.ProgectManager.services.kanban.KanbanService;
 import javax.validation.Valid;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
@@ -42,7 +45,7 @@ public class KanbanController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к указанному проекту"),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному действию"),
             @ApiResponse(responseCode = "406", description = "Имя не должно быть пустым",
                     content = {
                             @Content(mediaType = "application/json",
@@ -92,7 +95,7 @@ public class KanbanController {
                             @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ErrorResponse.class))
                     }),
-            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к указанному проекту"),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к указанному ресурсу"),
             @ApiResponse(responseCode = "200", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = KanbanResponse.class))
@@ -133,7 +136,7 @@ public class KanbanController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному ресурсу"),
             @ApiResponse(responseCode = "200", description = "Канбан доска успешно удалена")
     })
     @DeleteMapping("/all_kanban")
@@ -147,6 +150,84 @@ public class KanbanController {
         } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN),
                     HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @Operation(summary = "Получаение всех доступных для этого канбана тегов")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Обращение к несуществующему канбану", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному ресурсу"),
+            @ApiResponse(responseCode = "200", description = "Список тегов", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = TagListResponse.class))
+            })
+    })
+    @GetMapping("/tags")
+    public ResponseEntity<?> findAllTags(@RequestParam long id){
+        try{
+            Optional<Set<ru.manager.ProgectManager.entitys.kanban.Tag>> tags =
+                    kanbanService.findAllAvailableTags(id, provider.getLoginFromToken());
+            if(tags.isPresent()){
+                return ResponseEntity.ok(new TagListResponse(tags.get()));
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e){
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @Operation(summary = "Добавление тега в канбан")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Обращение к несуществующему канбану", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному ресурсу"),
+            @ApiResponse(responseCode = "200", description = "Информация о добавленном теге", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ru.manager.ProgectManager.entitys.kanban.Tag.class))
+            })
+    })
+    @PostMapping("/tag")
+    public ResponseEntity<?> addTag(@RequestParam long id, @RequestBody TagRequest request){
+        try {
+            Optional<ru.manager.ProgectManager.entitys.kanban.Tag> tag =
+                    kanbanService.addTag(id, request, provider.getLoginFromToken());
+            if(tag.isPresent()){
+                return ResponseEntity.ok(tag.get());
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e){
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @Operation(summary = "Удаление тега из канбана")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Обращение к несуществующему канбану или тегу", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному ресурсу"),
+            @ApiResponse(responseCode = "200", description = "Тег успешно удалён из канбана")
+    })
+    @DeleteMapping("/tag")
+    public ResponseEntity<?> deleteTag(@RequestParam long kanbanId, @RequestParam long tagId){
+        try{
+            if(kanbanService.removeTag(kanbanId, tagId, provider.getLoginFromToken())){
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else{
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e){
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.BAD_REQUEST);
+        } catch (IllegalArgumentException e){
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_TAG), HttpStatus.BAD_REQUEST);
         }
     }
 }

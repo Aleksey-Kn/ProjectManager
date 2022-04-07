@@ -34,7 +34,6 @@ public class KanbanElementService {
     private final KanbanElementCommentRepository commentRepository;
     private final KanbanAttachmentRepository attachmentRepository;
     private final TimeRemoverRepository timeRemoverRepository;
-    private final TagRepository tagRepository;
 
     public Optional<KanbanElement> addElement(CreateKanbanElementRequest request, String userLogin) {
         KanbanColumn column = columnRepository.findById(request.getColumnId()).get();
@@ -346,7 +345,9 @@ public class KanbanElementService {
                 || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
                 .filter(CustomRoleWithKanbanConnector::isCanEdit)
                 .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
-            element.getTags().add(tagRepository.findById(tagId).orElseThrow(IllegalArgumentException::new));
+            element.getTags().add(element.getKanbanColumn().getKanban().getAvailableTags().stream()
+                    .filter(t -> t.getId() == tagId)
+                    .findAny().orElseThrow(IllegalArgumentException::new));
             elementRepository.save(element);
             return true;
         } else{
