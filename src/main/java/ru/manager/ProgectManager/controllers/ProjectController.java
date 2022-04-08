@@ -16,6 +16,7 @@ import ru.manager.ProgectManager.DTO.request.PhotoDTO;
 import ru.manager.ProgectManager.DTO.request.ProjectDataRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.ProjectResponse;
+import ru.manager.ProgectManager.DTO.response.UserDataListResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanListResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.components.PhotoCompressor;
@@ -185,6 +186,28 @@ public class ProjectController {
             }
         } catch (NoSuchElementException e){
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @Operation(summary = "Получение списка участников проекта")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "404", description = "Обращание к несуществующему проекту", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к указанному проекту"),
+            @ApiResponse(responseCode = "200", description = "Список участников проекта", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = UserDataListResponse.class))
+            })
+    })
+    @GetMapping("/project/users")
+    public ResponseEntity<?> allParticipants(@RequestParam @Parameter(description = "Идентификатор проекта")
+                                                         long id){
+        try{
+            return ResponseEntity.ok(new UserDataListResponse(projectService.findAllParticipants(id)));
+        } catch (NoSuchElementException e){
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
         }
     }
 

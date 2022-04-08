@@ -14,10 +14,8 @@ import ru.manager.ProgectManager.repositories.UserWithProjectConnectorRepository
 
 import javax.activation.MimetypesFileTypeMap;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -114,5 +112,10 @@ public class ProjectService {
             return true;
         }
         return false;
+    }
+
+    public Set<User> findAllParticipants(long id){
+        return projectRepository.findById(id).get().getConnectors().stream().map(UserWithProjectConnector::getUser)
+                .collect(Collectors.toSet());
     }
 }
