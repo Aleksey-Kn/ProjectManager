@@ -16,7 +16,8 @@ import ru.manager.ProgectManager.DTO.request.NameRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.GetKanbanRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.TagRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
-import ru.manager.ProgectManager.DTO.response.kanban.KanbanResponse;
+import ru.manager.ProgectManager.DTO.response.kanban.KanbanContentResponse;
+import ru.manager.ProgectManager.DTO.response.kanban.KanbanMainDataResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.TagListResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
@@ -72,7 +73,7 @@ public class KanbanController {
                 Optional<Kanban> kanban =
                         kanbanService.createKanban(projectId, name.getName(), provider.getLoginFromToken());
                 if (kanban.isPresent()) {
-                    return ResponseEntity.ok(kanban.get());
+                    return ResponseEntity.ok(new KanbanMainDataResponse(kanban.get()));
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
@@ -98,7 +99,7 @@ public class KanbanController {
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к указанному ресурсу"),
             @ApiResponse(responseCode = "200", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = KanbanResponse.class))
+                            schema = @Schema(implementation = KanbanContentResponse.class))
             })
     })
     @GetMapping("/get")
@@ -116,7 +117,7 @@ public class KanbanController {
                 String login = provider.getLoginFromToken();
                 Optional<Kanban> result = kanbanService.findKanban(kanbanRequest.getId(), login);
                 if (result.isPresent()) {
-                    return ResponseEntity.ok(new KanbanResponse(result.get(),
+                    return ResponseEntity.ok(new KanbanContentResponse(result.get(),
                             kanbanRequest.getPageColumnIndex(), kanbanRequest.getCountColumn(),
                             kanbanRequest.getPageElementIndex(), kanbanRequest.getCountElement(),
                             accessProjectService.canEditKanban(kanbanRequest.getId(), login)));
