@@ -24,7 +24,7 @@ public class Kanban {
     private Set<Tag> availableTags;
 
     @JsonIgnore
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "kanban", cascade = CascadeType.ALL)
     private Set<KanbanColumn> kanbanColumns;
 
     @JsonIgnore

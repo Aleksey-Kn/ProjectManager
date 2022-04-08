@@ -1,9 +1,7 @@
 package ru.manager.ProgectManager.entitys.kanban;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
 import org.hibernate.Hibernate;
 
 import javax.persistence.*;
@@ -13,8 +11,6 @@ import java.util.Set;
 @Entity
 @Getter
 @Setter
-@ToString
-@RequiredArgsConstructor
 @Table(name = "kanban_column")
 public class KanbanColumn {
     @Id
@@ -30,7 +26,7 @@ public class KanbanColumn {
     @Column(nullable = false)
     private int delayedDays; // 0 - значение, обоначающее отстутствие автоочищения столбца
 
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "kanbanColumn", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private Set<KanbanElement> elements;
 
     @ManyToOne

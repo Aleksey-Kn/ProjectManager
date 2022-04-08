@@ -47,14 +47,14 @@ public class KanbanElement {
     @Column
     private String selectedDate;
 
-    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @OneToMany(mappedBy = "element", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private Set<KanbanAttachment> kanbanAttachments;
 
     @ManyToOne
     @JoinColumn(name = "kanban_column_id")
     private KanbanColumn kanbanColumn;
 
-    @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @OneToMany(mappedBy = "kanbanElement", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private Set<KanbanElementComment> comments;
 
     @ManyToMany(cascade = {

@@ -49,11 +49,11 @@ public class Project {
     private Set<CustomProjectRole> availableRole;
 
     @JsonIgnore
-    @OneToMany(cascade = CascadeType.PERSIST)
+    @OneToMany(mappedBy = "project", cascade = CascadeType.PERSIST)
     private Set<UserWithProjectConnector> connectors;
 
     @JsonIgnore
-    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "project", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Kanban> kanbans;
 
     @Override
