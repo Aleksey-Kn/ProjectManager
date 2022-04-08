@@ -205,4 +205,14 @@ public class AccessProjectService {
                         .filter(CustomRoleWithKanbanConnector::isCanEdit)
                         .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))));
     }
+
+    public String findUserRoleName(String userLogin, long projectId){
+        User user = userRepository.findByUsername(userLogin);
+        Project project = projectRepository.findById(projectId).get();
+        UserWithProjectConnector connector = project.getConnectors().stream()
+                .filter(c -> c.getUser().equals(user))
+                .findAny().get();
+        return (connector.getRoleType() == TypeRoleProject.CUSTOM_ROLE? connector.getCustomProjectRole().getName():
+                connector.getRoleType().toString());
+    }
 }

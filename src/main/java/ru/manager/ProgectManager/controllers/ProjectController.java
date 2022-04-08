@@ -22,6 +22,7 @@ import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.enums.Errors;
+import ru.manager.ProgectManager.services.AccessProjectService;
 import ru.manager.ProgectManager.services.ProjectService;
 import ru.manager.ProgectManager.services.kanban.KanbanService;
 
@@ -40,6 +41,7 @@ public class ProjectController {
     private final JwtProvider provider;
     private final PhotoCompressor compressor;
     private final KanbanService kanbanService;
+    private final AccessProjectService accessProjectService;
 
     @Operation(summary = "Создание проекта")
     @ApiResponses(value = {
@@ -59,7 +61,8 @@ public class ProjectController {
                     new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS), HttpStatus.NOT_ACCEPTABLE);
         } else{
             return ResponseEntity.ok(
-                    new ProjectResponse(projectService.addProject(request, provider.getLoginFromToken())));
+                    new ProjectResponse(projectService.addProject(request, provider.getLoginFromToken()),
+                            "ADMIN"));
         }
     }
 
@@ -78,9 +81,11 @@ public class ProjectController {
     @GetMapping("/project")
     public ResponseEntity<?> findProject(@RequestParam long id){
         try {
-            Optional<Project> project = projectService.findProject(id, provider.getLoginFromToken());
+            String login = provider.getLoginFromToken();
+            Optional<Project> project = projectService.findProject(id, login);
             if (project.isPresent()) {
-                return ResponseEntity.ok(new ProjectResponse(project.get()));
+                return ResponseEntity.ok(new ProjectResponse(project.get(),
+                        accessProjectService.findUserRoleName(login, project.get().getId())));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }

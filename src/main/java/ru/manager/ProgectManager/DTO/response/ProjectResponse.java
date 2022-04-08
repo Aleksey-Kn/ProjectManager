@@ -31,14 +31,17 @@ public class ProjectResponse {
     private final String startDate;
     @Schema(description = "Дедлайн проекта")
     private final String deadline;
+    @Schema(description = "Название роли этого пользователя в проекте")
+    private final String roleName;
 
-    public ProjectResponse(Project project){
+    public ProjectResponse(Project project, String userRoleName){
         name = project.getName();
         id = project.getId();
         photo = project.getPhoto();
         participants = project.getConnectors().stream()
                 .map(UserWithProjectConnector::getUser)
                 .map(PublicUserDataResponse::new)
+                .limit(3)
                 .collect(Collectors.toList());
         datatypePhoto = project.getDatatypePhoto();
         description = project.getDescription();
@@ -46,5 +49,6 @@ public class ProjectResponse {
         statusColor = project.getStatusColor();
         startDate = project.getStartDate();
         deadline = project.getDeadline();
+        roleName = userRoleName;
     }
 }

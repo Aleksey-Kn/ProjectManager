@@ -19,12 +19,16 @@ import ru.manager.ProgectManager.DTO.response.ProjectListResponse;
 import ru.manager.ProgectManager.DTO.response.PublicUserDataResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.components.PhotoCompressor;
+import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.User;
 import ru.manager.ProgectManager.enums.Errors;
+import ru.manager.ProgectManager.services.AccessProjectService;
 import ru.manager.ProgectManager.services.UserService;
 
 import javax.validation.Valid;
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -36,6 +40,7 @@ public class UserController {
     private final UserService userService;
     private final JwtProvider jwtProvider;
     private final PhotoCompressor compressor;
+    private final AccessProjectService accessProjectService;
 
     @Operation(summary = "Предоставление информации о пользователе",
             description = "Позволяет предоставлять информацию как о своём аккаунте, так и о чужих")
@@ -118,6 +123,10 @@ public class UserController {
     })
     @GetMapping("/user/projects")
     public ProjectListResponse getUserProjects(){
-        return new ProjectListResponse(userService.allProjectOfThisUser(jwtProvider.getLoginFromToken()));
+        String login = jwtProvider.getLoginFromToken();
+        List<Project> projectList = userService.allProjectOfThisUser(login);
+        List<String> roles = new LinkedList<>();
+        projectList.forEach(p -> roles.add(accessProjectService.findUserRoleName(login, p.getId())));
+        return new ProjectListResponse(projectList, roles);
     }
 }
