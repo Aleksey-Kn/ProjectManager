@@ -45,7 +45,7 @@ public class UserController {
     @Operation(summary = "Предоставление информации о пользователе",
             description = "Позволяет предоставлять информацию как о своём аккаунте, так и о чужих")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Обращение к неуществующему пользователю", content = {
+            @ApiResponse(responseCode = "404", description = "Обращение к неуществующему пользователю", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -63,7 +63,7 @@ public class UserController {
             return ResponseEntity.ok(new PublicUserDataResponse(user.get()));
         } else {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER),
-                    HttpStatus.BAD_REQUEST);
+                    HttpStatus.NOT_FOUND);
         }
     }
 
@@ -73,7 +73,7 @@ public class UserController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "406", description = "Вводимые данные не приемлимы", content = {
+            @ApiResponse(responseCode = "400", description = "Вводимые данные не приемлимы", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -87,7 +87,7 @@ public class UserController {
                     .map(Errors::valueOf)
                     .map(Errors::getNumValue)
                     .collect(Collectors.toList())),
-                    HttpStatus.NOT_ACCEPTABLE);
+                    HttpStatus.BAD_REQUEST);
         }
         if (userService.refreshUserData(jwtProvider.getLoginFromToken(), userDTO)) {
             return new ResponseEntity<>(HttpStatus.OK);
@@ -97,7 +97,7 @@ public class UserController {
 
     @Operation(summary = "Установление фотографии профиля", description = "Добавление или замена фотографии")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "406", description = "Файл не может быть корректно прочитан или обработан",
+            @ApiResponse(responseCode = "400", description = "Файл не может быть корректно прочитан или обработан",
                     content = {
                             @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ErrorResponse.class))
@@ -112,7 +112,7 @@ public class UserController {
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (IOException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.BAD_FILE),
-                    HttpStatus.NOT_ACCEPTABLE);
+                    HttpStatus.BAD_REQUEST);
         }
     }
 

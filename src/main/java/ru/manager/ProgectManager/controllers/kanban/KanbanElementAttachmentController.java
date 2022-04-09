@@ -35,7 +35,7 @@ public class KanbanElementAttachmentController {
 
     @Operation(summary = "Добавление вложения")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Обращение к несуществующему элементу", content = {
+            @ApiResponse(responseCode = "404", description = "Обращение к несуществующему элементу", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -44,7 +44,7 @@ public class KanbanElementAttachmentController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = AttachMainDataResponse.class))
             }),
-            @ApiResponse(responseCode = "406", description = "Ошибка чтения файла", content = {
+            @ApiResponse(responseCode = "400", description = "Ошибка чтения файла", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -65,10 +65,9 @@ public class KanbanElementAttachmentController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT),
-                    HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
         } catch (IOException | NullPointerException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.BAD_FILE), HttpStatus.NOT_ACCEPTABLE);
+            return new ResponseEntity<>(new ErrorResponse(Errors.BAD_FILE), HttpStatus.BAD_REQUEST);
         } catch (IncorrectStatusException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
                     HttpStatus.GONE);
@@ -77,7 +76,7 @@ public class KanbanElementAttachmentController {
 
     @Operation(summary = "Получение вложения")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Обращение к несуществующему вложению", content = {
+            @ApiResponse(responseCode = "404", description = "Обращение к несуществующему вложению", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -97,13 +96,13 @@ public class KanbanElementAttachmentController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ATTACHMENT), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ATTACHMENT), HttpStatus.NOT_FOUND);
         }
     }
 
     @Operation(summary = "Удаление вложения")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Обращение к несуществующему вложению", content = {
+            @ApiResponse(responseCode = "404", description = "Обращение к несуществующему вложению", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -125,7 +124,7 @@ public class KanbanElementAttachmentController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ATTACHMENT), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ATTACHMENT), HttpStatus.NOT_FOUND);
         } catch (IncorrectStatusException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
                     HttpStatus.GONE);

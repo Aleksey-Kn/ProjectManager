@@ -35,7 +35,7 @@ public class ArchiveAndTrashController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Элемент успешно перемещён"),
             @ApiResponse(responseCode = "403", description = "Польлзователь не имеет доступа к этому проекту"),
-            @ApiResponse(responseCode = "400", description = "Элемента с указанным идентификатором не существует",
+            @ApiResponse(responseCode = "404", description = "Элемента с указанным идентификатором не существует",
                     content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
@@ -57,7 +57,7 @@ public class ArchiveAndTrashController {
             return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
                     HttpStatus.GONE);
         } catch (NoSuchElementException e){
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -66,7 +66,7 @@ public class ArchiveAndTrashController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Элемент успешно перемещён"),
             @ApiResponse(responseCode = "403", description = "Польлзователь не имеет доступа к этому проекту"),
-            @ApiResponse(responseCode = "400", description = "Элемента с указанным идентификатором не существует",
+            @ApiResponse(responseCode = "404", description = "Элемента с указанным идентификатором не существует",
                     content = {
                             @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ErrorResponse.class))
@@ -88,7 +88,7 @@ public class ArchiveAndTrashController {
             return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
                     HttpStatus.GONE);
         } catch (NoSuchElementException e){
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -99,7 +99,7 @@ public class ArchiveAndTrashController {
                             schema = @Schema(implementation = KanbanElements.class))
             }),
             @ApiResponse(responseCode = "403", description = "Польлзователь не имеет доступа к этому проекту"),
-            @ApiResponse(responseCode = "400", description = "Канбана с указанным идентификатором не существует",
+            @ApiResponse(responseCode = "404", description = "Канбана с указанным идентификатором не существует",
                     content = {
                             @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ErrorResponse.class))
@@ -116,7 +116,7 @@ public class ArchiveAndTrashController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (NoSuchElementException e){
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -127,7 +127,7 @@ public class ArchiveAndTrashController {
                             schema = @Schema(implementation = KanbanElements.class))
             }),
             @ApiResponse(responseCode = "403", description = "Польлзователь не имеет доступа к этому проекту"),
-            @ApiResponse(responseCode = "400", description = "Канбана с указанным идентификатором не существует",
+            @ApiResponse(responseCode = "404", description = "Канбана с указанным идентификатором не существует",
                     content = {
                             @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ErrorResponse.class))
@@ -144,7 +144,7 @@ public class ArchiveAndTrashController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (NoSuchElementException e){
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.NOT_FOUND);
         }
     }
 }

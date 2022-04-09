@@ -40,11 +40,11 @@ public class KanbanElementController {
 
     @Operation(summary = "Получение элемента канбана", description = "Получение полной информации об элементе канбана")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Указанного элемента не существует", content = {
+            @ApiResponse(responseCode = "404", description = "Указанного элемента не существует", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "403", description = "Запрашивающий пользователь не имеет доступа к проекту",
+            @ApiResponse(responseCode = "403", description = "Запрашивающий пользователь не имеет доступа к ресурсу",
                     content = {
                             @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ErrorResponse.class))
@@ -62,22 +62,22 @@ public class KanbanElementController {
                     .getContentFromElement(elementId, provider.getLoginFromToken());
             if (content.isPresent()) {
                 return ResponseEntity.ok(new KanbanElementContentResponse(content.get(), zoneId));
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT),
-                    HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
         }
     }
 
     @Operation(summary = "Добавление элемента")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Указанной колонки не существует", content = {
+            @ApiResponse(responseCode = "404", description = "Указанной колонки не существует", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
-            @ApiResponse(responseCode = "406", description = "Попытка создать элемент с пустым именем", content = {
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к ресурсу"),
+            @ApiResponse(responseCode = "400", description = "Попытка создать элемент с пустым именем", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -95,7 +95,7 @@ public class KanbanElementController {
                             .map(Errors::valueOf)
                             .map(Errors::getNumValue)
                             .collect(Collectors.toList())),
-                    HttpStatus.NOT_ACCEPTABLE);
+                    HttpStatus.BAD_REQUEST);
         } else {
             try {
                 String login = provider.getLoginFromToken();
@@ -106,20 +106,19 @@ public class KanbanElementController {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
             } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN),
-                        HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.NOT_FOUND);
             }
         }
     }
 
     @Operation(summary = "Изменение элемента", description = "Обновление всех текстовых полей элемента")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Попытка обращения к несуществующему элементу", content = {
+            @ApiResponse(responseCode = "404", description = "Попытка обращения к несуществующему элементу", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
-            @ApiResponse(responseCode = "406", description = "Попытка присвоения элементу пустого имени", content = {
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к ресурсу"),
+            @ApiResponse(responseCode = "400", description = "Попытка присвоения элементу пустого имени", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -140,7 +139,7 @@ public class KanbanElementController {
                             .map(Errors::valueOf)
                             .map(Errors::getNumValue)
                             .collect(Collectors.toList())),
-                    HttpStatus.NOT_ACCEPTABLE);
+                    HttpStatus.BAD_REQUEST);
         } else {
             try {
                 Optional<KanbanElement> element = kanbanElementService.setElement(id, request,
@@ -151,8 +150,7 @@ public class KanbanElementController {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
             } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT),
-                        HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
             } catch (IncorrectStatusException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
                         HttpStatus.GONE);
@@ -162,11 +160,11 @@ public class KanbanElementController {
 
     @Operation(summary = "Удаление элемента")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Обращение к несуществующему элементу", content = {
+            @ApiResponse(responseCode = "404", description = "Обращение к несуществующему элементу", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к ресурсу"),
             @ApiResponse(responseCode = "200", description = "Элемент успешно удалён"),
             @ApiResponse(responseCode = "410",
                     description = "Операция недоступна, поскольку элемент уже в корзине", content = {
@@ -185,8 +183,7 @@ public class KanbanElementController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT),
-                    HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
         } catch (IncorrectStatusException e){
             return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
                     HttpStatus.GONE);
@@ -196,12 +193,12 @@ public class KanbanElementController {
     @Operation(summary = "Перемещение элемента канбана",
             description = "Изменение местоположения элемента на указанный порядковый номер в указанном столбце")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Неверные идентификаторы колонки или элемента", content = {
+            @ApiResponse(responseCode = "404", description = "Неверные идентификаторы колонки или элемента", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному проекту"),
-            @ApiResponse(responseCode = "406", description = "Введённый желаемый порядковый номер элемента недопостим",
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному ресурсу"),
+            @ApiResponse(responseCode = "400", description = "Введённый желаемый порядковый номер элемента недопостим",
                     content = {
                             @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ErrorResponse.class))
@@ -223,7 +220,7 @@ public class KanbanElementController {
                             .map(Errors::valueOf)
                             .map(Errors::getNumValue)
                             .collect(Collectors.toList())),
-                    HttpStatus.NOT_ACCEPTABLE);
+                    HttpStatus.BAD_REQUEST);
         } else {
             try {
                 if (kanbanElementService.transportElement(transportElementRequest, provider.getLoginFromToken())) {
@@ -232,10 +229,10 @@ public class KanbanElementController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             } catch (NoSuchElementException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT_OR_COLUMN),
-                        HttpStatus.BAD_REQUEST);
+                        HttpStatus.NOT_FOUND);
             } catch (IllegalArgumentException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.INDEX_MORE_COLLECTION_SIZE),
-                        HttpStatus.NOT_ACCEPTABLE);
+                        HttpStatus.BAD_REQUEST);
             } catch (IncorrectStatusException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
                         HttpStatus.GONE);
@@ -245,7 +242,7 @@ public class KanbanElementController {
 
     @Operation(summary = "Добавление существующего в этом канбане тега к указанному элементу")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Обращение к несуществующему элементу или тегу",
+            @ApiResponse(responseCode = "404", description = "Обращение к несуществующему элементу или тегу",
                     content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
@@ -262,15 +259,15 @@ public class KanbanElementController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (NoSuchElementException e){
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
         } catch (IllegalArgumentException e){
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_TAG), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_TAG), HttpStatus.NOT_FOUND);
         }
     }
 
     @Operation(summary = "Удаление тега из элемента")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Обращение к несуществующему элементу",
+            @ApiResponse(responseCode = "404", description = "Обращение к несуществующему элементу",
                     content = {
                             @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ErrorResponse.class))
@@ -287,7 +284,7 @@ public class KanbanElementController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (NoSuchElementException e){
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
         }
     }
 }

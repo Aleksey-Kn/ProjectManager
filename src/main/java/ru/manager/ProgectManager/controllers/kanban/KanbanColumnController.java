@@ -40,12 +40,12 @@ public class KanbanColumnController {
 
     @Operation(summary = "Добавление колонки")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Обращение к несуществующему проекту", content = {
+            @ApiResponse(responseCode = "404", description = "Обращение к несуществующему проекту", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
-            @ApiResponse(responseCode = "406", description = "Название колонки не должно быть пустым", content = {
+            @ApiResponse(responseCode = "400", description = "Название колонки не должно быть пустым", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -64,7 +64,7 @@ public class KanbanColumnController {
                             .map(Errors::valueOf)
                             .map(Errors::getNumValue)
                             .collect(Collectors.toList())),
-                    HttpStatus.NOT_ACCEPTABLE);
+                    HttpStatus.BAD_REQUEST);
         }
         try {
             String login = provider.getLoginFromToken();
@@ -75,19 +75,18 @@ public class KanbanColumnController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN),
-                    HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.NOT_FOUND);
         }
     }
 
     @Operation(summary = "Изменение колонки", description = "Изменение названия колонки")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Обращение к несуществующей колонке", content = {
+            @ApiResponse(responseCode = "404", description = "Обращение к несуществующей колонке", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
-            @ApiResponse(responseCode = "406", description = "Переданные данные неприемлемы", content = {
+            @ApiResponse(responseCode = "400", description = "Переданные данные неприемлемы", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -103,7 +102,7 @@ public class KanbanColumnController {
                             .map(Errors::valueOf)
                             .map(Errors::getNumValue)
                             .collect(Collectors.toList())),
-                    HttpStatus.NOT_ACCEPTABLE);
+                    HttpStatus.BAD_REQUEST);
         } else {
             try {
                 String login = provider.getLoginFromToken();
@@ -114,15 +113,14 @@ public class KanbanColumnController {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
             } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN),
-                        HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.NOT_FOUND);
             }
         }
     }
 
     @Operation(summary = "Удаление колонки")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Обращение к несуществующей колонке", content = {
+            @ApiResponse(responseCode = "404", description = "Обращение к несуществующей колонке", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -139,20 +137,19 @@ public class KanbanColumnController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN),
-                    HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.NOT_FOUND);
         }
     }
 
     @Operation(summary = "Перемещение столбца канбана",
             description = "Изменение местоположения столбца на указанный порядковый номер")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Неверный идентификатор колонки", content = {
+            @ApiResponse(responseCode = "404", description = "Неверный идентификатор колонки", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному проекту"),
-            @ApiResponse(responseCode = "406", description = "Введённый желаемый порядковый номер колонки недопостим",
+            @ApiResponse(responseCode = "400", description = "Введённый желаемый порядковый номер колонки недопостим",
                     content = {
                             @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ErrorResponse.class))
@@ -169,7 +166,7 @@ public class KanbanColumnController {
                             .map(Errors::valueOf)
                             .map(Errors::getNumValue)
                             .collect(Collectors.toList())),
-                    HttpStatus.NOT_ACCEPTABLE);
+                    HttpStatus.BAD_REQUEST);
         } else {
             String login = provider.getLoginFromToken();
             try {
@@ -179,17 +176,17 @@ public class KanbanColumnController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             } catch (NoSuchElementException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN),
-                        HttpStatus.BAD_REQUEST);
+                        HttpStatus.NOT_FOUND);
             } catch (IllegalArgumentException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.INDEX_MORE_COLLECTION_SIZE),
-                        HttpStatus.NOT_ACCEPTABLE);
+                        HttpStatus.BAD_REQUEST);
             }
         }
     }
 
     @Operation(summary = "Сортировка элементов столбца канбана")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Неверный идентификатор колонки", content = {
+            @ApiResponse(responseCode = "404", description = "Неверный идентификатор колонки", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -211,17 +208,17 @@ public class KanbanColumnController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.NOT_FOUND);
         }
     }
 
     @Operation(summary = "Установка интервала очитки столбца в днях")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Неверный идентификатор колонки", content = {
+            @ApiResponse(responseCode = "404", description = "Неверный идентификатор колонки", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "406",
+            @ApiResponse(responseCode = "400",
                     description = "Передынный интервал очистки является отрицательным числом", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
@@ -232,7 +229,7 @@ public class KanbanColumnController {
     @PostMapping("/delay")
     public ResponseEntity<?> setDelayRemover(@RequestBody @Valid DelayRemoveRequest request, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.COUNT_MUST_BE_MORE_1), HttpStatus.NOT_ACCEPTABLE);
+            return new ResponseEntity<>(new ErrorResponse(Errors.COUNT_MUST_BE_MORE_1), HttpStatus.BAD_REQUEST);
         } else {
             try {
                 if (kanbanColumnService.setDelayDeleter(request.getId(), request.getDelay(),
@@ -242,14 +239,14 @@ public class KanbanColumnController {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
             } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.NOT_FOUND);
             }
         }
     }
 
     @Operation(summary = "Отключение автоматической очистки столбца")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Неверный идентификатор колонки", content = {
+            @ApiResponse(responseCode = "404", description = "Неверный идентификатор колонки", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -265,7 +262,7 @@ public class KanbanColumnController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.NOT_FOUND);
         }
     }
 }

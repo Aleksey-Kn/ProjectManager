@@ -37,13 +37,12 @@ public class KanbanElementCommentController {
 
     @Operation(summary = "Добавление комментария к элементу канбана")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Обращение к несуществующему элементу", content = {
+            @ApiResponse(responseCode = "404", description = "Обращение к несуществующему элементу", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
-            @ApiResponse(responseCode = "406", description = "Неподходящие текстовые данные",
-                    content = {
+            @ApiResponse(responseCode = "400", description = "Неподходящие текстовые данные", content = {
                             @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ErrorResponse.class))
                     }),
@@ -66,7 +65,7 @@ public class KanbanElementCommentController {
                             .map(Errors::valueOf)
                             .map(Errors::getNumValue)
                             .collect(Collectors.toList())),
-                    HttpStatus.NOT_ACCEPTABLE);
+                    HttpStatus.BAD_REQUEST);
         } else {
             try {
                 Optional<KanbanElementComment> comment = kanbanElementService.addComment(request, provider.getLoginFromToken());
@@ -76,7 +75,7 @@ public class KanbanElementCommentController {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
             } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
             } catch (IncorrectStatusException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
                         HttpStatus.GONE);
@@ -86,12 +85,12 @@ public class KanbanElementCommentController {
 
     @Operation(summary = "Изменение комментария элемента канбана")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Обращение к несуществующему элементу", content = {
+            @ApiResponse(responseCode = "404", description = "Обращение к несуществующему элементу", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к комментарию"),
-            @ApiResponse(responseCode = "406", description = "Неподходящие текстовые данные",
+            @ApiResponse(responseCode = "400", description = "Неподходящие текстовые данные",
                     content = {
                             @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ErrorResponse.class))
@@ -115,7 +114,7 @@ public class KanbanElementCommentController {
                             .map(Errors::valueOf)
                             .map(Errors::getNumValue)
                             .collect(Collectors.toList())),
-                    HttpStatus.NOT_ACCEPTABLE);
+                    HttpStatus.BAD_REQUEST);
         } else {
             try {
                 Optional<KanbanElementComment> comment = kanbanElementService.updateComment(request, provider.getLoginFromToken());
@@ -125,7 +124,7 @@ public class KanbanElementCommentController {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
             } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COMMENT), HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COMMENT), HttpStatus.NOT_FOUND);
             } catch (IncorrectStatusException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
                         HttpStatus.GONE);
@@ -135,7 +134,7 @@ public class KanbanElementCommentController {
 
     @Operation(summary = "Удаление комментария элемента канбана")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Обращение к несуществующему комментарию", content = {
+            @ApiResponse(responseCode = "404", description = "Обращение к несуществующему комментарию", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -157,7 +156,7 @@ public class KanbanElementCommentController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COMMENT), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COMMENT), HttpStatus.NOT_FOUND);
         } catch (IncorrectStatusException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
                     HttpStatus.GONE);

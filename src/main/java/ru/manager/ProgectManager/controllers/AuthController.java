@@ -42,12 +42,13 @@ public class AuthController {
 
     @Operation(summary = "Регистрация")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Попытка регистрации пользователя с существующим логином",
+            @ApiResponse(responseCode = "406",
+                    description = "Попытка регистрации пользователя с существующим логином или почтой",
                     content = {
                             @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ErrorResponse.class))
                     }),
-            @ApiResponse(responseCode = "406", description = "Некорректные значения полей", content = {
+            @ApiResponse(responseCode = "400", description = "Некорректные значения полей", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -76,11 +77,11 @@ public class AuthController {
                     return ResponseEntity.ok(authResponse);
                 } else {
                     return new ResponseEntity<>(
-                            new ErrorResponse(Errors.USER_WITH_THIS_LOGIN_ALREADY_CREATED), HttpStatus.BAD_REQUEST);
+                            new ErrorResponse(Errors.USER_WITH_THIS_LOGIN_ALREADY_CREATED), HttpStatus.NOT_ACCEPTABLE);
                 }
             } catch (EmailAlreadyUsedException e) {
                 return new ResponseEntity<>(
-                        new ErrorResponse(Errors.USER_WITH_THIS_EMAIL_ALREADY_CREATED), HttpStatus.BAD_REQUEST);
+                        new ErrorResponse(Errors.USER_WITH_THIS_EMAIL_ALREADY_CREATED), HttpStatus.NOT_ACCEPTABLE);
             }
         } else {
             return new ResponseEntity<>(
@@ -89,7 +90,7 @@ public class AuthController {
                             .map(Errors::valueOf)
                             .map(Errors::getNumValue)
                             .collect(Collectors.toList())),
-                    HttpStatus.NOT_ACCEPTABLE);
+                    HttpStatus.BAD_REQUEST);
         }
     }
 

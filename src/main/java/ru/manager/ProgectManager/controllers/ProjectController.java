@@ -46,7 +46,7 @@ public class ProjectController {
 
     @Operation(summary = "Создание проекта")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "406", description = "Имя проекта не должно быть пустым", content = {
+            @ApiResponse(responseCode = "400", description = "Имя проекта не должно быть пустым", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -59,7 +59,7 @@ public class ProjectController {
     public ResponseEntity<?> addProject(@RequestBody @Valid ProjectDataRequest request, BindingResult bindingResult){
         if(bindingResult.hasErrors()){
             return new ResponseEntity<>(
-                    new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS), HttpStatus.NOT_ACCEPTABLE);
+                    new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS), HttpStatus.BAD_REQUEST);
         } else{
             return ResponseEntity.ok(
                     new ProjectResponse(projectService.addProject(request, provider.getLoginFromToken()),
@@ -69,7 +69,7 @@ public class ProjectController {
 
     @Operation(summary = "Получение данных проекта")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Обращание к несуществующему проекту", content = {
+            @ApiResponse(responseCode = "404", description = "Обращание к несуществующему проекту", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -92,18 +92,18 @@ public class ProjectController {
             }
         } catch (NoSuchElementException e){
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT),
-                    HttpStatus.BAD_REQUEST);
+                    HttpStatus.NOT_FOUND);
         }
     }
 
     @Operation(summary = "Изменение проекта", description = "Установление нового имени проекта")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Обращание к несуществующему проекту", content = {
+            @ApiResponse(responseCode = "404", description = "Обращание к несуществующему проекту", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "403", description = "Пользователь не является администратором проекта"),
-            @ApiResponse(responseCode = "406", description = "Имя проекта не должно быть пустым", content = {
+            @ApiResponse(responseCode = "400", description = "Имя проекта не должно быть пустым", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -114,7 +114,7 @@ public class ProjectController {
                                      BindingResult bindingResult){
         if(bindingResult.hasErrors()){
             return new ResponseEntity<>(
-                    new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS), HttpStatus.NOT_ACCEPTABLE);
+                    new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS), HttpStatus.BAD_REQUEST);
         } else{
             try {
                 if(projectService.setData(id, request, provider.getLoginFromToken()))
@@ -123,19 +123,19 @@ public class ProjectController {
             } catch (NoSuchElementException e){
                 return new ResponseEntity<>(
                         new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT),
-                        HttpStatus.BAD_REQUEST);
+                        HttpStatus.NOT_FOUND);
             }
         }
     }
 
     @Operation(summary = "Добавление картинки проекта", description = "Прикрепление картинки или замена существующей")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Обращание к несуществующему проекту", content = {
+            @ApiResponse(responseCode = "404", description = "Обращание к несуществующему проекту", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "403", description = "Пользователь не является администратором проекта"),
-            @ApiResponse(responseCode = "406", description = "Файл не может быть прочитан", content = {
+            @ApiResponse(responseCode = "400", description = "Файл не может быть прочитан", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -151,19 +151,16 @@ public class ProjectController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (IOException e){
-            return new ResponseEntity<>(new ErrorResponse(Errors.BAD_FILE),
-                    HttpStatus.NOT_ACCEPTABLE);
+            return new ResponseEntity<>(new ErrorResponse(Errors.BAD_FILE), HttpStatus.BAD_REQUEST);
         } catch (NoSuchElementException e){
-            return new ResponseEntity<>(
-                    new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT),
-                    HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
         }
     }
 
     @Operation(summary = "Получение списка канбанов проекта",
             description = "Отображаются только канбаны, доступные пользователю в соответствии с его ролью")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Обращание к несуществующему проекту", content = {
+            @ApiResponse(responseCode = "404", description = "Обращание к несуществующему проекту", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -185,7 +182,7 @@ public class ProjectController {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (NoSuchElementException e){
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -213,7 +210,7 @@ public class ProjectController {
 
     @Operation(summary = "Удаление проекта")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Обращание к несуществующему проекту", content = {
+            @ApiResponse(responseCode = "404", description = "Обращание к несуществующему проекту", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -229,7 +226,7 @@ public class ProjectController {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (NoSuchElementException e){
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT),
-                    HttpStatus.BAD_REQUEST);
+                    HttpStatus.NOT_FOUND);
         }
     }
 }
