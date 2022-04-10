@@ -7,7 +7,6 @@ import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.User;
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
-import ru.manager.ProgectManager.repositories.KanbanRepository;
 import ru.manager.ProgectManager.repositories.ProjectRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
 import ru.manager.ProgectManager.repositories.UserWithProjectConnectorRepository;
@@ -23,7 +22,6 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final UserWithProjectConnectorRepository connectorRepository;
-    private final KanbanRepository kanbanRepository;
 
     public Optional<Project> findProject(long id, String login) {
         User user = userRepository.findByUsername(login);
@@ -64,9 +62,7 @@ public class ProjectService {
     public boolean setPhoto(long id, byte[] photo, String userLogin, String filename) throws IOException {
         User admin = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(id).get();
-        if (project.getConnectors().stream()
-                .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
-                .anyMatch(c -> c.getUser().equals(admin))) {
+        if (isAdmin(project, admin)) {
             project.setPhoto(photo);
             project.setDatatypePhoto(new MimetypesFileTypeMap().getContentType(filename));
             projectRepository.save(project);
@@ -78,9 +74,7 @@ public class ProjectService {
     public boolean setData(long id, ProjectDataRequest request, String userLogin) {
         Project project = projectRepository.findById(id).get();
         User admin = userRepository.findByUsername(userLogin);
-        if (project.getConnectors().stream()
-                .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
-                .anyMatch(c -> c.getUser().equals(admin))) {
+        if (isAdmin(project, admin)) {
             project.setName(request.getName());
             project.setStatus(request.getStatus());
             project.setStatusColor(request.getStatusColor());
@@ -96,9 +90,7 @@ public class ProjectService {
     public boolean deleteProject(long id, String adminLogin) {
         User admin = userRepository.findByUsername(adminLogin);
         Project project = projectRepository.findById(id).get();
-        if (project.getConnectors().stream()
-                .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
-                .anyMatch(c -> c.getUser().equals(admin))) {
+        if (isAdmin(project, admin)) {
             List<UserWithProjectConnector> removable = new LinkedList<>(project.getConnectors());
             project.getConnectors().clear();
             removable.stream()
@@ -117,5 +109,11 @@ public class ProjectService {
     public Set<User> findAllParticipants(long id){
         return projectRepository.findById(id).get().getConnectors().stream().map(UserWithProjectConnector::getUser)
                 .collect(Collectors.toSet());
+    }
+
+    private boolean isAdmin(Project project, User admin){
+       return project.getConnectors().stream()
+                .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
+                .anyMatch(c -> c.getUser().equals(admin));
     }
 }

@@ -37,8 +37,7 @@ public class AccessProjectService {
     public boolean createCustomRole(CreateCustomRoleRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(request.getProjectId()).get();
-        if (user.getUserWithProjectConnectors().stream().filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
-                .anyMatch(c -> c.getProject().equals(project))) {
+        if (isAdmin(project, user)) {
             CustomProjectRole customProjectRole = new CustomProjectRole();
             setCustomProjectRoleData(project, customProjectRole, request);
             project.getAvailableRole().add(customProjectRole);
@@ -51,8 +50,7 @@ public class AccessProjectService {
     public Optional<Set<CustomProjectRole>> findAllCustomProjectRole(long projectId, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(projectId).get();
-        if (user.getUserWithProjectConnectors().stream().filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
-                .anyMatch(c -> c.getProject().equals(project))) {
+        if (isAdmin(project, user)) {
             return Optional.of(project.getAvailableRole());
         } else {
             return Optional.empty();
@@ -62,8 +60,7 @@ public class AccessProjectService {
     public boolean deleteCustomRole(long projectId, long roleId, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(projectId).get();
-        if (user.getUserWithProjectConnectors().stream().filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
-                .anyMatch(c -> c.getProject().equals(project))) {
+        if (isAdmin(project, user)) {
             CustomProjectRole role = project.getAvailableRole().stream()
                     .filter(r -> r.getId() == roleId)
                     .findAny().orElseThrow(IllegalArgumentException::new);
@@ -89,8 +86,7 @@ public class AccessProjectService {
     public boolean changeRole(long roleId, CreateCustomRoleRequest newCustomRole, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(newCustomRole.getProjectId()).get();
-        if (user.getUserWithProjectConnectors().stream().filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
-                .anyMatch(c -> c.getProject().equals(project))) {
+        if (isAdmin(project, user)) {
             CustomProjectRole customProjectRole = project.getAvailableRole().stream()
                     .filter(r -> r.getId() == roleId)
                     .findAny().orElseThrow(IllegalArgumentException::new);
@@ -118,8 +114,7 @@ public class AccessProjectService {
     public boolean editUserRole(EditUserRoleRequest request, String adminLogin) {
         User admin = userRepository.findByUsername(adminLogin);
         Project project = projectRepository.findById(request.getProjectId()).get();
-        if (admin.getUserWithProjectConnectors().stream().filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
-                .anyMatch(c -> c.getProject().equals(project))) {
+        if (isAdmin(project, admin)) {
             User targetUser = userRepository.findById(request.getUserId())
                     .orElseThrow(() -> new NoSuchResourceException("User: " + request.getUserId()));
             UserWithProjectConnector connector = targetUser.getUserWithProjectConnectors().stream()
@@ -150,9 +145,7 @@ public class AccessProjectService {
         Project project = projectRepository.findById(projectId).get();
         if (typeRoleProject == TypeRoleProject.ADMIN && !disposable)
             throw new IllegalArgumentException();
-        if (user.getUserWithProjectConnectors().stream()
-                .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
-                .anyMatch(c -> c.getProject().equals(project))) {
+        if (isAdmin(project, user)) {
             AccessProject accessProject = new AccessProject();
             accessProject.setProject(project);
             accessProject.setTypeRoleProject(typeRoleProject);
@@ -214,5 +207,11 @@ public class AccessProjectService {
                 .findAny().get();
         return (connector.getRoleType() == TypeRoleProject.CUSTOM_ROLE? connector.getCustomProjectRole().getName():
                 connector.getRoleType().toString());
+    }
+
+    private boolean isAdmin(Project project, User user){
+        return user.getUserWithProjectConnectors().stream()
+                .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
+                .anyMatch(c -> c.getProject().equals(project));
     }
 }
