@@ -1,6 +1,7 @@
 package ru.manager.ProgectManager.controllers.kanban;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -191,7 +192,8 @@ public class KanbanController {
             })
     })
     @PostMapping("/tag")
-    public ResponseEntity<?> addTag(@RequestParam long id, @RequestBody TagRequest request){
+    public ResponseEntity<?> addTag(@RequestParam @Parameter(description = "Идентификатор канбана") long id,
+                                    @RequestBody TagRequest request){
         try {
             Optional<ru.manager.ProgectManager.entitys.kanban.Tag> tag =
                     kanbanService.addTag(id, request, provider.getLoginFromToken());
@@ -215,9 +217,9 @@ public class KanbanController {
             @ApiResponse(responseCode = "200", description = "Тег успешно удалён из канбана")
     })
     @DeleteMapping("/tag")
-    public ResponseEntity<?> deleteTag(@RequestParam long kanbanId, @RequestParam long tagId){
+    public ResponseEntity<?> deleteTag(@RequestParam @Parameter(description = "Идентификатор тега") long id){
         try{
-            if(kanbanService.removeTag(kanbanId, tagId, provider.getLoginFromToken())){
+            if(kanbanService.removeTag(id, provider.getLoginFromToken())){
                 return new ResponseEntity<>(HttpStatus.OK);
             } else{
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -225,6 +227,29 @@ public class KanbanController {
         } catch (NoSuchElementException e){
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.NOT_FOUND);
         } catch (IllegalArgumentException e){
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_TAG), HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Operation(summary = "Изменение существующего тега")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "404", description = "Обращение к несуществующему тегу", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному ресурсу"),
+            @ApiResponse(responseCode = "200", description = "Информация о теге успешно изменена")
+    })
+    @PutMapping("/tag")
+    public ResponseEntity<?> editTag(@RequestParam @Parameter(description = "Идентификатор тега") long id,
+                                     @RequestBody TagRequest request){
+        try{
+            if(kanbanService.editTag(id, request, provider.getLoginFromToken())){
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else{
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e){
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_TAG), HttpStatus.NOT_FOUND);
         }
     }

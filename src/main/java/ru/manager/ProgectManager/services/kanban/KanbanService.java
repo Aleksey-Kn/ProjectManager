@@ -108,6 +108,7 @@ public class KanbanService {
             Tag tag = new Tag();
             tag.setColor(request.getColor());
             tag.setText(request.getText());
+            tag.setKanban(kanban);
             tag = tagRepository.save(tag);
             kanban.getAvailableTags().add(tag);
             kanbanRepository.save(kanban);
@@ -117,16 +118,15 @@ public class KanbanService {
         }
     }
 
-    public boolean removeTag(long kanbanId, long tagId, String userLogin) {
-        Kanban kanban = kanbanRepository.findById(kanbanId).get();
+    public boolean removeTag(long id, String userLogin) {
+        Tag tag = tagRepository.findById(id).get();
+        Kanban kanban = tag.getKanban();
         User user = userRepository.findByUsername(userLogin);
         if (kanban.getProject().getConnectors().parallelStream().anyMatch(c -> c.getUser().equals(user)
                 && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
                 || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().parallelStream()
                 .filter(CustomRoleWithKanbanConnector::isCanEdit)
                 .anyMatch(customRoleWithKanbanConnector -> customRoleWithKanbanConnector.getKanban().equals(kanban))))) {
-            Tag tag = kanban.getAvailableTags().stream().filter(t -> t.getId() == tagId)
-                    .findAny().orElseThrow(IllegalArgumentException::new);
             kanban.getAvailableTags().remove(tag);
             kanban.getKanbanColumns().stream().flatMap(c -> c.getElements().stream())
                     .filter(e -> e.getTags().contains(tag))
@@ -135,6 +135,24 @@ public class KanbanService {
             kanbanRepository.save(kanban);
             return true;
         } else {
+            return false;
+        }
+    }
+
+    public boolean editTag(long id, TagRequest request, String userLogin){
+        Tag tag = tagRepository.findById(id).get();
+        Kanban kanban = tag.getKanban();
+        User user = userRepository.findByUsername(userLogin);
+        if (kanban.getProject().getConnectors().parallelStream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().parallelStream()
+                .filter(CustomRoleWithKanbanConnector::isCanEdit)
+                .anyMatch(customRoleWithKanbanConnector -> customRoleWithKanbanConnector.getKanban().equals(kanban))))) {
+            tag.setText(request.getText());
+            tag.setColor(request.getColor());
+            tagRepository.save(tag);
+            return true;
+        } else{
             return false;
         }
     }

@@ -51,13 +51,14 @@ public class KanbanElement {
     @JoinColumn(name = "kanban_column_id")
     private KanbanColumn kanbanColumn;
 
-    @OneToMany(mappedBy = "element", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @OneToMany(mappedBy = "element", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<KanbanAttachment> kanbanAttachments;
 
-    @OneToMany(mappedBy = "kanbanElement", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @OneToMany(mappedBy = "kanbanElement", cascade = CascadeType.ALL,
+            orphanRemoval = true)
     private Set<KanbanElementComment> comments;
 
-    @OneToMany(mappedBy = "element", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @OneToMany(mappedBy = "element", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<CheckBox> checkBoxes;
 
     @ManyToMany(cascade = {

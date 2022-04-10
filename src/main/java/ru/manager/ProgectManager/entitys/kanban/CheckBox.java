@@ -16,7 +16,10 @@ public class CheckBox {
     @GeneratedValue
     private long id;
 
+    @Column(nullable = false, name = "is_check")
     private boolean check;
+
+    @Column(nullable = false)
     private String text;
 
     @JsonIgnore

@@ -1,13 +1,18 @@
 package ru.manager.ProgectManager.controllers.kanban;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import ru.manager.ProgectManager.DTO.request.NameRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.CheckboxRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
@@ -22,10 +27,28 @@ import java.util.Optional;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users/kanban/element/checkbox")
+@Tag(name = "Манипуляции с чекбоксами элементов канбан-доски")
 public class ElementCheckboxController {
     private final KanbanElementAttributesService attributesService;
     private final JwtProvider provider;
 
+    @Operation(summary = "Добавление нового чекбокса в элемент канбана")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Данные добавленного чекбокса", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = CheckBox.class))
+            }),
+            @ApiResponse(responseCode = "403",
+                    description = "Данный пользователь не имеет прав доступа для совершения данного действия"),
+            @ApiResponse(responseCode = "400", description = "Текст чекбокса должен содержать видимые символы", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "404", description = "Указанного элемента канбана не существует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
+    })
     @PostMapping("/add")
     public ResponseEntity<?> addCheckbox(@RequestBody @Valid CheckboxRequest request, BindingResult bindingResult){
         if(bindingResult.hasErrors()){
@@ -42,6 +65,76 @@ public class ElementCheckboxController {
             } catch (NoSuchElementException e){
                 return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
             }
+        }
+    }
+
+    @Operation(summary = "Удаление чекбокса из элемента канбана")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Удаление чекбокса произошло успешно"),
+            @ApiResponse(responseCode = "403",
+                    description = "Данный пользователь не имеет прав доступа для совершения данного действия"),
+            @ApiResponse(responseCode = "404", description = "Указанного чекбокса не существует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
+    })
+    @DeleteMapping("/delete")
+    public ResponseEntity<?> removeCheckbox(@RequestParam @Parameter(description = "Идентификатор чекбокса") long id){
+        try{
+            if(attributesService.deleteCheckbox(id, provider.getLoginFromToken())){
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else{
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e){
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CHECKBOX), HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Operation(summary = "Изменение значения чекбокса на противоположное")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Изменение произошло успешно"),
+            @ApiResponse(responseCode = "403",
+                    description = "Данный пользователь не имеет прав доступа для совершения данного действия"),
+            @ApiResponse(responseCode = "404", description = "Указанного чекбокса не существует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
+    })
+    @PutMapping("/select")
+    public ResponseEntity<?> click(@RequestParam @Parameter(description = "Идентификатор чекбокса") long id){
+        try{
+            if(attributesService.tapCheckbox(id, provider.getLoginFromToken())){
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else{
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e){
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CHECKBOX), HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Operation(summary = "Изменение текстового поля чекбокса")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Изменение произошло успешно"),
+            @ApiResponse(responseCode = "403",
+                    description = "Данный пользователь не имеет прав доступа для совершения данного действия"),
+            @ApiResponse(responseCode = "404", description = "Указанного чекбокса не существует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
+    })
+    @PutMapping("/rename")
+    public ResponseEntity<?> rename(@RequestParam @Parameter(description = "Идентификатор чекбокса") long id,
+                                    @RequestBody @Valid NameRequest nameRequest){
+        try{
+            if(attributesService.editCheckbox(id, nameRequest.getName(), provider.getLoginFromToken())){
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e){
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CHECKBOX), HttpStatus.NOT_FOUND);
         }
     }
 }

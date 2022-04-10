@@ -196,6 +196,7 @@ public class KanbanElementAttributesService {
             CheckBox checkBox = new CheckBox();
             checkBox.setCheck(false);
             checkBox.setText(request.getText());
+            checkBox.setElement(element);
             checkBox = checkboxRepository.save(checkBox);
             element.getCheckBoxes().add(checkBox);
             elementRepository.save(element);
@@ -236,6 +237,23 @@ public class KanbanElementAttributesService {
             checkboxRepository.save(checkBox);
             return true;
         } else {
+            return false;
+        }
+    }
+
+    public boolean editCheckbox(long id, String newText, String userLogin){
+        CheckBox checkBox = checkboxRepository.findById(id).get();
+        User user = userRepository.findByUsername(userLogin);
+        Kanban kanban = checkBox.getElement().getKanbanColumn().getKanban();
+        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
+                .filter(CustomRoleWithKanbanConnector::isCanEdit)
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
+            checkBox.setText(newText);
+            checkboxRepository.save(checkBox);
+            return true;
+        } else{
             return false;
         }
     }
