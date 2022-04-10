@@ -20,7 +20,7 @@ import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElementComment;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.exception.IncorrectStatusException;
-import ru.manager.ProgectManager.services.kanban.KanbanElementService;
+import ru.manager.ProgectManager.services.kanban.KanbanElementAttributesService;
 
 import javax.validation.Valid;
 import java.util.NoSuchElementException;
@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/users/kanban/element/comment")
 @Tag(name = "Манипуляции с комментариями в элементе канбана")
 public class KanbanElementCommentController {
-    private final KanbanElementService kanbanElementService;
+    private final KanbanElementAttributesService attributesService;
     private final JwtProvider provider;
 
     @Operation(summary = "Добавление комментария к элементу канбана")
@@ -68,7 +68,7 @@ public class KanbanElementCommentController {
                     HttpStatus.BAD_REQUEST);
         } else {
             try {
-                Optional<KanbanElementComment> comment = kanbanElementService.addComment(request, provider.getLoginFromToken());
+                Optional<KanbanElementComment> comment = attributesService.addComment(request, provider.getLoginFromToken());
                 if (comment.isPresent()) {
                     return ResponseEntity.ok(new KanbanElementCommentResponse(comment.get(), request.getZone()));
                 } else {
@@ -117,7 +117,7 @@ public class KanbanElementCommentController {
                     HttpStatus.BAD_REQUEST);
         } else {
             try {
-                Optional<KanbanElementComment> comment = kanbanElementService.updateComment(request, provider.getLoginFromToken());
+                Optional<KanbanElementComment> comment = attributesService.updateComment(request, provider.getLoginFromToken());
                 if (comment.isPresent()) {
                     return ResponseEntity.ok(new KanbanElementCommentResponse(comment.get(), request.getZone()));
                 } else {
@@ -149,7 +149,7 @@ public class KanbanElementCommentController {
     @DeleteMapping("/delete")
     public ResponseEntity<?> removeComment(@RequestParam long id) {
         try {
-            Optional<KanbanElement> element = kanbanElementService.deleteComment(id, provider.getLoginFromToken());
+            Optional<KanbanElement> element = attributesService.deleteComment(id, provider.getLoginFromToken());
             if (element.isPresent()) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {

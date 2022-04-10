@@ -47,15 +47,18 @@ public class KanbanElement {
     @Column
     private String selectedDate;
 
-    @OneToMany(mappedBy = "element", cascade = CascadeType.REMOVE, orphanRemoval = true)
-    private Set<KanbanAttachment> kanbanAttachments;
-
     @ManyToOne
     @JoinColumn(name = "kanban_column_id")
     private KanbanColumn kanbanColumn;
 
+    @OneToMany(mappedBy = "element", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private Set<KanbanAttachment> kanbanAttachments;
+
     @OneToMany(mappedBy = "kanbanElement", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private Set<KanbanElementComment> comments;
+
+    @OneToMany(mappedBy = "element", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private Set<CheckBox> checkBoxes;
 
     @ManyToMany(cascade = {
             CascadeType.REFRESH,
@@ -77,6 +80,6 @@ public class KanbanElement {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        return Objects.hashCode(id);
     }
 }

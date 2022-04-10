@@ -19,7 +19,7 @@ import ru.manager.ProgectManager.entitys.kanban.KanbanAttachment;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.exception.IncorrectStatusException;
-import ru.manager.ProgectManager.services.kanban.KanbanElementService;
+import ru.manager.ProgectManager.services.kanban.KanbanElementAttributesService;
 
 import java.io.IOException;
 import java.util.NoSuchElementException;
@@ -30,7 +30,7 @@ import java.util.Optional;
 @RequestMapping("/users/kanban/element/attachment")
 @Tag(name = "Манипуляции со вложениями")
 public class KanbanElementAttachmentController {
-    private final KanbanElementService kanbanElementService;
+    private final KanbanElementAttributesService attributesService;
     private final JwtProvider provider;
 
     @Operation(summary = "Добавление вложения")
@@ -58,7 +58,7 @@ public class KanbanElementAttachmentController {
     public ResponseEntity<?> addAttachment(@RequestParam long id, @ModelAttribute PhotoDTO photoDTO) {
         try {
             Optional<KanbanAttachment> attachment =
-                    kanbanElementService.addAttachment(id, provider.getLoginFromToken(), photoDTO.getFile());
+                    attributesService.addAttachment(id, provider.getLoginFromToken(), photoDTO.getFile());
             if (attachment.isPresent()) {
                 return ResponseEntity.ok(new AttachMainDataResponse(attachment.get()));
             } else {
@@ -89,7 +89,7 @@ public class KanbanElementAttachmentController {
     @GetMapping("/get")
     public ResponseEntity<?> getAttachment(@RequestParam long id) {
         try {
-            Optional<KanbanAttachment> attachment = kanbanElementService.getAttachment(id, provider.getLoginFromToken());
+            Optional<KanbanAttachment> attachment = attributesService.getAttachment(id, provider.getLoginFromToken());
             if (attachment.isPresent()) {
                 return ResponseEntity.ok(new AttachAllDataResponse(attachment.get()));
             } else {
@@ -117,7 +117,7 @@ public class KanbanElementAttachmentController {
     @DeleteMapping("/delete")
     public ResponseEntity<?> deleteAttachment(@RequestParam long id) {
         try {
-            Optional<KanbanElement> element = kanbanElementService.deleteAttachment(id, provider.getLoginFromToken());
+            Optional<KanbanElement> element = attributesService.deleteAttachment(id, provider.getLoginFromToken());
             if (element.isPresent()) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {

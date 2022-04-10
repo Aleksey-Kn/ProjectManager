@@ -23,6 +23,7 @@ import ru.manager.ProgectManager.entitys.kanban.KanbanColumn;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.exception.IncorrectStatusException;
+import ru.manager.ProgectManager.services.kanban.KanbanElementAttributesService;
 import ru.manager.ProgectManager.services.kanban.KanbanElementService;
 
 import javax.validation.Valid;
@@ -36,6 +37,7 @@ import java.util.stream.Collectors;
 @Tag(name = "Манипуляции с элементами канбан-доски")
 public class KanbanElementController {
     private final KanbanElementService kanbanElementService;
+    private final KanbanElementAttributesService attributesService;
     private final JwtProvider provider;
 
     @Operation(summary = "Получение элемента канбана", description = "Получение полной информации об элементе канбана")
@@ -253,7 +255,7 @@ public class KanbanElementController {
     @PostMapping("/tag")
     public ResponseEntity<?> addTag(@RequestParam long elementId, @RequestParam long tagId){
         try{
-            if(kanbanElementService.addTag(elementId, tagId, provider.getLoginFromToken())){
+            if(attributesService.addTag(elementId, tagId, provider.getLoginFromToken())){
                 return new ResponseEntity<>(HttpStatus.OK);
             } else{
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -278,7 +280,7 @@ public class KanbanElementController {
     @DeleteMapping("/tag")
     public ResponseEntity<?> removeTag(@RequestParam long elementId, @RequestParam long tagId){
         try{
-            if(kanbanElementService.removeTag(elementId, tagId, provider.getLoginFromToken())){
+            if(attributesService.removeTag(elementId, tagId, provider.getLoginFromToken())){
                 return new ResponseEntity<>(HttpStatus.OK);
             } else{
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
