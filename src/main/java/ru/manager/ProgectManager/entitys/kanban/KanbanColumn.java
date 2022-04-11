@@ -1,5 +1,6 @@
 package ru.manager.ProgectManager.entitys.kanban;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.Hibernate;
@@ -23,12 +24,15 @@ public class KanbanColumn {
     @Column(nullable = false)
     private String name;
 
+    @JsonIgnore
     @Column(nullable = false)
     private int delayedDays; // 0 - значение, обоначающее отстутствие автоочищения столбца
 
+    @JsonIgnore
     @OneToMany(mappedBy = "kanbanColumn", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private Set<KanbanElement> elements;
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "kanban_id")
     private Kanban kanban;

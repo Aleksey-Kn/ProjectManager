@@ -14,10 +14,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.NameRequest;
-import ru.manager.ProgectManager.DTO.request.kanban.DelayRemoveRequest;
-import ru.manager.ProgectManager.DTO.request.kanban.KanbanColumnRequest;
-import ru.manager.ProgectManager.DTO.request.kanban.SortColumnRequest;
-import ru.manager.ProgectManager.DTO.request.kanban.TransportColumnRequest;
+import ru.manager.ProgectManager.DTO.request.kanban.*;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanColumnResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
@@ -40,42 +37,73 @@ public class KanbanColumnController {
 
     @Operation(summary = "Добавление колонки")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "404", description = "Обращение к несуществующему проекту", content = {
+            @ApiResponse(responseCode = "404", description = "Обращение к несуществующему канбану", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному ресурсу"),
             @ApiResponse(responseCode = "400", description = "Название колонки не должно быть пустым", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "200", description = "Добавленная колонка", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = KanbanColumnResponse.class))
+                            schema = @Schema(implementation = KanbanColumn.class))
             })
     })
     @PostMapping("/add")
     public ResponseEntity<?> addColumn(@RequestBody @Valid KanbanColumnRequest kanbanColumnRequest,
                                        BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            return new ResponseEntity<>(
-                    new ErrorResponse(bindingResult.getAllErrors().stream()
-                            .map(ObjectError::getDefaultMessage)
-                            .map(Errors::valueOf)
-                            .map(Errors::getNumValue)
-                            .collect(Collectors.toList())),
-                    HttpStatus.BAD_REQUEST);
+            return dropErrorResponse(bindingResult);
         }
         try {
             String login = provider.getLoginFromToken();
             Optional<KanbanColumn> column = kanbanColumnService.addColumn(kanbanColumnRequest, login);
             if (column.isPresent()) {
-                return ResponseEntity.ok(new KanbanColumnResponse(column.get(), 0, 1));
+                return ResponseEntity.ok(column.get());
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Operation(summary = "Получение информации о колонке и её содержимом")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "404", description = "Обращение к несуществующей колонке", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному ресурсу"),
+            @ApiResponse(responseCode = "400", description = "Переменные для пагинации должны быть положительными",
+                    content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "200", description = "Запрашиваемая колонка", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = KanbanColumnResponse.class))
+            })
+    })
+    @GetMapping("/get")
+    public ResponseEntity<?> findColumn(@RequestBody @Valid GetKanbanColumnRequest request, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            return dropErrorResponse(bindingResult);
+        } else {
+            try {
+                Optional<KanbanColumn> kanbanColumn = kanbanColumnService.findKanbanColumn(request.getId(),
+                        provider.getLoginFromToken());
+                if (kanbanColumn.isPresent()) {
+                    return ResponseEntity.ok(new KanbanColumnResponse(kanbanColumn.get(), request.getPageIndex(),
+                            request.getCount()));
+                } else {
+                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+                }
+            } catch (NoSuchElementException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.NOT_FOUND);
+            }
         }
     }
 
@@ -85,7 +113,7 @@ public class KanbanColumnController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному ресурсу"),
             @ApiResponse(responseCode = "400", description = "Переданные данные неприемлемы", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
@@ -96,13 +124,7 @@ public class KanbanColumnController {
     public ResponseEntity<?> renameColumn(@RequestParam long id, @RequestBody @Valid NameRequest name,
                                           BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            return new ResponseEntity<>(
-                    new ErrorResponse(bindingResult.getAllErrors().stream()
-                            .map(ObjectError::getDefaultMessage)
-                            .map(Errors::valueOf)
-                            .map(Errors::getNumValue)
-                            .collect(Collectors.toList())),
-                    HttpStatus.BAD_REQUEST);
+            return dropErrorResponse(bindingResult);
         } else {
             try {
                 String login = provider.getLoginFromToken();
@@ -124,7 +146,7 @@ public class KanbanColumnController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному ресурсу"),
             @ApiResponse(responseCode = "200", description = "Колонка успешно удалена")
     })
     @DeleteMapping("/delete")
@@ -148,7 +170,7 @@ public class KanbanColumnController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному проекту"),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному ресурсу"),
             @ApiResponse(responseCode = "400", description = "Введённый желаемый порядковый номер колонки недопостим",
                     content = {
                             @Content(mediaType = "application/json",
@@ -160,13 +182,7 @@ public class KanbanColumnController {
     public ResponseEntity<?> transportColumn(@RequestBody @Valid TransportColumnRequest transportColumnRequest,
                                              BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            return new ResponseEntity<>(
-                    new ErrorResponse(bindingResult.getAllErrors().stream()
-                            .map(ObjectError::getDefaultMessage)
-                            .map(Errors::valueOf)
-                            .map(Errors::getNumValue)
-                            .collect(Collectors.toList())),
-                    HttpStatus.BAD_REQUEST);
+            return dropErrorResponse(bindingResult);
         } else {
             String login = provider.getLoginFromToken();
             try {
@@ -190,7 +206,7 @@ public class KanbanColumnController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному проекту"),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному ресурсу"),
             @ApiResponse(responseCode = "200", description = "Отсортирванная по указанному ключу колонка", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = KanbanColumnResponse.class))
@@ -264,5 +280,14 @@ public class KanbanColumnController {
         } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.NOT_FOUND);
         }
+    }
+
+    private ResponseEntity<?> dropErrorResponse(BindingResult bindingResult) {
+        return new ResponseEntity<>(new ErrorResponse(bindingResult.getAllErrors().stream()
+                        .map(ObjectError::getDefaultMessage)
+                        .map(Errors::valueOf)
+                        .map(Errors::getNumValue)
+                        .collect(Collectors.toList())),
+                HttpStatus.BAD_REQUEST);
     }
 }

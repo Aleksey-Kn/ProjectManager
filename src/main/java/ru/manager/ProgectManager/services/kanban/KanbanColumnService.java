@@ -31,6 +31,20 @@ public class KanbanColumnService {
     private final KanbanElementRepository elementRepository;
     private final TimeRemoverRepository timeRemoverRepository;
 
+    public Optional<KanbanColumn> findKanbanColumn(long id, String userLogin){
+        User user = userRepository.findByUsername(userLogin);
+        KanbanColumn column = columnRepository.findById(id).get();
+        Kanban kanban = column.getKanban();
+        if(kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))){
+            return Optional.of(column);
+        } else{
+            return Optional.empty();
+        }
+    }
+
     public boolean transportColumn(TransportColumnRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         KanbanColumn column = columnRepository.findById(request.getId()).get();

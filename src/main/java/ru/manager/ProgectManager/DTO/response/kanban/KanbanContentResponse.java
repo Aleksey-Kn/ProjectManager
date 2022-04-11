@@ -19,15 +19,13 @@ public class KanbanContentResponse {
     @Schema(description = "Может ли пользовватель изменять информацию в данной доске")
     private final boolean canEdit;
     @Schema(description = "Список колонок канбана")
-    private final List<KanbanColumnResponse> kanbanColumns;
+    private final List<KanbanColumn> kanbanColumns;
 
-    public KanbanContentResponse(Kanban kanban, int pageIndexColumn, int countColumn, int pageIndexElement,
-                                 int countElement, boolean canEditKanban){
+    public KanbanContentResponse(Kanban kanban, int pageIndex, int count, boolean canEditKanban){
         kanbanColumns = kanban.getKanbanColumns().stream()
                 .sorted(Comparator.comparing(KanbanColumn::getSerialNumber))
-                .map(kanbanColumn -> new KanbanColumnResponse(kanbanColumn, pageIndexElement, countElement))
-                .skip(pageIndexColumn)
-                .limit(countColumn)
+                .skip(pageIndex)
+                .limit(count)
                 .collect(Collectors.toList());
         name = kanban.getName();
         id = kanban.getId();

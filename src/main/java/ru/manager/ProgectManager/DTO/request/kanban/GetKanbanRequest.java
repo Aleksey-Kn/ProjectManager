@@ -14,14 +14,8 @@ public class GetKanbanRequest {
     private long id;
     @Min(value = 0, message = "INDEX_MUST_BE_MORE_0")
     @Schema(description = "Первый порядковый номер колонки в запрашиваемой странице")
-    private int pageColumnIndex;
+    private int pageIndex;
     @Min(value = 1, message = "COUNT_MUST_BE_MORE_1")
     @Schema(description = "Количество колонок в запрашиваемой странице")
-    private int countColumn;
-    @Min(value = 0, message = "INDEX_MUST_BE_MORE_0")
-    @Schema(description = "Первый порядковый номер элемента в запрашиваемой странице")
-    private int pageElementIndex;
-    @Min(value = 1, message = "COUNT_MUST_BE_MORE_1")
-    @Schema(description = "Количество элементов в запрашиваемой странице")
-    private int countElement;
+    private int count;
 }

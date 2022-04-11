@@ -117,10 +117,8 @@ public class KanbanController {
                 String login = provider.getLoginFromToken();
                 Optional<Kanban> result = kanbanService.findKanban(kanbanRequest.getId(), login);
                 if (result.isPresent()) {
-                    return ResponseEntity.ok(new KanbanContentResponse(result.get(),
-                            kanbanRequest.getPageColumnIndex(), kanbanRequest.getCountColumn(),
-                            kanbanRequest.getPageElementIndex(), kanbanRequest.getCountElement(),
-                            accessProjectService.canEditKanban(kanbanRequest.getId(), login)));
+                    return ResponseEntity.ok(new KanbanContentResponse(result.get(), kanbanRequest.getPageIndex(),
+                            kanbanRequest.getCount(), accessProjectService.canEditKanban(kanbanRequest.getId(), login)));
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
@@ -165,16 +163,16 @@ public class KanbanController {
             })
     })
     @GetMapping("/tags")
-    public ResponseEntity<?> findAllTags(@RequestParam long id){
-        try{
+    public ResponseEntity<?> findAllTags(@RequestParam long id) {
+        try {
             Optional<Set<ru.manager.ProgectManager.entitys.kanban.Tag>> tags =
                     kanbanService.findAllAvailableTags(id, provider.getLoginFromToken());
-            if(tags.isPresent()){
+            if (tags.isPresent()) {
                 return ResponseEntity.ok(new TagListResponse(tags.get()));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
-        } catch (NoSuchElementException e){
+        } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.NOT_FOUND);
         }
     }
@@ -193,16 +191,16 @@ public class KanbanController {
     })
     @PostMapping("/tag")
     public ResponseEntity<?> addTag(@RequestParam @Parameter(description = "Идентификатор канбана") long id,
-                                    @RequestBody TagRequest request){
+                                    @RequestBody TagRequest request) {
         try {
             Optional<ru.manager.ProgectManager.entitys.kanban.Tag> tag =
                     kanbanService.addTag(id, request, provider.getLoginFromToken());
-            if(tag.isPresent()){
+            if (tag.isPresent()) {
                 return ResponseEntity.ok(tag.get());
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
-        } catch (NoSuchElementException e){
+        } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.NOT_FOUND);
         }
     }
@@ -217,16 +215,16 @@ public class KanbanController {
             @ApiResponse(responseCode = "200", description = "Тег успешно удалён из канбана")
     })
     @DeleteMapping("/tag")
-    public ResponseEntity<?> deleteTag(@RequestParam @Parameter(description = "Идентификатор тега") long id){
-        try{
-            if(kanbanService.removeTag(id, provider.getLoginFromToken())){
+    public ResponseEntity<?> deleteTag(@RequestParam @Parameter(description = "Идентификатор тега") long id) {
+        try {
+            if (kanbanService.removeTag(id, provider.getLoginFromToken())) {
                 return new ResponseEntity<>(HttpStatus.OK);
-            } else{
+            } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
-        } catch (NoSuchElementException e){
+        } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.NOT_FOUND);
-        } catch (IllegalArgumentException e){
+        } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_TAG), HttpStatus.NOT_FOUND);
         }
     }
@@ -242,14 +240,14 @@ public class KanbanController {
     })
     @PutMapping("/tag")
     public ResponseEntity<?> editTag(@RequestParam @Parameter(description = "Идентификатор тега") long id,
-                                     @RequestBody TagRequest request){
-        try{
-            if(kanbanService.editTag(id, request, provider.getLoginFromToken())){
+                                     @RequestBody TagRequest request) {
+        try {
+            if (kanbanService.editTag(id, request, provider.getLoginFromToken())) {
                 return new ResponseEntity<>(HttpStatus.OK);
-            } else{
+            } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
-        } catch (NoSuchElementException e){
+        } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_TAG), HttpStatus.NOT_FOUND);
         }
     }
