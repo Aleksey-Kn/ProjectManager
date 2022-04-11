@@ -32,11 +32,7 @@ public class KanbanElementAttributesService {
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(request.getId()).get();
         Kanban kanban = element.getKanbanColumn().getKanban();
-        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
-                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
-                || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
-                .filter(CustomRoleWithKanbanConnector::isCanEdit)
-                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
+        if (canEditKanban(kanban, user)) {
             if (element.getStatus() == ElementStatus.UTILISE)
                 throw new IncorrectStatusException();
             KanbanElementComment comment = new KanbanElementComment();
@@ -93,11 +89,7 @@ public class KanbanElementAttributesService {
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(id).get();
         Kanban kanban = element.getKanbanColumn().getKanban();
-        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
-                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
-                || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
-                .filter(CustomRoleWithKanbanConnector::isCanEdit)
-                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
+        if (canEditKanban(kanban, user)) {
             if (element.getStatus() == ElementStatus.UTILISE)
                 throw new IncorrectStatusException();
             KanbanAttachment attachment = new KanbanAttachment();
@@ -132,11 +124,7 @@ public class KanbanElementAttributesService {
         User user = userRepository.findByUsername(userLogin);
         KanbanAttachment attachment = attachmentRepository.findById(id).get();
         Kanban kanban = attachment.getElement().getKanbanColumn().getKanban();
-        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
-                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
-                || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
-                .filter(CustomRoleWithKanbanConnector::isCanEdit)
-                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
+        if (canEditKanban(kanban, user)) {
             if (attachment.getElement().getStatus() == ElementStatus.UTILISE)
                 throw new IncorrectStatusException();
             KanbanElement element = attachment.getElement();
@@ -152,11 +140,7 @@ public class KanbanElementAttributesService {
         KanbanElement element = elementRepository.findById(elementId).get();
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = element.getKanbanColumn().getKanban();
-        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
-                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
-                || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
-                .filter(CustomRoleWithKanbanConnector::isCanEdit)
-                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
+        if (canEditKanban(kanban, user)) {
             element.getTags().add(element.getKanbanColumn().getKanban().getAvailableTags().stream()
                     .filter(t -> t.getId() == tagId)
                     .findAny().orElseThrow(IllegalArgumentException::new));
@@ -171,11 +155,7 @@ public class KanbanElementAttributesService {
         KanbanElement element = elementRepository.findById(elementId).get();
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = element.getKanbanColumn().getKanban();
-        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
-                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
-                || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
-                .filter(CustomRoleWithKanbanConnector::isCanEdit)
-                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
+        if (canEditKanban(kanban, user)) {
             element.getTags().removeIf(tag -> tag.getId() == tagId);
             elementRepository.save(element);
             return true;
@@ -188,11 +168,7 @@ public class KanbanElementAttributesService {
         KanbanElement element = elementRepository.findById(request.getElementId()).get();
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = element.getKanbanColumn().getKanban();
-        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
-                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
-                || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
-                .filter(CustomRoleWithKanbanConnector::isCanEdit)
-                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
+        if (canEditKanban(kanban, user)) {
             CheckBox checkBox = new CheckBox();
             checkBox.setCheck(false);
             checkBox.setText(request.getText());
@@ -211,11 +187,7 @@ public class KanbanElementAttributesService {
         KanbanElement element = checkBox.getElement();
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = element.getKanbanColumn().getKanban();
-        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
-                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
-                || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
-                .filter(CustomRoleWithKanbanConnector::isCanEdit)
-                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
+        if (canEditKanban(kanban, user)) {
             element.getCheckBoxes().remove(checkBox);
             elementRepository.save(element);
             return true;
@@ -228,11 +200,7 @@ public class KanbanElementAttributesService {
         CheckBox checkBox = checkboxRepository.findById(id).get();
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = checkBox.getElement().getKanbanColumn().getKanban();
-        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
-                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
-                || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
-                .filter(CustomRoleWithKanbanConnector::isCanEdit)
-                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
+        if (canEditKanban(kanban, user)) {
             checkBox.setCheck(!checkBox.isCheck());
             checkboxRepository.save(checkBox);
             return true;
@@ -245,11 +213,7 @@ public class KanbanElementAttributesService {
         CheckBox checkBox = checkboxRepository.findById(id).get();
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = checkBox.getElement().getKanbanColumn().getKanban();
-        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
-                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
-                || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
-                .filter(CustomRoleWithKanbanConnector::isCanEdit)
-                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
+        if (canEditKanban(kanban, user)) {
             checkBox.setText(newText);
             checkboxRepository.save(checkBox);
             return true;
@@ -260,5 +224,13 @@ public class KanbanElementAttributesService {
 
     private long getEpochSeconds() {
         return LocalDateTime.now().toEpochSecond(ZoneOffset.systemDefault().getRules().getOffset(Instant.now()));
+    }
+
+    private boolean canEditKanban(Kanban kanban, User user){
+        return kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
+                .filter(CustomRoleWithKanbanConnector::isCanEdit)
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))));
     }
 }

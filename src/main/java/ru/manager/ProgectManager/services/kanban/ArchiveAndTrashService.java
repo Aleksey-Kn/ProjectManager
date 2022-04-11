@@ -43,11 +43,7 @@ public class ArchiveAndTrashService {
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(id).get();
         Kanban kanban = element.getKanbanColumn().getKanban();
-        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
-                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
-                || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
-                .filter(CustomRoleWithKanbanConnector::isCanEdit)
-                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
+        if (canEditResource(kanban, user)) {
             if (element.getStatus() == ElementStatus.ARCHIVED)
                 throw new IncorrectStatusException();
 
@@ -70,11 +66,7 @@ public class ArchiveAndTrashService {
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(id).get();
         Kanban kanban = element.getKanbanColumn().getKanban();
-        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
-                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
-                || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
-                .filter(CustomRoleWithKanbanConnector::isCanEdit)
-                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
+        if (canEditResource(kanban, user)) {
             if (element.getStatus() == ElementStatus.ALIVE)
                 throw new IncorrectStatusException();
 
@@ -96,10 +88,7 @@ public class ArchiveAndTrashService {
     public Optional<List<KanbanElement>> findArchive(long kanbanId, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = kanbanRepository.findById(kanbanId).get();
-        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
-                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
-                || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
-                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
+        if (canSeeResource(kanban, user)) {
             return Optional.of(kanban.getKanbanColumns().stream()
                     .flatMap(c -> c.getElements().stream())
                     .filter(e -> e.getStatus() == ElementStatus.ARCHIVED)
@@ -112,10 +101,7 @@ public class ArchiveAndTrashService {
     public Optional<List<KanbanElement>> findTrash(long kanbanId, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = kanbanRepository.findById(kanbanId).get();
-        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
-                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
-                || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
-                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
+        if (canSeeResource(kanban, user)) {
             return Optional.of(kanban.getKanbanColumns().stream()
                     .flatMap(c -> c.getElements().stream())
                     .filter(e -> e.getStatus() == ElementStatus.UTILISE)
@@ -127,5 +113,20 @@ public class ArchiveAndTrashService {
 
     private long getEpochSeconds() {
         return LocalDateTime.now().toEpochSecond(ZoneOffset.systemDefault().getRules().getOffset(Instant.now()));
+    }
+
+    private boolean canEditResource(Kanban kanban, User user){
+        return kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
+                .filter(CustomRoleWithKanbanConnector::isCanEdit)
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))));
+    }
+
+    private boolean canSeeResource(Kanban kanban, User user){
+        return kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))));
     }
 }
