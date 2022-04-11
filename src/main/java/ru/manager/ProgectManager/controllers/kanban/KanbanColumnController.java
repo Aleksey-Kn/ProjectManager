@@ -13,8 +13,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
+import ru.manager.ProgectManager.DTO.request.GetResourceWithPagination;
 import ru.manager.ProgectManager.DTO.request.NameRequest;
-import ru.manager.ProgectManager.DTO.request.kanban.*;
+import ru.manager.ProgectManager.DTO.request.kanban.DelayRemoveRequest;
+import ru.manager.ProgectManager.DTO.request.kanban.KanbanColumnRequest;
+import ru.manager.ProgectManager.DTO.request.kanban.SortColumnRequest;
+import ru.manager.ProgectManager.DTO.request.kanban.TransportColumnRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanColumnResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
@@ -88,7 +92,7 @@ public class KanbanColumnController {
             })
     })
     @GetMapping("/get")
-    public ResponseEntity<?> findColumn(@RequestBody @Valid GetKanbanColumnRequest request, BindingResult bindingResult) {
+    public ResponseEntity<?> findColumn(@RequestBody @Valid GetResourceWithPagination request, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return dropErrorResponse(bindingResult);
         } else {

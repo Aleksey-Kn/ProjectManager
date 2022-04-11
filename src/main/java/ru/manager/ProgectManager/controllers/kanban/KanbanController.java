@@ -13,8 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
+import ru.manager.ProgectManager.DTO.request.GetResourceWithPagination;
 import ru.manager.ProgectManager.DTO.request.NameRequest;
-import ru.manager.ProgectManager.DTO.request.kanban.GetKanbanRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.TagRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanContentResponse;
@@ -62,13 +62,7 @@ public class KanbanController {
     public ResponseEntity<?> createKanban(@RequestParam long projectId, @RequestBody @Valid NameRequest name,
                                           BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            return new ResponseEntity<>(
-                    new ErrorResponse(bindingResult.getAllErrors().stream()
-                            .map(ObjectError::getDefaultMessage)
-                            .map(Errors::valueOf)
-                            .map(Errors::getNumValue)
-                            .collect(Collectors.toList())),
-                    HttpStatus.BAD_REQUEST);
+            return dropErrorResponse(bindingResult);
         } else {
             try {
                 Optional<Kanban> kanban =
@@ -103,15 +97,9 @@ public class KanbanController {
             })
     })
     @GetMapping("/get")
-    public ResponseEntity<?> getKanban(@RequestBody @Valid GetKanbanRequest kanbanRequest, BindingResult bindingResult) {
+    public ResponseEntity<?> getKanban(@RequestBody @Valid GetResourceWithPagination kanbanRequest, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            return new ResponseEntity<>(
-                    new ErrorResponse(bindingResult.getAllErrors().stream()
-                            .map(ObjectError::getDefaultMessage)
-                            .map(Errors::valueOf)
-                            .map(Errors::getNumValue)
-                            .collect(Collectors.toList())),
-                    HttpStatus.BAD_REQUEST);
+            return dropErrorResponse(bindingResult);
         } else {
             try {
                 String login = provider.getLoginFromToken();
@@ -250,5 +238,15 @@ public class KanbanController {
         } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_TAG), HttpStatus.NOT_FOUND);
         }
+    }
+
+    private ResponseEntity<?> dropErrorResponse(BindingResult bindingResult) {
+        return new ResponseEntity<>(
+                new ErrorResponse(bindingResult.getAllErrors().stream()
+                        .map(ObjectError::getDefaultMessage)
+                        .map(Errors::valueOf)
+                        .map(Errors::getNumValue)
+                        .collect(Collectors.toList())),
+                HttpStatus.BAD_REQUEST);
     }
 }
