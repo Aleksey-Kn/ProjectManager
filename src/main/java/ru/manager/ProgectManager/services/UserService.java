@@ -17,6 +17,7 @@ import javax.activation.MimetypesFileTypeMap;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -92,6 +93,13 @@ public class UserService {
     public List<Project> allProjectOfThisUser(String login) {
         return userRepository.findByUsername(login).getUserWithProjectConnectors().stream()
                 .map(UserWithProjectConnector::getProject)
+                .collect(Collectors.toList());
+    }
+
+    public List<Project> projectsByNameOfThisUser(String name, String userLogin){
+        return userRepository.findByUsername(userLogin).getUserWithProjectConnectors().stream()
+                .map(UserWithProjectConnector::getProject)
+                .filter(p -> p.getName().toLowerCase(Locale.ROOT).contains(name))
                 .collect(Collectors.toList());
     }
 

@@ -122,11 +122,26 @@ public class UserController {
                     schema = @Schema(implementation = ProjectListResponse.class))
     })
     @GetMapping("/user/projects")
-    public ProjectListResponse getUserProjects(){
+    public ProjectListResponse getUserProjects() {
         String login = jwtProvider.getLoginFromToken();
         List<Project> projectList = userService.allProjectOfThisUser(login);
         List<String> roles = new LinkedList<>();
         projectList.forEach(p -> roles.add(accessProjectService.findUserRoleName(login, p.getId())));
         return new ProjectListResponse(projectList, roles);
+    }
+
+    @Operation(summary = "Результат поиска проектов по имени")
+    @ApiResponse(responseCode = "200", description = "Список проектов, доступных пользователю, с фильтрацией по имени",
+            content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ProjectListResponse.class))
+            })
+    @GetMapping("user/projects_by_name")
+    public ProjectListResponse findProjectsByName(@RequestParam String name) {
+        String login = jwtProvider.getLoginFromToken();
+        List<Project> projects = userService.projectsByNameOfThisUser(name, login);
+        List<String> roles = new LinkedList<>();
+        projects.forEach(p -> roles.add(accessProjectService.findUserRoleName(login, p.getId())));
+        return new ProjectListResponse(projects, roles);
     }
 }
