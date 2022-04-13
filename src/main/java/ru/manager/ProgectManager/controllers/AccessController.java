@@ -70,7 +70,10 @@ public class AccessController {
 
     @Operation(summary = "Добавление новой роли в проект")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Новая роль успешно создана"),
+            @ApiResponse(responseCode = "200", description = "Новая роль успешно создана", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = CustomProjectRole.class))
+            }),
             @ApiResponse(responseCode = "403",
                     description = "Пользователь не имеет достаточных прав доступа для совершения даннного действия"),
             @ApiResponse(responseCode = "404", description = "Указанного проекта или канбана не существует", content = {
@@ -90,8 +93,10 @@ public class AccessController {
                     HttpStatus.BAD_REQUEST);
         } else {
             try {
-                if (accessProjectService.createCustomRole(request, provider.getLoginFromToken())) {
-                    return new ResponseEntity<>(HttpStatus.OK);
+                Optional<CustomProjectRole> customProjectRole =
+                        accessProjectService.createCustomRole(request, provider.getLoginFromToken());
+                if (customProjectRole.isPresent()) {
+                    return new ResponseEntity<>(customProjectRole.get(), HttpStatus.OK);
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }

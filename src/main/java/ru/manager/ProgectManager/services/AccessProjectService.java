@@ -34,17 +34,18 @@ public class AccessProjectService {
     private final KanbanConnectorRepository kanbanConnectorRepository;
     private final CustomProjectRoleRepository customProjectRoleRepository;
 
-    public boolean createCustomRole(CreateCustomRoleRequest request, String userLogin) {
+    public Optional<CustomProjectRole> createCustomRole(CreateCustomRoleRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(request.getProjectId()).get();
         if (isAdmin(project, user)) {
             CustomProjectRole customProjectRole = new CustomProjectRole();
             setCustomProjectRoleData(project, customProjectRole, request);
+            customProjectRole = customProjectRoleRepository.save(customProjectRole);
             project.getAvailableRole().add(customProjectRole);
             projectRepository.save(project);
-            return true;
+            return Optional.of(customProjectRole);
         }
-        return false;
+        return Optional.empty();
     }
 
     public Optional<Set<CustomProjectRole>> findAllCustomProjectRole(long projectId, String userLogin) {

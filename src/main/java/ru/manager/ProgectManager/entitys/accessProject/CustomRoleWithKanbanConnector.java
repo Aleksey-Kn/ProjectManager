@@ -18,7 +18,7 @@ public class CustomRoleWithKanbanConnector {
 
     private boolean canEdit;
 
-    @OneToOne(optional = false)
+    @ManyToOne(optional = false)
     @JoinColumn(name = "kanban_id")
     private Kanban kanban;
 
