@@ -90,6 +90,29 @@ public class KanbanService {
         }
     }
 
+
+    public Optional<Set<Kanban>> findKanbansByName(long id, String name, String userLogin) {
+        Project project = projectRepository.findById(id).get();
+        User user = userRepository.findByUsername(userLogin);
+        Optional<UserWithProjectConnector> connector = user.getUserWithProjectConnectors().stream()
+                .filter(c -> c.getProject().equals(project))
+                .findAny();
+        if (connector.isPresent()) {
+            if (connector.get().getRoleType() == TypeRoleProject.CUSTOM_ROLE) {
+                return Optional.of(connector.get().getCustomProjectRole().getCustomRoleWithKanbanConnectors().parallelStream()
+                        .map(CustomRoleWithKanbanConnector::getKanban)
+                        .filter(k -> k.getName().toLowerCase().contains(name))
+                        .collect(Collectors.toSet()));
+            } else {
+                return Optional.of(project.getKanbans().stream()
+                        .filter(k -> k.getName().toLowerCase().contains(name))
+                        .collect(Collectors.toSet()));
+            }
+        } else {
+            return Optional.empty();
+        }
+    }
+
     public Optional<Tag> addTag(long id, TagRequest request, String userLogin) {
         Kanban kanban = kanbanRepository.findById(id).get();
         User user = userRepository.findByUsername(userLogin);
@@ -124,7 +147,7 @@ public class KanbanService {
         }
     }
 
-    public boolean editTag(long id, TagRequest request, String userLogin){
+    public boolean editTag(long id, TagRequest request, String userLogin) {
         Tag tag = tagRepository.findById(id).get();
         Kanban kanban = tag.getKanban();
         User user = userRepository.findByUsername(userLogin);
@@ -133,7 +156,7 @@ public class KanbanService {
             tag.setColor(request.getColor());
             tagRepository.save(tag);
             return true;
-        } else{
+        } else {
             return false;
         }
     }
@@ -148,13 +171,13 @@ public class KanbanService {
         }
     }
 
-    private boolean canEditResource(Project project, User user){
+    private boolean canEditResource(Project project, User user) {
         return user.getUserWithProjectConnectors()
                 .stream().anyMatch(c -> c.getProject().equals(project)
                         && (c.getRoleType() == TypeRoleProject.ADMIN || c.getCustomProjectRole().isCanEditResources()));
     }
 
-    private boolean canEditKanban(Kanban kanban, User user){
+    private boolean canEditKanban(Kanban kanban, User user) {
         return kanban.getProject().getConnectors().parallelStream().anyMatch(c -> c.getUser().equals(user)
                 && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
                 || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().parallelStream()
@@ -162,7 +185,7 @@ public class KanbanService {
                 .anyMatch(connector -> connector.getKanban().equals(kanban))));
     }
 
-    private boolean canSeeKanban(Kanban kanban, User user){
+    private boolean canSeeKanban(Kanban kanban, User user) {
         return kanban.getProject().getConnectors().parallelStream().anyMatch(c -> c.getUser().equals(user)
                 && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
                 || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().parallelStream()

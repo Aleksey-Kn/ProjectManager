@@ -5,10 +5,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.request.RefreshUserDTO;
 import ru.manager.ProgectManager.DTO.request.UserDTO;
+import ru.manager.ProgectManager.DTO.response.PointerResource;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.Role;
 import ru.manager.ProgectManager.entitys.User;
+import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
+import ru.manager.ProgectManager.enums.ResourceType;
+import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.EmailAlreadyUsedException;
 import ru.manager.ProgectManager.repositories.RoleRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
@@ -100,6 +104,17 @@ public class UserService {
         return userRepository.findByUsername(userLogin).getUserWithProjectConnectors().stream()
                 .map(UserWithProjectConnector::getProject)
                 .filter(p -> p.getName().toLowerCase(Locale.ROOT).contains(name))
+                .collect(Collectors.toList());
+    }
+
+    public List<PointerResource> availableResourceByName(String name, String userLogin){
+        return userRepository.findByUsername(userLogin).getUserWithProjectConnectors().stream()
+                .flatMap(connector -> (connector.getRoleType() == TypeRoleProject.CUSTOM_ROLE
+                        ? connector.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
+                                .map(CustomRoleWithKanbanConnector::getKanban)
+                        : connector.getProject().getKanbans().stream()))
+                .filter(kanban -> kanban.getName().toLowerCase().contains(name))
+                .map(k -> new PointerResource(k.getId(), k.getName(), ResourceType.KANBAN))
                 .collect(Collectors.toList());
     }
 

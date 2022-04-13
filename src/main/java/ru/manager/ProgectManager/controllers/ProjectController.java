@@ -186,6 +186,35 @@ public class ProjectController {
         }
     }
 
+    @Operation(summary = "Поиск канбанов по имени в указанном проекте",
+            description = "Отображаются только канбаны, доступные пользователю в соответствии с его ролью")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "404", description = "Обращание к несуществующему проекту", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к указанному проекту"),
+            @ApiResponse(responseCode = "200",
+                    description = "Список канбан досок в данном проекте, найденных по данному названию", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = KanbanListResponse.class))
+            })
+    })
+    @GetMapping("/project/kanbans_by_name")
+    public ResponseEntity<?> allKanbanOfThisUser(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
+                                                 @RequestParam String name){
+        try {
+            Optional<Set<Kanban>> kanbans = kanbanService.findKanbansByName(id, name, provider.getLoginFromToken());
+            if (kanbans.isPresent()) {
+                return ResponseEntity.ok(new KanbanListResponse(kanbans.get()));
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e){
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
+        }
+    }
+
     @Operation(summary = "Получение списка участников проекта")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "404", description = "Обращание к несуществующему проекту", content = {
