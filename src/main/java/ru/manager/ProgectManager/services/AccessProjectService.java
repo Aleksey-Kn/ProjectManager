@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.request.accessProject.CreateCustomRoleRequest;
 import ru.manager.ProgectManager.DTO.request.accessProject.EditUserRoleRequest;
+import ru.manager.ProgectManager.DTO.response.ProjectResponse;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.User;
 import ru.manager.ProgectManager.entitys.accessProject.AccessProject;
@@ -164,6 +165,21 @@ public class AccessProjectService {
         return Optional.empty();
     }
 
+    public Optional<ProjectResponse> findInfoOfProjectFromAccessToken(String token){
+        AccessProject accessProject = accessProjectRepository.findById(token).get();
+        if (accessProject.isDisposable() || LocalDate.ofEpochDay(accessProject.getTimeForDie()).isBefore(LocalDate.now())) {
+            accessProjectRepository.delete(accessProject);
+        }
+        if (LocalDate.ofEpochDay(accessProject.getTimeForDie()).isAfter(LocalDate.now())) {
+            return Optional.of(new ProjectResponse(accessProject.getProject(),
+                    (accessProject.getTypeRoleProject() == TypeRoleProject.CUSTOM_ROLE
+                            ? accessProject.getProjectRole().getName()
+                            : accessProject.getTypeRoleProject().name())));
+        } else {
+            return Optional.empty();
+        }
+    }
+
     public boolean createAccessForUser(String token, String toUser) {
         AccessProject accessProject = accessProjectRepository.findById(token).get();
         if (accessProject.isDisposable() || LocalDate.ofEpochDay(accessProject.getTimeForDie()).isBefore(LocalDate.now())) {
@@ -186,8 +202,9 @@ public class AccessProjectService {
                 userRepository.save(user);
             }
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     public boolean canEditKanban(long id, String userLogin) {
@@ -207,7 +224,7 @@ public class AccessProjectService {
                 .filter(c -> c.getUser().equals(user))
                 .findAny().get();
         return (connector.getRoleType() == TypeRoleProject.CUSTOM_ROLE? connector.getCustomProjectRole().getName():
-                connector.getRoleType().toString());
+                connector.getRoleType().name());
     }
 
     private boolean isAdmin(Project project, User user){
