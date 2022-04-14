@@ -16,6 +16,7 @@ import ru.manager.ProgectManager.DTO.request.accessProject.AccessProjectRequest;
 import ru.manager.ProgectManager.DTO.request.accessProject.CreateCustomRoleRequest;
 import ru.manager.ProgectManager.DTO.request.accessProject.EditUserRoleRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
+import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.DTO.response.accessProject.AccessProjectResponse;
 import ru.manager.ProgectManager.DTO.response.accessProject.CustomProjectRoleResponseList;
 import ru.manager.ProgectManager.components.JwtProvider;
@@ -72,7 +73,7 @@ public class AccessController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Новая роль успешно создана", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = CustomProjectRole.class))
+                            schema = @Schema(implementation = IdResponse.class))
             }),
             @ApiResponse(responseCode = "403",
                     description = "Пользователь не имеет достаточных прав доступа для совершения даннного действия"),
@@ -96,7 +97,7 @@ public class AccessController {
                 Optional<CustomProjectRole> customProjectRole =
                         accessProjectService.createCustomRole(request, provider.getLoginFromToken());
                 if (customProjectRole.isPresent()) {
-                    return new ResponseEntity<>(customProjectRole.get(), HttpStatus.OK);
+                    return new ResponseEntity<>(new IdResponse(customProjectRole.get().getId()), HttpStatus.OK);
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.PhotoDTO;
 import ru.manager.ProgectManager.DTO.request.ProjectDataRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
+import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.DTO.response.ProjectResponse;
 import ru.manager.ProgectManager.DTO.response.UserDataListResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanListResponse;
@@ -50,9 +51,9 @@ public class ProjectController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "200", description = "Возвращается информация о созданном проекте", content = {
+            @ApiResponse(responseCode = "200", description = "Идентификатор созданного проекта", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ProjectResponse.class))
+                            schema = @Schema(implementation = IdResponse.class))
             })
     })
     @PostMapping("/project")
@@ -62,8 +63,7 @@ public class ProjectController {
                     new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS), HttpStatus.BAD_REQUEST);
         } else{
             return ResponseEntity.ok(
-                    new ProjectResponse(projectService.addProject(request, provider.getLoginFromToken()),
-                            "ADMIN"));
+                    new IdResponse(projectService.addProject(request, provider.getLoginFromToken()).getId()));
         }
     }
 

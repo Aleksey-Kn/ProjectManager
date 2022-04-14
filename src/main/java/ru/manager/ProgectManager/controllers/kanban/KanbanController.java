@@ -11,15 +11,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.GetResourceWithPagination;
 import ru.manager.ProgectManager.DTO.request.NameRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.TagRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
+import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanContentResponse;
-import ru.manager.ProgectManager.DTO.response.kanban.KanbanMainDataResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.TagListResponse;
+import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.enums.Errors;
@@ -30,7 +30,6 @@ import javax.validation.Valid;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -40,6 +39,7 @@ public class KanbanController {
     private final KanbanService kanbanService;
     private final AccessProjectService accessProjectService;
     private final JwtProvider provider;
+    private final ErrorResponseEntityConfigurator entityConfigurator;
 
     @Operation(summary = "Добавление новой канбан-доски в проект")
     @ApiResponses(value = {
@@ -55,20 +55,20 @@ public class KanbanController {
                     }),
             @ApiResponse(responseCode = "200", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Kanban.class))
+                            schema = @Schema(implementation = IdResponse.class))
             })
     })
     @PostMapping("/new")
     public ResponseEntity<?> createKanban(@RequestParam long projectId, @RequestBody @Valid NameRequest name,
                                           BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            return dropErrorResponse(bindingResult);
+            return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
                 Optional<Kanban> kanban =
                         kanbanService.createKanban(projectId, name.getName(), provider.getLoginFromToken());
                 if (kanban.isPresent()) {
-                    return ResponseEntity.ok(new KanbanMainDataResponse(kanban.get()));
+                    return ResponseEntity.ok(new IdResponse(kanban.get().getId()));
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
@@ -99,7 +99,7 @@ public class KanbanController {
     @GetMapping("/get")
     public ResponseEntity<?> getKanban(@RequestBody @Valid GetResourceWithPagination kanbanRequest, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            return dropErrorResponse(bindingResult);
+            return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
                 String login = provider.getLoginFromToken();
@@ -174,7 +174,7 @@ public class KanbanController {
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному ресурсу"),
             @ApiResponse(responseCode = "200", description = "Информация о добавленном теге", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ru.manager.ProgectManager.entitys.kanban.Tag.class))
+                            schema = @Schema(implementation = IdResponse.class))
             })
     })
     @PostMapping("/tag")
@@ -184,7 +184,7 @@ public class KanbanController {
             Optional<ru.manager.ProgectManager.entitys.kanban.Tag> tag =
                     kanbanService.addTag(id, request, provider.getLoginFromToken());
             if (tag.isPresent()) {
-                return ResponseEntity.ok(tag.get());
+                return ResponseEntity.ok(new IdResponse(tag.get().getId()));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
@@ -238,15 +238,5 @@ public class KanbanController {
         } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_TAG), HttpStatus.NOT_FOUND);
         }
-    }
-
-    private ResponseEntity<?> dropErrorResponse(BindingResult bindingResult) {
-        return new ResponseEntity<>(
-                new ErrorResponse(bindingResult.getAllErrors().stream()
-                        .map(ObjectError::getDefaultMessage)
-                        .map(Errors::valueOf)
-                        .map(Errors::getNumValue)
-                        .collect(Collectors.toList())),
-                HttpStatus.BAD_REQUEST);
     }
 }

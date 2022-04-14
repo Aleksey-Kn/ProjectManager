@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.GetResourceWithPagination;
 import ru.manager.ProgectManager.DTO.request.NameRequest;
@@ -20,7 +19,9 @@ import ru.manager.ProgectManager.DTO.request.kanban.KanbanColumnRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.SortColumnRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.TransportColumnRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
+import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanColumnResponse;
+import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.kanban.KanbanColumn;
 import ru.manager.ProgectManager.enums.Errors;
@@ -29,7 +30,6 @@ import ru.manager.ProgectManager.services.kanban.KanbanColumnService;
 import javax.validation.Valid;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 public class KanbanColumnController {
     private final KanbanColumnService kanbanColumnService;
     private final JwtProvider provider;
+    private final ErrorResponseEntityConfigurator entityConfigurator;
 
     @Operation(summary = "Добавление колонки")
     @ApiResponses(value = {
@@ -50,22 +51,22 @@ public class KanbanColumnController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "200", description = "Добавленная колонка", content = {
+            @ApiResponse(responseCode = "200", description = "Идентификатор добавленной колонки", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = KanbanColumn.class))
+                            schema = @Schema(implementation = IdResponse.class))
             })
     })
     @PostMapping("/add")
     public ResponseEntity<?> addColumn(@RequestBody @Valid KanbanColumnRequest kanbanColumnRequest,
                                        BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            return dropErrorResponse(bindingResult);
+            return entityConfigurator.createErrorResponse(bindingResult);
         }
         try {
             String login = provider.getLoginFromToken();
             Optional<KanbanColumn> column = kanbanColumnService.addColumn(kanbanColumnRequest, login);
             if (column.isPresent()) {
-                return ResponseEntity.ok(column.get());
+                return ResponseEntity.ok(new IdResponse(column.get().getId()));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
@@ -94,7 +95,7 @@ public class KanbanColumnController {
     @GetMapping("/get")
     public ResponseEntity<?> findColumn(@RequestBody @Valid GetResourceWithPagination request, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            return dropErrorResponse(bindingResult);
+            return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
                 Optional<KanbanColumn> kanbanColumn = kanbanColumnService.findKanbanColumn(request.getId(),
@@ -128,7 +129,7 @@ public class KanbanColumnController {
     public ResponseEntity<?> renameColumn(@RequestParam long id, @RequestBody @Valid NameRequest name,
                                           BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            return dropErrorResponse(bindingResult);
+            return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
                 String login = provider.getLoginFromToken();
@@ -186,7 +187,7 @@ public class KanbanColumnController {
     public ResponseEntity<?> transportColumn(@RequestBody @Valid TransportColumnRequest transportColumnRequest,
                                              BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            return dropErrorResponse(bindingResult);
+            return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             String login = provider.getLoginFromToken();
             try {
@@ -284,14 +285,5 @@ public class KanbanColumnController {
         } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.NOT_FOUND);
         }
-    }
-
-    private ResponseEntity<?> dropErrorResponse(BindingResult bindingResult) {
-        return new ResponseEntity<>(new ErrorResponse(bindingResult.getAllErrors().stream()
-                        .map(ObjectError::getDefaultMessage)
-                        .map(Errors::valueOf)
-                        .map(Errors::getNumValue)
-                        .collect(Collectors.toList())),
-                HttpStatus.BAD_REQUEST);
     }
 }

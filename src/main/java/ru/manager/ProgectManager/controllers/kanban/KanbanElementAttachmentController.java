@@ -12,8 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.PhotoDTO;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
+import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.AttachAllDataResponse;
-import ru.manager.ProgectManager.DTO.response.kanban.AttachMainDataResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.kanban.KanbanAttachment;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
@@ -42,7 +42,7 @@ public class KanbanElementAttachmentController {
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
             @ApiResponse(responseCode = "200", description = "Информация о добавленном вложении", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = AttachMainDataResponse.class))
+                            schema = @Schema(implementation = IdResponse.class))
             }),
             @ApiResponse(responseCode = "400", description = "Ошибка чтения файла", content = {
                     @Content(mediaType = "application/json",
@@ -60,7 +60,7 @@ public class KanbanElementAttachmentController {
             Optional<KanbanAttachment> attachment =
                     attributesService.addAttachment(id, provider.getLoginFromToken(), photoDTO.getFile());
             if (attachment.isPresent()) {
-                return ResponseEntity.ok(new AttachMainDataResponse(attachment.get()));
+                return ResponseEntity.ok(new IdResponse(attachment.get().getId()));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }

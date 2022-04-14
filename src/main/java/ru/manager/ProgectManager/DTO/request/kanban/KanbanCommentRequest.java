@@ -9,7 +9,7 @@ import javax.validation.constraints.Size;
 
 @Getter
 @Validated
-@Schema(description = "Запрос на создание комментария внутри элемента канбана")
+@Schema(description = "Запрос на создание или изменение комментария внутри элемента канбана")
 public class KanbanCommentRequest {
     @Schema(description = "Идентификатор элемента в случае добавления комментария, " +
             "и идентификатор комментария в случае зароса на редактирование комментария", required = true)

@@ -11,13 +11,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.kanban.CreateKanbanElementRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.TransportElementRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.UpdateKanbanElementRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
+import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanElementContentResponse;
+import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.kanban.KanbanColumn;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
@@ -29,7 +30,6 @@ import ru.manager.ProgectManager.services.kanban.KanbanElementService;
 import javax.validation.Valid;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -39,6 +39,7 @@ public class KanbanElementController {
     private final KanbanElementService kanbanElementService;
     private final KanbanElementAttributesService attributesService;
     private final JwtProvider provider;
+    private final ErrorResponseEntityConfigurator entityConfigurator;
 
     @Operation(summary = "Получение элемента канбана", description = "Получение полной информации об элементе канбана")
     @ApiResponses(value = {
@@ -85,25 +86,19 @@ public class KanbanElementController {
             }),
             @ApiResponse(responseCode = "200", description = "Добавленный элемент", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = KanbanElementContentResponse.class))
+                            schema = @Schema(implementation = IdResponse.class))
             })
     })
     @PostMapping("/add")
     public ResponseEntity<?> addElement(@RequestBody @Valid CreateKanbanElementRequest request, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            return new ResponseEntity<>(
-                    new ErrorResponse(bindingResult.getAllErrors().stream()
-                            .map(ObjectError::getDefaultMessage)
-                            .map(Errors::valueOf)
-                            .map(Errors::getNumValue)
-                            .collect(Collectors.toList())),
-                    HttpStatus.BAD_REQUEST);
+            return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
                 String login = provider.getLoginFromToken();
                 Optional<KanbanElement> element = kanbanElementService.addElement(request, login);
                 if (element.isPresent()) {
-                    return ResponseEntity.ok(new KanbanElementContentResponse(element.get(), 0));
+                    return ResponseEntity.ok(new IdResponse(element.get().getId()));
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
@@ -135,13 +130,7 @@ public class KanbanElementController {
     public ResponseEntity<?> editElement(@RequestParam long id, @RequestBody @Valid UpdateKanbanElementRequest request,
                                          BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            return new ResponseEntity<>(
-                    new ErrorResponse(bindingResult.getAllErrors().stream()
-                            .map(ObjectError::getDefaultMessage)
-                            .map(Errors::valueOf)
-                            .map(Errors::getNumValue)
-                            .collect(Collectors.toList())),
-                    HttpStatus.BAD_REQUEST);
+            return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
                 Optional<KanbanElement> element = kanbanElementService.setElement(id, request,
@@ -216,13 +205,7 @@ public class KanbanElementController {
     public ResponseEntity<?> transportElement(@RequestBody @Valid TransportElementRequest transportElementRequest,
                                               BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            return new ResponseEntity<>(
-                    new ErrorResponse(bindingResult.getAllErrors().stream()
-                            .map(ObjectError::getDefaultMessage)
-                            .map(Errors::valueOf)
-                            .map(Errors::getNumValue)
-                            .collect(Collectors.toList())),
-                    HttpStatus.BAD_REQUEST);
+            return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
                 if (kanbanElementService.transportElement(transportElementRequest, provider.getLoginFromToken())) {

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.NameRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.CheckboxRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
+import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.kanban.CheckBox;
 import ru.manager.ProgectManager.enums.Errors;
@@ -34,9 +35,9 @@ public class ElementCheckboxController {
 
     @Operation(summary = "Добавление нового чекбокса в элемент канбана")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Данные добавленного чекбокса", content = {
+            @ApiResponse(responseCode = "200", description = "Идентификатор добавленного чекбокса", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = CheckBox.class))
+                            schema = @Schema(implementation = IdResponse.class))
             }),
             @ApiResponse(responseCode = "403",
                     description = "Данный пользователь не имеет прав доступа для совершения данного действия"),
@@ -58,7 +59,7 @@ public class ElementCheckboxController {
             try{
                 Optional<CheckBox> checkBox = attributesService.addCheckbox(request, provider.getLoginFromToken());
                 if(checkBox.isPresent()){
-                    return ResponseEntity.ok(checkBox.get());
+                    return ResponseEntity.ok(new IdResponse(checkBox.get().getId()));
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
