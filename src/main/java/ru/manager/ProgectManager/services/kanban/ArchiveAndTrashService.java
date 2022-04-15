@@ -7,7 +7,9 @@ import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConne
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.entitys.kanban.KanbanColumn;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
+import ru.manager.ProgectManager.entitys.kanban.Tag;
 import ru.manager.ProgectManager.enums.ElementStatus;
+import ru.manager.ProgectManager.enums.SearchElementType;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.IncorrectStatusException;
 import ru.manager.ProgectManager.repositories.*;
@@ -15,8 +17,10 @@ import ru.manager.ProgectManager.repositories.*;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -109,6 +113,46 @@ public class ArchiveAndTrashService {
         } else {
             return Optional.empty();
         }
+    }
+
+    public Optional<Set<KanbanElement>> findElements(long kanbanId, SearchElementType type, String name,
+                                                     ElementStatus from, String userLogin){
+        if(from == ElementStatus.ALIVE)
+            throw new IllegalArgumentException("Illegal element status for this method");
+        Kanban kanban = kanbanRepository.findById(kanbanId).get();
+        User user = userRepository.findByUsername(userLogin);
+        if(canSeeResource(kanban, user)){
+            if(type == SearchElementType.NAME){
+                return Optional.of(findByName(kanban, name, from));
+            } else if(type == SearchElementType.TAG){
+                return Optional.of(findByTag(kanban, name, from));
+            } else {
+                Set<KanbanElement> set = new HashSet<>();
+                set.addAll(findByName(kanban, name, from));
+                set.addAll(findByTag(kanban, name, from));
+                return Optional.of(set);
+            }
+        } else{
+            return Optional.empty();
+        }
+    }
+
+
+    private Set<KanbanElement> findByName(Kanban kanban, String name, ElementStatus elementStatus){
+        return kanban.getKanbanColumns().stream()
+                .flatMap(c -> c.getElements().stream())
+                .filter(e -> e.getStatus() == elementStatus)
+                .filter(e -> e.getName().toLowerCase().contains(name))
+                .collect(Collectors.toSet());
+    }
+
+    private Set<KanbanElement> findByTag(Kanban kanban, String tagName, ElementStatus elementStatus){
+        return kanban.getKanbanColumns().stream()
+                .flatMap(c -> c.getElements().stream())
+                .filter(e -> e.getStatus() == elementStatus)
+                .filter(e -> e.getTags().stream().map(Tag::getText).map(String::toLowerCase)
+                        .anyMatch(s -> s.contains(tagName)))
+                .collect(Collectors.toSet());
     }
 
     private long getEpochSeconds() {
