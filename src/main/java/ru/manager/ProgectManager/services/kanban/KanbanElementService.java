@@ -7,26 +7,23 @@ import ru.manager.ProgectManager.DTO.request.kanban.TransportElementRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.UpdateKanbanElementRequest;
 import ru.manager.ProgectManager.entitys.User;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
-import ru.manager.ProgectManager.entitys.kanban.Kanban;
-import ru.manager.ProgectManager.entitys.kanban.KanbanColumn;
-import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
-import ru.manager.ProgectManager.entitys.kanban.TimeRemover;
+import ru.manager.ProgectManager.entitys.kanban.*;
 import ru.manager.ProgectManager.enums.ElementStatus;
+import ru.manager.ProgectManager.enums.SearchElementType;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.IncorrectStatusException;
 import ru.manager.ProgectManager.exception.NoSuchResourceException;
-import ru.manager.ProgectManager.repositories.KanbanColumnRepository;
-import ru.manager.ProgectManager.repositories.KanbanElementRepository;
-import ru.manager.ProgectManager.repositories.TimeRemoverRepository;
-import ru.manager.ProgectManager.repositories.UserRepository;
+import ru.manager.ProgectManager.repositories.*;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -35,6 +32,7 @@ public class KanbanElementService {
     private final KanbanElementRepository elementRepository;
     private final UserRepository userRepository;
     private final TimeRemoverRepository timeRemoverRepository;
+    private final KanbanRepository kanbanRepository;
 
     public Optional<KanbanElement> addElement(CreateKanbanElementRequest request, String userLogin) {
         KanbanColumn column = columnRepository.findById(request.getColumnId()).get();
@@ -192,13 +190,47 @@ public class KanbanElementService {
         KanbanElement kanbanElement = elementRepository.findById(id).get();
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = kanbanElement.getKanbanColumn().getKanban();
-        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
-                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
-                || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
-                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
+        if (canSeeKanban(kanban, user)) {
             return Optional.of(kanbanElement);
         }
         return Optional.empty();
+    }
+
+    public Optional<Set<KanbanElement>> findElements(long kanbanId, SearchElementType type, String name,
+                                                     ElementStatus from, String userLogin){
+        Kanban kanban = kanbanRepository.findById(kanbanId).get();
+        User user = userRepository.findByUsername(userLogin);
+        if(canSeeKanban(kanban, user)){
+            if(type == SearchElementType.NAME){
+                return Optional.of(findByName(kanban, name, from));
+            } else if(type == SearchElementType.TAG){
+                return Optional.of(findByTag(kanban, name, from));
+            } else {
+                Set<KanbanElement> set = new HashSet<>();
+                set.addAll(findByName(kanban, name, from));
+                set.addAll(findByTag(kanban, name, from));
+                return Optional.of(set);
+            }
+        } else{
+            return Optional.empty();
+        }
+    }
+
+    private Set<KanbanElement> findByName(Kanban kanban, String name, ElementStatus elementStatus){
+        return kanban.getKanbanColumns().stream()
+                .flatMap(c -> c.getElements().stream())
+                .filter(e -> e.getStatus() == elementStatus)
+                .filter(e -> e.getName().toLowerCase().contains(name))
+                .collect(Collectors.toSet());
+    }
+
+    private Set<KanbanElement> findByTag(Kanban kanban, String tagName, ElementStatus elementStatus){
+        return kanban.getKanbanColumns().stream()
+                .flatMap(c -> c.getElements().stream())
+                .filter(e -> e.getStatus() == elementStatus)
+                .filter(e -> e.getTags().stream().map(Tag::getText).map(String::toLowerCase)
+                        .anyMatch(s -> s.contains(tagName)))
+                .collect(Collectors.toSet());
     }
 
     private long getEpochSeconds() {
@@ -213,6 +245,13 @@ public class KanbanElementService {
             remover.setTimeToDelete(LocalDate.now().plusDays(column.getDelayedDays()).toEpochDay());
             timeRemoverRepository.save(remover);
         }
+    }
+
+    private boolean canSeeKanban(Kanban kanban, User user){
+        return kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))));
     }
 
     private boolean canEditKanban(Kanban kanban, User user){

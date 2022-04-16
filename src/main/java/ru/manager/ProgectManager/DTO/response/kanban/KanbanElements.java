@@ -18,7 +18,10 @@ public class KanbanElements {
                 .map(KanbanElementMainDataResponse::new).collect(Collectors.toList());
     }
 
-    public KanbanElements(Set<KanbanElement> elementSet){
-        elements = elementSet.stream().map(KanbanElementMainDataResponse::new).collect(Collectors.toList());
+    public KanbanElements(Set<KanbanElement> elementSet, int pageIndex, int rowCount){
+        elements = elementSet.stream()
+                .skip(pageIndex)
+                .limit(rowCount)
+                .map(KanbanElementMainDataResponse::new).collect(Collectors.toList());
     }
 }

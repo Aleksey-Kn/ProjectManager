@@ -13,11 +13,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.kanban.CreateKanbanElementRequest;
+import ru.manager.ProgectManager.DTO.request.kanban.FindKanbanElements;
 import ru.manager.ProgectManager.DTO.request.kanban.TransportElementRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.UpdateKanbanElementRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanElementContentResponse;
+import ru.manager.ProgectManager.DTO.response.kanban.KanbanElements;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.kanban.KanbanColumn;
@@ -30,6 +32,7 @@ import ru.manager.ProgectManager.services.kanban.KanbanElementService;
 import javax.validation.Valid;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
@@ -104,6 +107,41 @@ public class KanbanElementController {
                 }
             } catch (NoSuchElementException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.NOT_FOUND);
+            }
+        }
+    }
+
+    @Operation(summary = "Поиск элемента", description = "Доступен поиск по названию и тегу элемента")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "404", description = "Указанного канбана не существует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к ресурсу"),
+            @ApiResponse(responseCode = "400", description = "Ошибка валидации", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "200", description = "Список найденных элементов", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = KanbanElements.class))
+            })
+    })
+    @GetMapping("/find")
+    public ResponseEntity<?> findElementsByName(@RequestBody @Valid FindKanbanElements request, BindingResult bindingResult){
+        if(bindingResult.hasErrors()){
+            return entityConfigurator.createErrorResponse(bindingResult);
+        } else {
+            try {
+                Optional<Set<KanbanElement>> elements = kanbanElementService.findElements(request.getKanbanId(),
+                        request.getType(), request.getName(), request.getStatus(), provider.getLoginFromToken());
+                if (elements.isPresent()) {
+                    return ResponseEntity.ok(new KanbanElements(elements.get(), request.getPageIndex(), request.getCount()));
+                } else {
+                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+                }
+            } catch (NoSuchElementException e){
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.NOT_FOUND);
             }
         }
     }
