@@ -25,6 +25,9 @@ public class CustomProjectRole {
     @OneToMany(cascade = CascadeType.REMOVE)
     private Set<CustomRoleWithKanbanConnector> customRoleWithKanbanConnectors;
 
+    @OneToMany(cascade = CascadeType.REMOVE)
+    private Set<CustomRoleWithDocumentConnector> customRoleWithDocumentConnectors;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

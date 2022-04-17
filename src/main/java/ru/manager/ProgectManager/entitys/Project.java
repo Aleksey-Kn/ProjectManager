@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import ru.manager.ProgectManager.entitys.accessProject.CustomProjectRole;
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
-import ru.manager.ProgectManager.entitys.documents.Section;
+import ru.manager.ProgectManager.entitys.documents.Page;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 
 import javax.persistence.*;
@@ -59,7 +59,7 @@ public class Project {
 
     @JsonIgnore
     @OneToMany(mappedBy = "project", cascade = CascadeType.REMOVE)
-    private Set<Section> sections;
+    private Set<Page> pages;
 
     @Override
     public boolean equals(Object o) {
