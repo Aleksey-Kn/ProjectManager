@@ -8,8 +8,8 @@ import ru.manager.ProgectManager.entitys.User;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithDocumentConnector;
 import ru.manager.ProgectManager.entitys.documents.Page;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
+import ru.manager.ProgectManager.repositories.PageRepository;
 import ru.manager.ProgectManager.repositories.ProjectRepository;
-import ru.manager.ProgectManager.repositories.SectionRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
 
 import java.util.Optional;
@@ -19,7 +19,7 @@ import java.util.Optional;
 public class SectionService {
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
-    private final SectionRepository sectionRepository;
+    private final PageRepository pageRepository;
 
     public Optional<Long> createSection(CreateSectionRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
@@ -30,7 +30,7 @@ public class SectionService {
             page.setName(request.getName());
             page.setProject(project);
             page.setRoot(null);
-            page = sectionRepository.save(page);
+            page = pageRepository.save(page);
 
             project.getPages().add(page);
             projectRepository.save(project);
