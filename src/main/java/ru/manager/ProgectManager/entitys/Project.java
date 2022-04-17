@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import ru.manager.ProgectManager.entitys.accessProject.CustomProjectRole;
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
+import ru.manager.ProgectManager.entitys.documents.Section;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 
 import javax.persistence.*;
@@ -55,6 +56,10 @@ public class Project {
     @JsonIgnore
     @OneToMany(mappedBy = "project", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Kanban> kanbans;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "project", cascade = CascadeType.REMOVE)
+    private Set<Section> sections;
 
     @Override
     public boolean equals(Object o) {

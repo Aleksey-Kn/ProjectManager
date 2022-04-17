@@ -19,10 +19,7 @@ import ru.manager.ProgectManager.repositories.UserRepository;
 
 import javax.activation.MimetypesFileTypeMap;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -108,7 +105,9 @@ public class UserService {
     }
 
     public List<PointerResource> availableResourceByName(String name, String userLogin){
-        return userRepository.findByUsername(userLogin).getUserWithProjectConnectors().stream()
+        Set<UserWithProjectConnector> connectors =
+                userRepository.findByUsername(userLogin).getUserWithProjectConnectors();
+        return connectors.stream()
                 .flatMap(connector -> (connector.getRoleType() == TypeRoleProject.CUSTOM_ROLE
                         ? connector.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
                                 .map(CustomRoleWithKanbanConnector::getKanban)
