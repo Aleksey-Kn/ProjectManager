@@ -44,7 +44,8 @@ public class KanbanService {
     public boolean removeKanban(long id, String userLogin) {
         Kanban kanban = kanbanRepository.findById(id).get();
         Project project = kanban.getProject();
-        if (canEditResource(project, userRepository.findByUsername(userLogin))) {
+        User user = userRepository.findByUsername(userLogin);
+        if (canEditResource(project, user) && canEditKanban(kanban, user)) {
             project.getAvailableRole().forEach(r -> {
                 Optional<CustomRoleWithKanbanConnector> removeConnector = r.getCustomRoleWithKanbanConnectors().stream()
                         .filter(c -> c.getKanban().getId() == id).findAny();
