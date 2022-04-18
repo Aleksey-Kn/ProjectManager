@@ -12,10 +12,10 @@ import ru.manager.ProgectManager.entitys.User;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithDocumentConnector;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
-import ru.manager.ProgectManager.entitys.documents.Page;
 import ru.manager.ProgectManager.enums.ResourceType;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.EmailAlreadyUsedException;
+import ru.manager.ProgectManager.repositories.PageRepository;
 import ru.manager.ProgectManager.repositories.RoleRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
 
@@ -29,6 +29,7 @@ public class UserService {
     private RoleRepository roleRepository;
     private UserRepository userRepository;
     private PasswordEncoder passwordEncoder;
+    private PageRepository pageRepository;
 
     public Optional<User> saveUser(UserDTO userDTO) {
         if (userRepository.findByUsername(userDTO.getLogin()) == null) {
@@ -119,21 +120,14 @@ public class UserService {
                 .collect(Collectors.toCollection(LinkedList::new));
         result.addAll(connectors.stream()
                 .flatMap(connector -> (connector.getRoleType() == TypeRoleProject.CUSTOM_ROLE
-                        ? connector.getCustomProjectRole().getCustomRoleWithDocumentConnectors().stream()
-                        .map(CustomRoleWithDocumentConnector::getPage)
-                        .flatMap(root -> findAllSubpage(root).stream())
-                        : connector.getProject().getPages().stream()
-                        .flatMap(root -> findAllSubpage(root).stream())))
+                        ? pageRepository.findPageByProject(connector.getProject()).stream()
+                        .filter(page -> connector.getCustomProjectRole().getCustomRoleWithDocumentConnectors().stream()
+                                .map(CustomRoleWithDocumentConnector::getPage)
+                                .anyMatch(root -> root.equals(page) || page.getRoot().equals(root)))
+                        : pageRepository.findPageByProject(connector.getProject()).stream()))
                 .filter(section -> section.getName().toLowerCase().contains(name))
                 .map(s -> new PointerResource(s.getId(), s.getName(), ResourceType.DOCUMENT))
                 .collect(Collectors.toList()));
-        return result;
-    }
-
-    private Set<Page> findAllSubpage(Page parentPage) {
-        Set<Page> result = new HashSet<>();
-        result.add(parentPage);
-        parentPage.getSubpages().forEach(p -> result.addAll(findAllSubpage(p)));
         return result;
     }
 
@@ -150,5 +144,10 @@ public class UserService {
     @Autowired
     private void setUserRepository(UserRepository u) {
         userRepository = u;
+    }
+
+    @Autowired
+    public void setPageRepository(PageRepository pageRepository) {
+        this.pageRepository = pageRepository;
     }
 }

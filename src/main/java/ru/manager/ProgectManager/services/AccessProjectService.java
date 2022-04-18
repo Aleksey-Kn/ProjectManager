@@ -33,6 +33,7 @@ public class AccessProjectService {
     private final KanbanConnectorRepository kanbanConnectorRepository;
     private final CustomProjectRoleRepository customProjectRoleRepository;
     private final CustomRoleWithDocumentConnectorRepository documentConnectorRepository;
+    private final PageRepository pageRepository;
 
     public Optional<CustomProjectRole> createCustomRole(CreateCustomRoleRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
@@ -114,13 +115,14 @@ public class AccessProjectService {
             CustomRoleWithDocumentConnector customRoleWithDocumentConnector = new CustomRoleWithDocumentConnector();
             customRoleWithDocumentConnector.setCanEdit(dr.isCanEdit());
             customRoleWithDocumentConnector.setId(dr.getId());
-            customRoleWithDocumentConnector.setPage(findPage(project.getPages()));
+            Optional<Page> foundPage = pageRepository.findById(dr.getId());
+            if(foundPage.isPresent() && foundPage.get().getProject().equals(project)) {
+                customRoleWithDocumentConnector.setPage(foundPage.get());
+            } else{
+                throw new NoSuchResourceException("Page: " + dr.getId());
+            }
             return documentConnectorRepository.save(customRoleWithDocumentConnector);
         }).collect(Collectors.toSet()));
-    }
-
-    private Page findPage(Set<Page> rootPages){
-
     }
 
     public boolean editUserRole(EditUserRoleRequest request, String adminLogin) {
