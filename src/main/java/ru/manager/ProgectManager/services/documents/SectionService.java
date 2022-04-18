@@ -79,6 +79,18 @@ public class SectionService {
         }
     }
 
+    public boolean rename(long id, String name, String userLogin) {
+        User user = userRepository.findByUsername(userLogin);
+        Page page = pageRepository.findById(id).get();
+        if(canEditPage(page, user)){
+            page.setName(name);
+            pageRepository.save(page);
+            return true;
+        } else{
+            return false;
+        }
+    }
+
     private boolean canEditPage(Page page, User user) {
         Page root = (page.getRoot() == null ? page : page.getRoot());
         return page.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
