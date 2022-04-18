@@ -32,7 +32,6 @@ public class AccessProjectService {
     private final KanbanConnectorRepository kanbanConnectorRepository;
     private final CustomProjectRoleRepository customProjectRoleRepository;
     private final CustomRoleWithDocumentConnectorRepository documentConnectorRepository;
-    private final PageRepository pageRepository;
 
     public Optional<CustomProjectRole> createCustomRole(CreateCustomRoleRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
