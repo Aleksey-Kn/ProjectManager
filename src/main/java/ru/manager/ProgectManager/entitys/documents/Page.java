@@ -16,7 +16,9 @@ public class Page {
     @GeneratedValue
     private long id;
 
+    @Column(nullable = false)
     private String name;
+
     private String content;
 
     @ManyToOne

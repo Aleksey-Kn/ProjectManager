@@ -8,11 +8,11 @@ import ru.manager.ProgectManager.entitys.User;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithDocumentConnector;
 import ru.manager.ProgectManager.entitys.documents.Page;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
-import ru.manager.ProgectManager.repositories.PageRepository;
-import ru.manager.ProgectManager.repositories.ProjectRepository;
-import ru.manager.ProgectManager.repositories.UserRepository;
+import ru.manager.ProgectManager.repositories.*;
 
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +20,8 @@ public class SectionService {
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
     private final PageRepository pageRepository;
+    private final CustomRoleWithDocumentConnectorRepository documentConnectorRepository;
+    private  final CustomProjectRoleRepository roleRepository;
 
     public Optional<Long> createSection(CreateSectionRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
@@ -29,7 +31,14 @@ public class SectionService {
             page.setContent(request.getContent());
             page.setName(request.getName());
             page.setProject(project);
-            page.setRoot(null);
+            Optional<Page> parent = pageRepository.findById(request.getParentId());
+            if(parent.isPresent()){
+                page.setParent(parent.get());
+                page.setRoot(parent.get().getRoot() == null? parent.get(): parent.get().getRoot());
+            } else {
+                page.setRoot(null);
+                page.setParent(null);
+            }
             page = pageRepository.save(page);
 
             project.getPages().add(page);
@@ -40,10 +49,35 @@ public class SectionService {
         }
     }
 
-//    public boolean deleteSection(long id, String userLogin){
-//        User user = userRepository.findByUsername(userLogin);
-//
-//    }
+    public boolean deleteSection(long id, String userLogin){
+        User user = userRepository.findByUsername(userLogin);
+        Page page = pageRepository.findById(id).get();
+        Project project = page.getProject();
+        if(canEditResource(project, user) && canEditPage(page, user)){
+            if(page.getParent() != null){
+                Page parent = page.getParent();
+                parent.getSubpages().remove(page);
+                pageRepository.save(parent);
+            } else {
+                project.getAvailableRole().parallelStream()
+                        .filter(r -> r.getCustomRoleWithDocumentConnectors().parallelStream()
+                                .anyMatch(connector -> connector.getPage().equals(page)))
+                        .forEach(r -> {
+                            Set<CustomRoleWithDocumentConnector> forRemove = r.getCustomRoleWithDocumentConnectors()
+                                    .parallelStream()
+                                    .filter(connector -> connector.getPage().equals(page))
+                                    .collect(Collectors.toSet());
+                            r.getCustomRoleWithDocumentConnectors().removeAll(forRemove);
+                            roleRepository.save(r);
+                            documentConnectorRepository.deleteAll(forRemove);
+                        });
+            }
+            pageRepository.delete(page);
+            return true;
+        } else{
+            return false;
+        }
+    }
 
     private boolean canEditPage(Page page, User user) {
         Page root = (page.getRoot() == null ? page : page.getRoot());

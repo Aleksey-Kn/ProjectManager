@@ -9,6 +9,7 @@ import javax.validation.constraints.NotBlank;
 @Validated
 public class CreateSectionRequest {
     private long projectId;
+    private long parentId;
     @NotBlank
     private String name;
     private String content;
