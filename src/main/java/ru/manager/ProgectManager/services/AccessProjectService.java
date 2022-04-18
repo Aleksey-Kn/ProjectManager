@@ -116,6 +116,7 @@ public class AccessProjectService {
             customRoleWithDocumentConnector.setCanEdit(dr.isCanEdit());
             customRoleWithDocumentConnector.setId(dr.getId());
             customRoleWithDocumentConnector.setPage(project.getPages().parallelStream()
+                    .filter(p -> p.getRoot() == null)
                     .filter(p -> p.getId() == dr.getId())
                     .findAny().orElseThrow(() -> new NoSuchResourceException("Page: " + dr.getId())));
             return documentConnectorRepository.save(customRoleWithDocumentConnector);
@@ -174,7 +175,7 @@ public class AccessProjectService {
         return Optional.empty();
     }
 
-    public Optional<ProjectResponse> findInfoOfProjectFromAccessToken(String token){
+    public Optional<ProjectResponse> findInfoOfProjectFromAccessToken(String token) {
         AccessProject accessProject = accessProjectRepository.findById(token).get();
         if (accessProject.isDisposable() || LocalDate.ofEpochDay(accessProject.getTimeForDie()).isBefore(LocalDate.now())) {
             accessProjectRepository.delete(accessProject);
@@ -226,17 +227,17 @@ public class AccessProjectService {
                         .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))));
     }
 
-    public String findUserRoleName(String userLogin, long projectId){
+    public String findUserRoleName(String userLogin, long projectId) {
         User user = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(projectId).get();
         UserWithProjectConnector connector = project.getConnectors().stream()
                 .filter(c -> c.getUser().equals(user))
                 .findAny().get();
-        return (connector.getRoleType() == TypeRoleProject.CUSTOM_ROLE? connector.getCustomProjectRole().getName():
+        return (connector.getRoleType() == TypeRoleProject.CUSTOM_ROLE ? connector.getCustomProjectRole().getName() :
                 connector.getRoleType().name());
     }
 
-    private boolean isAdmin(Project project, User user){
+    private boolean isAdmin(Project project, User user) {
         return user.getUserWithProjectConnectors().stream()
                 .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
                 .anyMatch(c -> c.getProject().equals(project));
