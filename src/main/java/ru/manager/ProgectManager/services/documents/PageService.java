@@ -6,6 +6,7 @@ import ru.manager.ProgectManager.DTO.request.documents.CreateSectionRequest;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.User;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithDocumentConnector;
+import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
 import ru.manager.ProgectManager.entitys.documents.Page;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.repositories.*;
@@ -16,14 +17,14 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class SectionService {
+public class PageService {
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
     private final PageRepository pageRepository;
     private final CustomRoleWithDocumentConnectorRepository documentConnectorRepository;
     private  final CustomProjectRoleRepository roleRepository;
 
-    public Optional<Long> createSection(CreateSectionRequest request, String userLogin) {
+    public Optional<Long> createPage(CreateSectionRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(request.getProjectId()).get();
         if (canEditResource(project, user)) {
@@ -49,7 +50,7 @@ public class SectionService {
         }
     }
 
-    public boolean deleteSection(long id, String userLogin){
+    public boolean deletePage(long id, String userLogin){
         User user = userRepository.findByUsername(userLogin);
         Page page = pageRepository.findById(id).get();
         Project project = page.getProject();
@@ -91,12 +92,63 @@ public class SectionService {
         }
     }
 
+    public boolean setContent(long id, String content, String userLogin) {
+        User user = userRepository.findByUsername(userLogin);
+        Page page = pageRepository.findById(id).get();
+        if(canEditPage(page, user)){
+            page.setContent(content);
+            pageRepository.save(page);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public Optional<Page> find(long id, String userLogin) {
+        User user = userRepository.findByUsername(userLogin);
+        Page page = pageRepository.findById(id).get();
+        if(canSeePage(page, user)){
+            return Optional.of(page);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    public Optional<Set<Page>> findAllRoot(long projectId, String userLogin) {
+        User user = userRepository.findByUsername(userLogin);
+        Project project = projectRepository.findById(projectId).get();
+        Optional<UserWithProjectConnector> withProjectConnector = project.getConnectors().stream()
+                .filter(c -> c.getUser().equals(user)).findAny();
+        if(withProjectConnector.isPresent()) {
+            if(withProjectConnector.get().getRoleType() == TypeRoleProject.CUSTOM_ROLE) {
+                return Optional.of(withProjectConnector.get().getCustomProjectRole().getCustomRoleWithDocumentConnectors()
+                        .parallelStream()
+                        .map(CustomRoleWithDocumentConnector::getPage)
+                        .collect(Collectors.toSet()));
+            } else {
+                return Optional.of(project.getPages().parallelStream()
+                        .filter(p -> p.getRoot() == null)
+                        .collect(Collectors.toSet()));
+            }
+        } else {
+            return Optional.empty();
+        }
+    }
+
     private boolean canEditPage(Page page, User user) {
         Page root = (page.getRoot() == null ? page : page.getRoot());
         return page.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
                 && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
                 || c.getCustomProjectRole().getCustomRoleWithDocumentConnectors().stream()
                 .filter(CustomRoleWithDocumentConnector::isCanEdit)
+                .anyMatch(connector -> connector.getPage().equals(root))));
+    }
+
+    private boolean canSeePage(Page page, User user){
+        Page root = (page.getRoot() == null ? page : page.getRoot());
+        return page.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getCustomRoleWithDocumentConnectors().stream()
                 .anyMatch(connector -> connector.getPage().equals(root))));
     }
 

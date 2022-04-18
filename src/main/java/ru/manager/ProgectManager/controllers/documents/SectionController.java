@@ -15,7 +15,7 @@ import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.enums.Errors;
-import ru.manager.ProgectManager.services.documents.SectionService;
+import ru.manager.ProgectManager.services.documents.PageService;
 
 import javax.validation.Valid;
 import java.util.NoSuchElementException;
@@ -26,7 +26,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Tag(name = "Манипуляция страницами документации")
 public class SectionController {
-    private final SectionService sectionService;
+    private final PageService pageService;
     private final JwtProvider provider;
 
     @Operation(summary = "Добавление страницы документации")
@@ -37,7 +37,7 @@ public class SectionController {
                     HttpStatus.BAD_REQUEST);
         } else{
             try{
-                Optional<Long> id = sectionService.createSection(request, provider.getLoginFromToken());
+                Optional<Long> id = pageService.createPage(request, provider.getLoginFromToken());
                 if(id.isPresent()){
                     return ResponseEntity.ok(new IdResponse(id.get()));
                 } else{

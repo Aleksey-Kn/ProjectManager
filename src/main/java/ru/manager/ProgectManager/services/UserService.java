@@ -15,7 +15,6 @@ import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
 import ru.manager.ProgectManager.enums.ResourceType;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.EmailAlreadyUsedException;
-import ru.manager.ProgectManager.repositories.PageRepository;
 import ru.manager.ProgectManager.repositories.RoleRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
 
@@ -29,7 +28,6 @@ public class UserService {
     private RoleRepository roleRepository;
     private UserRepository userRepository;
     private PasswordEncoder passwordEncoder;
-    private PageRepository pageRepository;
 
     public Optional<User> saveUser(UserDTO userDTO) {
         if (userRepository.findByUsername(userDTO.getLogin()) == null) {
@@ -112,7 +110,7 @@ public class UserService {
                 userRepository.findByUsername(userLogin).getUserWithProjectConnectors();
         List<PointerResource> result = connectors.stream()
                 .flatMap(connector -> (connector.getRoleType() == TypeRoleProject.CUSTOM_ROLE
-                        ? connector.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
+                        ? connector.getCustomProjectRole().getCustomRoleWithKanbanConnectors().parallelStream()
                         .map(CustomRoleWithKanbanConnector::getKanban)
                         : connector.getProject().getKanbans().stream()))
                 .filter(kanban -> kanban.getName().toLowerCase().contains(name))
@@ -120,11 +118,11 @@ public class UserService {
                 .collect(Collectors.toCollection(LinkedList::new));
         result.addAll(connectors.stream()
                 .flatMap(connector -> (connector.getRoleType() == TypeRoleProject.CUSTOM_ROLE
-                        ? pageRepository.findPageByProject(connector.getProject()).stream()
+                        ? connector.getProject().getPages().parallelStream()
                         .filter(page -> connector.getCustomProjectRole().getCustomRoleWithDocumentConnectors().stream()
                                 .map(CustomRoleWithDocumentConnector::getPage)
-                                .anyMatch(root -> root.equals(page) || page.getRoot().equals(root)))
-                        : pageRepository.findPageByProject(connector.getProject()).stream()))
+                                .anyMatch(root -> root.equals(page) || root.equals(page.getRoot())))
+                        : connector.getProject().getPages().stream()))
                 .filter(section -> section.getName().toLowerCase().contains(name))
                 .map(s -> new PointerResource(s.getId(), s.getName(), ResourceType.DOCUMENT))
                 .collect(Collectors.toList()));
@@ -144,10 +142,5 @@ public class UserService {
     @Autowired
     private void setUserRepository(UserRepository u) {
         userRepository = u;
-    }
-
-    @Autowired
-    public void setPageRepository(PageRepository pageRepository) {
-        this.pageRepository = pageRepository;
     }
 }
