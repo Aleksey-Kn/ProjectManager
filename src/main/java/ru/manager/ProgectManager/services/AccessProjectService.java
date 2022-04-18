@@ -7,10 +7,8 @@ import ru.manager.ProgectManager.DTO.request.accessProject.EditUserRoleRequest;
 import ru.manager.ProgectManager.DTO.response.ProjectResponse;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.User;
-import ru.manager.ProgectManager.entitys.accessProject.AccessProject;
-import ru.manager.ProgectManager.entitys.accessProject.CustomProjectRole;
-import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
-import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
+import ru.manager.ProgectManager.entitys.accessProject.*;
+import ru.manager.ProgectManager.entitys.documents.Page;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.NoSuchResourceException;
@@ -31,9 +29,10 @@ public class AccessProjectService {
     private final KanbanRepository kanbanRepository;
     private final AccessProjectRepository accessProjectRepository;
     private final ProjectRepository projectRepository;
-    private final UserWithProjectConnectorRepository connectorRepository;
+    private final UserWithProjectConnectorRepository projectConnectorRepository;
     private final KanbanConnectorRepository kanbanConnectorRepository;
     private final CustomProjectRoleRepository customProjectRoleRepository;
+    private final CustomRoleWithDocumentConnectorRepository documentConnectorRepository;
 
     public Optional<CustomProjectRole> createCustomRole(CreateCustomRoleRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
@@ -111,6 +110,17 @@ public class AccessProjectService {
                     .findAny().orElseThrow(() -> new NoSuchResourceException("Kanban: " + kr.getId())));
             return kanbanConnectorRepository.save(customRoleWithKanbanConnector);
         }).collect(Collectors.toSet()));
+        customProjectRole.setCustomRoleWithDocumentConnectors(request.getDocumentConnectorRequest().stream().map(dr -> {
+            CustomRoleWithDocumentConnector customRoleWithDocumentConnector = new CustomRoleWithDocumentConnector();
+            customRoleWithDocumentConnector.setCanEdit(dr.isCanEdit());
+            customRoleWithDocumentConnector.setId(dr.getId());
+            customRoleWithDocumentConnector.setPage(findPage(project.getPages()));
+            return documentConnectorRepository.save(customRoleWithDocumentConnector);
+        }).collect(Collectors.toSet()));
+    }
+
+    private Page findPage(Set<Page> rootPages){
+
     }
 
     public boolean editUserRole(EditUserRoleRequest request, String adminLogin) {
@@ -131,7 +141,7 @@ public class AccessProjectService {
             } else {
                 connector.setCustomProjectRole(null);
             }
-            connectorRepository.save(connector);
+            projectConnectorRepository.save(connector);
             return true;
         }
         return false;
@@ -194,7 +204,7 @@ public class AccessProjectService {
                 connector.setProject(project);
                 connector.setRoleType(accessProject.getTypeRoleProject());
                 connector.setCustomProjectRole(accessProject.getProjectRole());
-                connector = connectorRepository.save(connector);
+                connector = projectConnectorRepository.save(connector);
 
                 project.getConnectors().add(connector);
                 user.getUserWithProjectConnectors().add(connector);

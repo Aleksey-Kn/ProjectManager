@@ -19,5 +19,7 @@ public class CreateCustomRoleRequest {
     @Schema(description = "Сможет ли пользователь с данной ролью создавать или удалять ресурсы проекта", required = true)
     private boolean canEditResource;
     @Schema(description = "Список доступных для данной роли канбан-досок с указанием уровня доступа", required = true)
-    private List<CustomRoleWithKanbanConnectorRequest> kanbanConnectorRequests;
+    private List<CustomRoleWithResourceConnectorRequest> kanbanConnectorRequests;
+    @Schema(description = "Список доступных для данной роли документов с указанием уровня доступа", required = true)
+    private List<CustomRoleWithResourceConnectorRequest> documentConnectorRequest;
 }
