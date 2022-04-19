@@ -2,7 +2,7 @@ package ru.manager.ProgectManager.services.documents;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.manager.ProgectManager.DTO.request.documents.CreateSectionRequest;
+import ru.manager.ProgectManager.DTO.request.documents.CreatePageRequest;
 import ru.manager.ProgectManager.DTO.request.documents.TransportPageRequest;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.User;
@@ -30,7 +30,7 @@ public class PageService {
     private final CustomRoleWithDocumentConnectorRepository documentConnectorRepository;
     private final CustomProjectRoleRepository roleRepository;
 
-    public Optional<Long> createPage(CreateSectionRequest request, String userLogin) {
+    public Optional<Long> createPage(CreatePageRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(request.getProjectId()).get();
         if (canEditResource(project, user)) {
@@ -263,6 +263,8 @@ public class PageService {
                                 page.setSerialNumber((short) (page.getSerialNumber() + 1));
                                 pageRepository.save(page);
                             });
+                    transportedPage.setParent(parent);
+                    recursiveSetRoot(transportedPage, parent.getRoot() == null? parent: parent.getRoot());
 
                     oldParent.getSubpages().remove(transportedPage);
                     parent.getSubpages().add(transportedPage);
@@ -278,6 +280,7 @@ public class PageService {
                         });
                 oldParent.getSubpages().remove(transportedPage);
                 pageRepository.save(oldParent);
+                transportedPage.getSubpages().forEach(subpage -> recursiveSetRoot(subpage, transportedPage));
 
                 transportedPage.setRoot(null);
                 transportedPage.setParent(null);
@@ -296,6 +299,11 @@ public class PageService {
         } else {
             return false;
         }
+    }
+
+    private void recursiveSetRoot(Page now, Page root) {
+        now.setRoot(root);
+        now.getSubpages().forEach(subpage -> recursiveSetRoot(subpage, root));
     }
 
     private long getEpochSeconds() {

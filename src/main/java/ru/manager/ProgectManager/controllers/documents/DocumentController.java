@@ -13,17 +13,25 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.ContentRequest;
+import ru.manager.ProgectManager.DTO.request.GetResourceWithPagination;
 import ru.manager.ProgectManager.DTO.request.NameRequest;
-import ru.manager.ProgectManager.DTO.request.documents.CreateSectionRequest;
+import ru.manager.ProgectManager.DTO.request.documents.CreatePageRequest;
+import ru.manager.ProgectManager.DTO.request.documents.TransportPageRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.IdResponse;
+import ru.manager.ProgectManager.DTO.response.documents.PageResponse;
+import ru.manager.ProgectManager.DTO.response.documents.PageResponseList;
+import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.components.JwtProvider;
+import ru.manager.ProgectManager.entitys.documents.Page;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.documents.PageService;
 
 import javax.validation.Valid;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/users/documents")
@@ -32,6 +40,7 @@ import java.util.Optional;
 public class DocumentController {
     private final PageService pageService;
     private final JwtProvider provider;
+    private final ErrorResponseEntityConfigurator entityConfigurator;
 
     @Operation(summary = "Добавление страницы документации")
     @ApiResponses(value = {
@@ -46,7 +55,7 @@ public class DocumentController {
             })
     })
     @PostMapping("/add")
-    public ResponseEntity<?> addService(@RequestBody @Valid CreateSectionRequest request, BindingResult bindingResult) {
+    public ResponseEntity<?> addPage(@RequestBody @Valid CreatePageRequest request, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
                     HttpStatus.BAD_REQUEST);
@@ -64,6 +73,19 @@ public class DocumentController {
         }
     }
 
+    @Operation(summary = "Переименование страницы документации")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Переименование прошло успешно"),
+            @ApiResponse(responseCode = "400", description = "Название должно содержать видимые символы", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Недостаточно прав доступа для совершения данного действия"),
+            @ApiResponse(responseCode = "404", description = "Указанной страницы не существует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
+    })
     @PutMapping("/rename")
     public ResponseEntity<?> rename(@RequestParam @Parameter(description = "Идентификатор страницы") long id,
                                     @RequestBody @Valid NameRequest request, BindingResult bindingResult) {
@@ -83,6 +105,15 @@ public class DocumentController {
         }
     }
 
+    @Operation(summary = "Изменение данных документа")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Данные успешно изменены"),
+            @ApiResponse(responseCode = "403", description = "Недостаточно прав доступа для совершения данного действия"),
+            @ApiResponse(responseCode = "404", description = "Указанной страницы не существует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
+    })
     @PutMapping("/content")
     public ResponseEntity<?> setContent(@RequestBody ContentRequest request) {
         try {
@@ -96,6 +127,16 @@ public class DocumentController {
         }
     }
 
+    @Operation(summary = "Публикация документа",
+            description = "До публикации доступ к документу имеет только его создатель")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Документ успешно опубликован"),
+            @ApiResponse(responseCode = "403", description = "Недостаточно прав доступа для совершения данного действия"),
+            @ApiResponse(responseCode = "404", description = "Указанной страницы не существует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
+    })
     @PutMapping("/publish")
     public ResponseEntity<?> publish(@RequestParam @Parameter(description = "Идентификатор страницы") long id) {
         try {
@@ -106,6 +147,197 @@ public class DocumentController {
             }
         } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PAGE), HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Operation(summary = "Удаление страницы документа")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Страница успешно удалена"),
+            @ApiResponse(responseCode = "403", description = "Недостаточно прав доступа для совершения данного действия"),
+            @ApiResponse(responseCode = "404", description = "Указанной страницы не существует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
+    })
+    @DeleteMapping("/delete")
+    public ResponseEntity<?> delete(@RequestParam @Parameter(description = "Идентификатор страницы") long id) {
+        try {
+            if (pageService.deletePage(id, provider.getLoginFromToken())) {
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PAGE), HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Operation(summary = "Получение страницы документа по идентификатору")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Запрашиваемая страница", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = PageResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Недостаточно прав доступа для совершения данного действия"),
+            @ApiResponse(responseCode = "404", description = "Указанной страницы не существует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
+    })
+    @GetMapping("/get")
+    public ResponseEntity<?> findById(@RequestParam @Parameter(description = "Идентификатор страницы") long id,
+                                      @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId) {
+        try {
+            Optional<Page> page = pageService.find(id, provider.getLoginFromToken());
+            if (page.isPresent()) {
+                return ResponseEntity.ok(new PageResponse(page.get(), zoneId));
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PAGE), HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Operation(summary = "Получение списка корневых страниц документов проекта")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Список корневых страниц документов", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = PageResponseList.class))
+            }),
+            @ApiResponse(responseCode = "400", description = "Некорректные индексы пагинации", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Недостаточно прав доступа для совершения данного действия"),
+            @ApiResponse(responseCode = "404", description = "Указанного проекта не существует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
+    })
+    @GetMapping("/root")
+    public ResponseEntity<?> findRootPages(@RequestBody @Valid GetResourceWithPagination request,
+                                           BindingResult bindingResult,
+                                           @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId) {
+        if(bindingResult.hasErrors()){
+            return entityConfigurator.createErrorResponse(bindingResult);
+        } else {
+            try {
+                Optional<List<Page>> pageList = pageService.findAllRoot(request.getId(), provider.getLoginFromToken());
+                if (pageList.isPresent()) {
+                    return ResponseEntity.ok(new PageResponseList(pageList.get(), zoneId, request.getPageIndex(),
+                            request.getCount()));
+                } else {
+                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+                }
+            } catch (NoSuchElementException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
+            }
+        }
+    }
+
+    @Operation(summary = "Поиск страниц по названию среди документов указанного проекта")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Список найденных страниц документов", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = PageResponseList.class))
+            }),
+            @ApiResponse(responseCode = "400", description = "Некорректные индексы пагинации", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Недостаточно прав доступа для совершения данного действия"),
+            @ApiResponse(responseCode = "404", description = "Указанного проекта не существует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
+    })
+    @GetMapping("/find")
+    public ResponseEntity<?> findByName(@RequestBody @Valid GetResourceWithPagination request,
+                                        BindingResult bindingResult,
+                                        @RequestParam String name,
+                                        @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId) {
+        if(bindingResult.hasErrors()){
+            return entityConfigurator.createErrorResponse(bindingResult);
+        } else {
+            try {
+                Optional<Set<Page>> pageSet = pageService.findByName(request.getId(), name, provider.getLoginFromToken());
+                if (pageSet.isPresent()) {
+                    return ResponseEntity.ok(new PageResponseList(pageSet.get(), zoneId, request.getPageIndex(),
+                            request.getCount()));
+                } else {
+                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+                }
+            } catch (NoSuchElementException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
+            }
+        }
+    }
+
+    @Operation(summary = "Список всех страниц документов, отсортированный по дате последнего изменения")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Список страниц документов", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = PageResponseList.class))
+            }),
+            @ApiResponse(responseCode = "400", description = "Некорректные индексы пагинации", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Недостаточно прав доступа для совершения данного действия"),
+            @ApiResponse(responseCode = "404", description = "Указанного проекта не существует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
+    })
+    @GetMapping("/all")
+    public ResponseEntity<?> findAllWithSort(@RequestBody @Valid GetResourceWithPagination request,
+                                             BindingResult bindingResult,
+                                             @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId) {
+        if(bindingResult.hasErrors()){
+            return entityConfigurator.createErrorResponse(bindingResult);
+        } else {
+            try {
+                Optional<List<Page>> pages = pageService.findAllWithSort(request.getId(), provider.getLoginFromToken());
+                if (pages.isPresent()) {
+                    return ResponseEntity.ok(new PageResponseList(pages.get(), zoneId, request.getPageIndex(),
+                            request.getCount()));
+                } else {
+                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+                }
+            } catch (NoSuchElementException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
+            }
+        }
+    }
+
+    @Operation(summary = "Перемещение страницы документа")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Перемещение произошло успешно"),
+            @ApiResponse(responseCode = "400", description = "Некорректный целевой индекс", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Недостаточно прав доступа для совершения данного действия"),
+            @ApiResponse(responseCode = "404", description = "Указанной страницы не существует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
+    })
+    @PutMapping("/transport")
+    public ResponseEntity<?> transport(@RequestBody @Valid TransportPageRequest request, BindingResult  bindingResult) {
+        if(bindingResult.hasErrors()){
+            return new ResponseEntity<>(new ErrorResponse(Errors.INDEX_MUST_BE_MORE_0), HttpStatus.BAD_REQUEST);
+        } else {
+            try {
+                if(pageService.transport(request, provider.getLoginFromToken())){
+                    return new ResponseEntity<>(HttpStatus.OK);
+                } else{
+                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+                }
+            } catch (NoSuchElementException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PAGE), HttpStatus.NOT_FOUND);
+            }
         }
     }
 }
