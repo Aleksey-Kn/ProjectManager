@@ -46,14 +46,14 @@ public class KanbanService {
         Project project = kanban.getProject();
         User user = userRepository.findByUsername(userLogin);
         if (canEditResource(project, user) && canEditKanban(kanban, user)) {
-            project.getAvailableRole().forEach(r -> {
-                Optional<CustomRoleWithKanbanConnector> removeConnector = r.getCustomRoleWithKanbanConnectors().stream()
-                        .filter(c -> c.getKanban().getId() == id).findAny();
-                if (removeConnector.isPresent()) {
-                    r.getCustomRoleWithKanbanConnectors().remove(removeConnector.get());
-                    kanbanConnectorRepository.delete(removeConnector.get());
-                    customProjectRoleRepository.save(r);
-                }
+            project.getAvailableRole().forEach(role -> {
+                role.getCustomRoleWithKanbanConnectors().stream()
+                        .filter(kanbanConnector -> kanbanConnector.getKanban().getId() == id)
+                        .forEach(kanbanConnector -> {
+                            role.getCustomRoleWithKanbanConnectors().remove(kanbanConnector);
+                            kanbanConnectorRepository.delete(kanbanConnector);
+                            customProjectRoleRepository.save(role);
+                        });
             });
             project.getKanbans().remove(kanban);
             projectRepository.save(project);

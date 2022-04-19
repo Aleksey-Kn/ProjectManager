@@ -3,6 +3,7 @@ package ru.manager.ProgectManager.entitys.documents;
 import lombok.Getter;
 import lombok.Setter;
 import ru.manager.ProgectManager.entitys.Project;
+import ru.manager.ProgectManager.entitys.User;
 
 import javax.persistence.*;
 import java.util.Objects;
@@ -20,6 +21,13 @@ public class Page {
     private String name;
 
     private String content;
+    private long updateTime;
+    private boolean published;
+    private short serialNumber;
+
+    @ManyToOne
+    @JoinColumn(name = "owner_id")
+    private User owner;
 
     @ManyToOne
     @JoinColumn(name = "root_id")
