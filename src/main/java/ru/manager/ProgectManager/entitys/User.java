@@ -49,7 +49,7 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "user")
     private Set<UserWithProjectConnector> userWithProjectConnectors;
 
-    @OneToMany
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<VisitMark> visitMarks;
 
     @Override

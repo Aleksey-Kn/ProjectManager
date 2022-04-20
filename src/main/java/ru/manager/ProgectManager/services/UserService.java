@@ -131,8 +131,12 @@ public class UserService {
     }
 
     public List<VisitMark> lastVisits(String userLogin) {
-        return userRepository.findByUsername(userLogin).getVisitMarks().stream()
+        User user = userRepository.findByUsername(userLogin);
+        user.getVisitMarks().removeIf(visitMark -> visitMark.getSerialNumber() > 20);
+        userRepository.save(user);
+        return user.getVisitMarks().stream()
                 .sorted(Comparator.comparing(VisitMark::getSerialNumber))
+                .limit(10)
                 .collect(Collectors.toList());
     }
 

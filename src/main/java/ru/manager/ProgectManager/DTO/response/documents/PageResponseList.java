@@ -4,7 +4,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Getter
@@ -15,13 +14,6 @@ public class PageResponseList {
 
     public PageResponseList(List<PageResponse> pageList, int pageIndex, int rowCount) {
         pages = pageList.stream()
-                .skip(pageIndex)
-                .limit(rowCount)
-                .collect(Collectors.toList());
-    }
-
-    public PageResponseList(Set<PageResponse> pageSet, int pageIndex, int rowCount) {
-        pages = pageSet.stream()
                 .skip(pageIndex)
                 .limit(rowCount)
                 .collect(Collectors.toList());

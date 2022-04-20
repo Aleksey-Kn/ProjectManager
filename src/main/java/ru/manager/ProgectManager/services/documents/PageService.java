@@ -4,6 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.request.documents.CreatePageRequest;
 import ru.manager.ProgectManager.DTO.request.documents.TransportPageRequest;
+import ru.manager.ProgectManager.DTO.response.documents.PageContentResponse;
+import ru.manager.ProgectManager.DTO.response.documents.PageNameAndUpdateDateResponse;
+import ru.manager.ProgectManager.DTO.response.documents.PageNameResponse;
 import ru.manager.ProgectManager.DTO.response.documents.PageResponse;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.User;
@@ -76,15 +79,13 @@ public class PageService {
                         .forEach(p -> p.setSerialNumber((short) (p.getSerialNumber() - 1)));
                 pageRepository.save(parent);
             } else {
-                project.getAvailableRole().forEach(role -> {
-                    role.getCustomRoleWithDocumentConnectors().parallelStream()
-                            .filter(connector -> connector.getPage().equals(page))
-                            .forEach(connector -> {
-                                role.getCustomRoleWithDocumentConnectors().remove(connector);
-                                documentConnectorRepository.delete(connector);
-                                roleRepository.save(role);
-                            });
-                });
+                project.getAvailableRole().forEach(role -> role.getCustomRoleWithDocumentConnectors().parallelStream()
+                        .filter(connector -> connector.getPage().equals(page))
+                        .forEach(connector -> {
+                            role.getCustomRoleWithDocumentConnectors().remove(connector);
+                            documentConnectorRepository.delete(connector);
+                            roleRepository.save(role);
+                        }));
                 project.getPages().parallelStream()
                         .filter(p -> p.getRoot() == null)
                         .filter(p -> p.getSerialNumber() > page.getSerialNumber())
@@ -137,17 +138,27 @@ public class PageService {
         }
     }
 
-    public Optional<PageResponse> find(long id, String userLogin, int timeZoneId) {
+    public Optional<PageResponse> find(long id, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         Page page = pageRepository.findById(id).get();
         if (canSeePage(page, user) && (page.getOwner().equals(user) || isPublishPipeline(page))) {
-            return Optional.of(new PageResponse(page, user, timeZoneId));
+            return Optional.of(new PageResponse(page, user));
         } else {
             return Optional.empty();
         }
     }
 
-    public Optional<List<PageResponse>> findAllRoot(long projectId, String userLogin, int timeZoneId) {
+    public Optional<PageContentResponse> findContent(long id, String userLogin, int zoneId) {
+        User user = userRepository.findByUsername(userLogin);
+        Page page = pageRepository.findById(id).get();
+        if (canSeePage(page, user) && (page.getOwner().equals(user) || isPublishPipeline(page))) {
+            return Optional.of(new PageContentResponse(page, zoneId));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    public Optional<List<PageResponse>> findAllRoot(long projectId, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(projectId).get();
         Optional<UserWithProjectConnector> withProjectConnector = project.getConnectors().stream()
@@ -159,14 +170,14 @@ public class PageService {
                         .map(CustomRoleWithDocumentConnector::getPage)
                         .filter(page -> page.getOwner().equals(user) || isPublishPipeline(page))
                         .sorted(Comparator.comparing(Page::getSerialNumber))
-                        .map(page -> new PageResponse(page, user, timeZoneId))
+                        .map(page -> new PageResponse(page, user))
                         .collect(Collectors.toList()));
             } else {
                 return Optional.of(project.getPages().stream()
                         .filter(p -> p.getRoot() == null)
                         .filter(page -> page.getOwner().equals(user) || isPublishPipeline(page))
                         .sorted(Comparator.comparing(Page::getSerialNumber))
-                        .map(page -> new PageResponse(page, user, timeZoneId))
+                        .map(page -> new PageResponse(page, user))
                         .collect(Collectors.toList()));
             }
         } else {
@@ -174,7 +185,7 @@ public class PageService {
         }
     }
 
-    public Optional<Set<PageResponse>> findByName(long projectId, String name, String userLogin, int timeZoneId) {
+    public Optional<Set<PageNameResponse>> findByName(long projectId, String name, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(projectId).get();
         Optional<UserWithProjectConnector> withProjectConnector = project.getConnectors().stream()
@@ -188,13 +199,13 @@ public class PageService {
                                 .anyMatch(root -> root.equals(page) || root.equals(page.getRoot())))
                         .filter(page -> page.getOwner().equals(user) || isPublishPipeline(page))
                         .filter(p -> p.getName().toLowerCase().contains(name))
-                        .map(page -> new PageResponse(page, user, timeZoneId))
+                        .map(PageNameResponse::new)
                         .collect(Collectors.toSet()));
             } else {
                 return Optional.of(project.getPages().parallelStream()
                         .filter(page -> page.getOwner().equals(user) || isPublishPipeline(page))
                         .filter(p -> p.getName().toLowerCase().contains(name))
-                        .map(page -> new PageResponse(page, user, timeZoneId))
+                        .map(PageNameResponse::new)
                         .collect(Collectors.toSet()));
             }
         } else {
@@ -202,7 +213,7 @@ public class PageService {
         }
     }
 
-    public Optional<List<PageResponse>> findAllWithSort(long projectId, String userLogin, int timeZoneId) {
+    public Optional<List<PageNameAndUpdateDateResponse>> findAllWithSort(long projectId, String userLogin, int timeZoneId) {
         User user = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(projectId).get();
         Optional<UserWithProjectConnector> withProjectConnector = project.getConnectors().stream()
@@ -216,13 +227,13 @@ public class PageService {
                                 .anyMatch(root -> root.equals(page) || root.equals(page.getRoot())))
                         .filter(page -> page.getOwner().equals(user) || isPublishPipeline(page))
                         .sorted(Comparator.comparing(Page::getUpdateTime).reversed())
-                        .map(page -> new PageResponse(page, user, timeZoneId))
+                        .map(page -> new PageNameAndUpdateDateResponse(page, timeZoneId))
                         .collect(Collectors.toList()));
             } else {
                 return Optional.of(project.getPages().stream()
                         .filter(page -> page.getOwner().equals(user) || isPublishPipeline(page))
                         .sorted(Comparator.comparing(Page::getUpdateTime).reversed())
-                        .map(page -> new PageResponse(page, user, timeZoneId))
+                        .map(page -> new PageNameAndUpdateDateResponse(page, timeZoneId))
                         .collect(Collectors.toList()));
             }
         } else {

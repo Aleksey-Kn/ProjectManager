@@ -5,8 +5,6 @@ import lombok.Getter;
 import ru.manager.ProgectManager.entitys.User;
 import ru.manager.ProgectManager.entitys.documents.Page;
 
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -18,10 +16,6 @@ public class PageResponse {
     private final long id;
     @Schema(description = "Название страницы")
     private final String name;
-    @Schema(description = "Содержимое документа")
-    private final String content;
-    @Schema(description = "Дата и время последнего обновления")
-    private final String updateTime;
     @Schema(description = "Флаг того, опубликована ли страница")
     private final boolean published;
     @Schema(description = "Порядковый номер в списке подстраниц родительской страницы")
@@ -29,12 +23,9 @@ public class PageResponse {
     @Schema(description = "Идентификаторы подстраниц данной страницы")
     private final List<Long> subpagesId;
 
-    public PageResponse(Page page, User currentUser, int zoneId){
+    public PageResponse(Page page, User currentUser){
         id = page.getId();
         name = page.getName();
-        content = page.getContent();
-        updateTime = LocalDateTime
-                .ofEpochSecond(page.getUpdateTime(), 0, ZoneOffset.ofHours(zoneId)).toString();
         published = page.isPublished();
         serialNumber = page.getSerialNumber();
         subpagesId = page.getSubpages().stream()

@@ -19,8 +19,7 @@ import ru.manager.ProgectManager.DTO.request.documents.CreatePageRequest;
 import ru.manager.ProgectManager.DTO.request.documents.TransportPageRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.IdResponse;
-import ru.manager.ProgectManager.DTO.response.documents.PageResponse;
-import ru.manager.ProgectManager.DTO.response.documents.PageResponseList;
+import ru.manager.ProgectManager.DTO.response.documents.*;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.enums.Errors;
@@ -126,6 +125,33 @@ public class DocumentController {
         }
     }
 
+    @Operation(summary = "Получение содержимого страницы")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Содержимое запрашиваемой страницы", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = PageContentResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Недостаточно прав доступа для совершения данного действия"),
+            @ApiResponse(responseCode = "404", description = "Указанной страницы не существует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
+    })
+    @GetMapping("/content")
+    public ResponseEntity<?> getContent(@RequestParam @Parameter(description = "Идентификатор страницы") long id,
+                                        @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId) {
+        try {
+            Optional<PageContentResponse> response = pageService.findContent(id, provider.getLoginFromToken(), zoneId);
+            if(response.isPresent()) {
+                return ResponseEntity.ok(response.get());
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PAGE), HttpStatus.NOT_FOUND);
+        }
+    }
+
     @Operation(summary = "Публикация документа",
             description = "До публикации доступ к документу имеет только его создатель")
     @ApiResponses(value = {
@@ -184,10 +210,9 @@ public class DocumentController {
             })
     })
     @GetMapping("/get")
-    public ResponseEntity<?> findById(@RequestParam @Parameter(description = "Идентификатор страницы") long id,
-                                      @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId) {
+    public ResponseEntity<?> findById(@RequestParam @Parameter(description = "Идентификатор страницы") long id) {
         try {
-            Optional<PageResponse> page = pageService.find(id, provider.getLoginFromToken(), zoneId);
+            Optional<PageResponse> page = pageService.find(id, provider.getLoginFromToken());
             if (page.isPresent()) {
                 return ResponseEntity.ok(page.get());
             } else {
@@ -216,14 +241,13 @@ public class DocumentController {
     })
     @GetMapping("/root")
     public ResponseEntity<?> findRootPages(@RequestBody @Valid GetResourceWithPagination request,
-                                           BindingResult bindingResult,
-                                           @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId) {
+                                           BindingResult bindingResult) {
         if(bindingResult.hasErrors()){
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
                 Optional<List<PageResponse>> pageList = pageService.findAllRoot(request.getId(),
-                        provider.getLoginFromToken(), zoneId);
+                        provider.getLoginFromToken());
                 if (pageList.isPresent()) {
                     return ResponseEntity.ok(new PageResponseList(pageList.get(), request.getPageIndex(),
                             request.getCount()));
@@ -240,7 +264,7 @@ public class DocumentController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Список найденных страниц документов", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = PageResponseList.class))
+                            schema = @Schema(implementation = PageNameResponseList.class))
             }),
             @ApiResponse(responseCode = "400", description = "Некорректные индексы пагинации", content = {
                     @Content(mediaType = "application/json",
@@ -255,16 +279,15 @@ public class DocumentController {
     @GetMapping("/find")
     public ResponseEntity<?> findByName(@RequestBody @Valid GetResourceWithPagination request,
                                         BindingResult bindingResult,
-                                        @RequestParam String name,
-                                        @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId) {
+                                        @RequestParam String name) {
         if(bindingResult.hasErrors()){
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
-                Optional<Set<PageResponse>> pageSet = pageService.findByName(request.getId(), name,
-                        provider.getLoginFromToken(), zoneId);
+                Optional<Set<PageNameResponse>> pageSet = pageService.findByName(request.getId(), name,
+                        provider.getLoginFromToken());
                 if (pageSet.isPresent()) {
-                    return ResponseEntity.ok(new PageResponseList(pageSet.get(), request.getPageIndex(),
+                    return ResponseEntity.ok(new PageNameResponseList(pageSet.get(), request.getPageIndex(),
                             request.getCount()));
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -279,7 +302,7 @@ public class DocumentController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Список страниц документов", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = PageResponseList.class))
+                            schema = @Schema(implementation = PageNameAndUpdateDateResponseList.class))
             }),
             @ApiResponse(responseCode = "400", description = "Некорректные индексы пагинации", content = {
                     @Content(mediaType = "application/json",
@@ -299,10 +322,10 @@ public class DocumentController {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
-                Optional<List<PageResponse>> pages = pageService.findAllWithSort(request.getId(),
+                Optional<List<PageNameAndUpdateDateResponse>> pages = pageService.findAllWithSort(request.getId(),
                         provider.getLoginFromToken(), zoneId);
                 if (pages.isPresent()) {
-                    return ResponseEntity.ok(new PageResponseList(pages.get(), request.getPageIndex(),
+                    return ResponseEntity.ok(new PageNameAndUpdateDateResponseList(pages.get(), request.getPageIndex(),
                             request.getCount()));
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
