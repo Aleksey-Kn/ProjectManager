@@ -175,7 +175,8 @@ public class KanbanService {
     private boolean canEditResource(Project project, User user) {
         return user.getUserWithProjectConnectors()
                 .stream().anyMatch(c -> c.getProject().equals(project)
-                        && (c.getRoleType() == TypeRoleProject.ADMIN || c.getCustomProjectRole().isCanEditResources()));
+                        && (c.getRoleType() == TypeRoleProject.ADMIN || (c.getRoleType() == TypeRoleProject.CUSTOM_ROLE
+                        && c.getCustomProjectRole().isCanEditResources())));
     }
 
     private boolean canEditKanban(Kanban kanban, User user) {

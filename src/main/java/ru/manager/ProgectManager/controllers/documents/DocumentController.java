@@ -23,7 +23,6 @@ import ru.manager.ProgectManager.DTO.response.documents.PageResponse;
 import ru.manager.ProgectManager.DTO.response.documents.PageResponseList;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.components.JwtProvider;
-import ru.manager.ProgectManager.entitys.documents.Page;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.documents.PageService;
 
@@ -188,9 +187,9 @@ public class DocumentController {
     public ResponseEntity<?> findById(@RequestParam @Parameter(description = "Идентификатор страницы") long id,
                                       @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId) {
         try {
-            Optional<Page> page = pageService.find(id, provider.getLoginFromToken());
+            Optional<PageResponse> page = pageService.find(id, provider.getLoginFromToken(), zoneId);
             if (page.isPresent()) {
-                return ResponseEntity.ok(new PageResponse(page.get(), zoneId));
+                return ResponseEntity.ok(page.get());
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
@@ -223,9 +222,10 @@ public class DocumentController {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
-                Optional<List<Page>> pageList = pageService.findAllRoot(request.getId(), provider.getLoginFromToken());
+                Optional<List<PageResponse>> pageList = pageService.findAllRoot(request.getId(),
+                        provider.getLoginFromToken(), zoneId);
                 if (pageList.isPresent()) {
-                    return ResponseEntity.ok(new PageResponseList(pageList.get(), zoneId, request.getPageIndex(),
+                    return ResponseEntity.ok(new PageResponseList(pageList.get(), request.getPageIndex(),
                             request.getCount()));
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -261,9 +261,10 @@ public class DocumentController {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
-                Optional<Set<Page>> pageSet = pageService.findByName(request.getId(), name, provider.getLoginFromToken());
+                Optional<Set<PageResponse>> pageSet = pageService.findByName(request.getId(), name,
+                        provider.getLoginFromToken(), zoneId);
                 if (pageSet.isPresent()) {
-                    return ResponseEntity.ok(new PageResponseList(pageSet.get(), zoneId, request.getPageIndex(),
+                    return ResponseEntity.ok(new PageResponseList(pageSet.get(), request.getPageIndex(),
                             request.getCount()));
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -298,9 +299,10 @@ public class DocumentController {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
-                Optional<List<Page>> pages = pageService.findAllWithSort(request.getId(), provider.getLoginFromToken());
+                Optional<List<PageResponse>> pages = pageService.findAllWithSort(request.getId(),
+                        provider.getLoginFromToken(), zoneId);
                 if (pages.isPresent()) {
-                    return ResponseEntity.ok(new PageResponseList(pages.get(), zoneId, request.getPageIndex(),
+                    return ResponseEntity.ok(new PageResponseList(pages.get(), request.getPageIndex(),
                             request.getCount()));
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);

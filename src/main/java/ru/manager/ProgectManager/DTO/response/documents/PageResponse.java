@@ -2,6 +2,7 @@ package ru.manager.ProgectManager.DTO.response.documents;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
+import ru.manager.ProgectManager.entitys.User;
 import ru.manager.ProgectManager.entitys.documents.Page;
 
 import java.time.LocalDateTime;
@@ -28,7 +29,7 @@ public class PageResponse {
     @Schema(description = "Идентификаторы подстраниц данной страницы")
     private final List<Long> subpagesId;
 
-    public PageResponse(Page page, int zoneId){
+    public PageResponse(Page page, User currentUser, int zoneId){
         id = page.getId();
         name = page.getName();
         content = page.getContent();
@@ -37,6 +38,7 @@ public class PageResponse {
         published = page.isPublished();
         serialNumber = page.getSerialNumber();
         subpagesId = page.getSubpages().stream()
+                .filter(p -> p.isPublished() || currentUser.equals(p.getOwner()))
                 .sorted(Comparator.comparing(Page::getSerialNumber))
                 .map(Page::getId)
                 .collect(Collectors.toList());
