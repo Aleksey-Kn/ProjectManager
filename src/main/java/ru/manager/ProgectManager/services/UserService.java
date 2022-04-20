@@ -9,6 +9,7 @@ import ru.manager.ProgectManager.DTO.response.PointerResource;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.Role;
 import ru.manager.ProgectManager.entitys.User;
+import ru.manager.ProgectManager.entitys.VisitMark;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithDocumentConnector;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
@@ -127,6 +128,12 @@ public class UserService {
                 .map(s -> new PointerResource(s.getId(), s.getName(), ResourceType.DOCUMENT))
                 .collect(Collectors.toList()));
         return result;
+    }
+
+    public List<VisitMark> lastVisits(String userLogin) {
+        return userRepository.findByUsername(userLogin).getVisitMarks().stream()
+                .sorted(Comparator.comparing(VisitMark::getSerialNumber))
+                .collect(Collectors.toList());
     }
 
     @Autowired

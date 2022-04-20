@@ -49,6 +49,9 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "user")
     private Set<UserWithProjectConnector> userWithProjectConnectors;
 
+    @OneToMany
+    private Set<VisitMark> visitMarks;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return userWithRoleConnectors;
