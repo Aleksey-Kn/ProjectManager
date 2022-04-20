@@ -10,9 +10,11 @@ import ru.manager.ProgectManager.DTO.response.documents.PageNameResponse;
 import ru.manager.ProgectManager.DTO.response.documents.PageResponse;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.User;
+import ru.manager.ProgectManager.entitys.VisitMark;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithDocumentConnector;
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
 import ru.manager.ProgectManager.entitys.documents.Page;
+import ru.manager.ProgectManager.enums.ResourceType;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.repositories.*;
 
@@ -239,6 +241,23 @@ public class PageService {
         } else {
             return Optional.empty();
         }
+    }
+
+    public List<PageNameAndUpdateDateResponse> findLastSeeDocument(String userLogin, int zoneId) {
+        User user = userRepository.findByUsername(userLogin);
+        List<PageNameAndUpdateDateResponse> result = user.getVisitMarks().stream()
+                .filter(visitMark -> visitMark.getResourceType() == ResourceType.DOCUMENT)
+                .sorted(Comparator.comparing(VisitMark::getSerialNumber))
+                .map(visitMark -> {
+                    Optional<Page> page = pageRepository.findById(visitMark.getResourceId());
+                    return page.map(p -> new PageNameAndUpdateDateResponse(p, zoneId));
+                })
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
+        user.getVisitMarks().removeIf(visitMark -> visitMark.getSerialNumber() > 20);
+        userRepository.save(user);
+        return result;
     }
 
     public boolean transport(TransportPageRequest request, String userLogin) {
