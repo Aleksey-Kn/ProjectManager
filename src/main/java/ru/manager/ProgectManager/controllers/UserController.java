@@ -161,7 +161,7 @@ public class UserController {
                             schema = @Schema(implementation = ListPointerResources.class))
             })
     @GetMapping("/user/lasts")
-    public VisitMarksResponse findLastSee(){
-        return new VisitMarksResponse(userService.lastVisits(jwtProvider.getLoginFromToken()));
+    public VisitMarkListResponse findLastSee(){
+        return new VisitMarkListResponse(userService.lastVisits(jwtProvider.getLoginFromToken()));
     }
 }

@@ -1,6 +1,5 @@
 package ru.manager.ProgectManager.entitys;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
 import ru.manager.ProgectManager.enums.ResourceType;
@@ -14,19 +13,15 @@ import java.util.Objects;
 public class VisitMark {
     @Id
     @GeneratedValue
-    @JsonIgnore
     private long id;
 
     @Enumerated
     private ResourceType resourceType;
 
-    private long resourceId;
-
     @Column(nullable = false)
     private String resourceName;
-
-    @JsonIgnore
     private byte serialNumber;
+    private long resourceId;
 
     @Override
     public boolean equals(Object o) {

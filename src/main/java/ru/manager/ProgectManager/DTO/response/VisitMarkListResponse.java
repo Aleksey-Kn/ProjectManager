@@ -2,15 +2,18 @@ package ru.manager.ProgectManager.DTO.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import ru.manager.ProgectManager.entitys.VisitMark;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
-@RequiredArgsConstructor
 @Schema(description = "Список последних посещённых пользователем ресурсов")
-public class VisitMarksResponse {
+public class VisitMarkListResponse {
     @Schema(description = "Список информации о ресурсах")
-    private final List<VisitMark> visitMarks;
+    private final List<VisitMarkResponse> visitMarks;
+
+    public VisitMarkListResponse(List<VisitMark> markList) {
+        visitMarks = markList.stream().map(VisitMarkResponse::new).collect(Collectors.toList());
+    }
 }
