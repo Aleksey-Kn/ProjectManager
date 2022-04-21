@@ -17,6 +17,7 @@ import ru.manager.ProgectManager.entitys.documents.Page;
 import ru.manager.ProgectManager.enums.ResourceType;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.repositories.*;
+import ru.manager.ProgectManager.services.VisitMarkUpdater;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -35,6 +36,7 @@ public class PageService {
     private final PageRepository pageRepository;
     private final CustomRoleWithDocumentConnectorRepository documentConnectorRepository;
     private final CustomProjectRoleRepository roleRepository;
+    private final VisitMarkUpdater visitMarkUpdater;
 
     public Optional<Long> createPage(CreatePageRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
@@ -144,6 +146,7 @@ public class PageService {
         User user = userRepository.findByUsername(userLogin);
         Page page = pageRepository.findById(id).get();
         if (canSeePage(page, user) && (page.getOwner().equals(user) || isPublishPipeline(page))) {
+            visitMarkUpdater.updateVisitMarks(user, id, page.getName(), ResourceType.DOCUMENT);
             return Optional.of(new PageResponse(page, user));
         } else {
             return Optional.empty();
@@ -154,6 +157,7 @@ public class PageService {
         User user = userRepository.findByUsername(userLogin);
         Page page = pageRepository.findById(id).get();
         if (canSeePage(page, user) && (page.getOwner().equals(user) || isPublishPipeline(page))) {
+            visitMarkUpdater.updateVisitMarks(user, id, page.getName(), ResourceType.DOCUMENT);
             return Optional.of(new PageContentResponse(page, zoneId));
         } else {
             return Optional.empty();
@@ -243,21 +247,18 @@ public class PageService {
         }
     }
 
-    public List<PageNameAndUpdateDateResponse> findLastSeeDocument(String userLogin, int zoneId) {
-        User user = userRepository.findByUsername(userLogin);
-        List<PageNameAndUpdateDateResponse> result = user.getVisitMarks().stream()
+    public Optional<List<PageNameAndUpdateDateResponse>> findLastSeeDocument(long projectId, String userLogin,
+                                                                             int zoneId) {
+        Optional<Project> project = projectRepository.findById(projectId);
+        return project.map(proj -> userRepository.findByUsername(userLogin).getVisitMarks().stream()
                 .filter(visitMark -> visitMark.getResourceType() == ResourceType.DOCUMENT)
                 .sorted(Comparator.comparing(VisitMark::getSerialNumber))
-                .map(visitMark -> {
-                    Optional<Page> page = pageRepository.findById(visitMark.getResourceId());
-                    return page.map(p -> new PageNameAndUpdateDateResponse(p, zoneId));
-                })
+                .map(visitMark -> pageRepository.findById(visitMark.getResourceId()))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .collect(Collectors.toList());
-        user.getVisitMarks().removeIf(visitMark -> visitMark.getSerialNumber() > 20);
-        userRepository.save(user);
-        return result;
+                .filter(page -> page.getProject().equals(proj))
+                .map(page -> new PageNameAndUpdateDateResponse(page, zoneId))
+                .collect(Collectors.toList()));
     }
 
     public boolean transport(TransportPageRequest request, String userLogin) {

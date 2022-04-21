@@ -9,8 +9,10 @@ import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConne
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.entitys.kanban.Tag;
+import ru.manager.ProgectManager.enums.ResourceType;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.repositories.*;
+import ru.manager.ProgectManager.services.VisitMarkUpdater;
 
 import java.util.Optional;
 import java.util.Set;
@@ -25,6 +27,7 @@ public class KanbanService {
     private final CustomProjectRoleRepository customProjectRoleRepository;
     private final KanbanConnectorRepository kanbanConnectorRepository;
     private final TagRepository tagRepository;
+    private final VisitMarkUpdater visitMarkUpdater;
 
     public Optional<Kanban> createKanban(long projectId, String name, String userLogin) {
         Project project = projectRepository.findById(projectId).get();
@@ -66,6 +69,7 @@ public class KanbanService {
         Kanban kanban = kanbanRepository.findById(id).get();
         User user = userRepository.findByUsername(userLogin);
         if (canSeeKanban(kanban, user)) {
+            visitMarkUpdater.updateVisitMarks(user, id, kanban.getName(), ResourceType.KANBAN);
             return Optional.of(kanban);
         } else {
             return Optional.empty();

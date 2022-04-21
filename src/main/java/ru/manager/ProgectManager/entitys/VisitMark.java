@@ -5,10 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import ru.manager.ProgectManager.enums.ResourceType;
 
-import javax.persistence.Entity;
-import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.util.Objects;
 
 @Entity
@@ -24,6 +21,11 @@ public class VisitMark {
     private ResourceType resourceType;
 
     private long resourceId;
+
+    @Column(nullable = false)
+    private String resourceName;
+
+    @JsonIgnore
     private byte serialNumber;
 
     @Override

@@ -14,10 +14,7 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.PhotoDTO;
 import ru.manager.ProgectManager.DTO.request.RefreshUserDTO;
-import ru.manager.ProgectManager.DTO.response.ErrorResponse;
-import ru.manager.ProgectManager.DTO.response.ListPointerResources;
-import ru.manager.ProgectManager.DTO.response.ProjectListResponse;
-import ru.manager.ProgectManager.DTO.response.PublicUserDataResponse;
+import ru.manager.ProgectManager.DTO.response.*;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.entitys.Project;
@@ -152,8 +149,19 @@ public class UserController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ListPointerResources.class))
             })
-    @GetMapping("/users/resources")
+    @GetMapping("/user/resources")
     public ListPointerResources findResourcesByName(@RequestParam String name){
         return new ListPointerResources(userService.availableResourceByName(name, jwtProvider.getLoginFromToken()));
+    }
+
+    @Operation(summary = "Результат поиска ресурсов по имени")
+    @ApiResponse(responseCode = "200", description = "Список ресурсов, доступных пользователю, с фильтрацией по имени",
+            content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ListPointerResources.class))
+            })
+    @GetMapping("/user/lasts")
+    public VisitMarksResponse findLastSee(){
+        return new VisitMarksResponse(userService.lastVisits(jwtProvider.getLoginFromToken()));
     }
 }

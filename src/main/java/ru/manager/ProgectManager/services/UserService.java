@@ -131,13 +131,10 @@ public class UserService {
     }
 
     public List<VisitMark> lastVisits(String userLogin) {
-        User user = userRepository.findByUsername(userLogin);
-        List<VisitMark> result =  user.getVisitMarks().stream()
+        return userRepository.findByUsername(userLogin).getVisitMarks().stream()
                 .sorted(Comparator.comparing(VisitMark::getSerialNumber))
+                .limit(20)
                 .collect(Collectors.toList());
-        user.getVisitMarks().removeIf(visitMark -> visitMark.getSerialNumber() > 20);
-        userRepository.save(user);
-        return result;
     }
 
     @Autowired

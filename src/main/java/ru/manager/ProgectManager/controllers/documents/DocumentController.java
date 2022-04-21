@@ -142,7 +142,7 @@ public class DocumentController {
                                         @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId) {
         try {
             Optional<PageContentResponse> response = pageService.findContent(id, provider.getLoginFromToken(), zoneId);
-            if(response.isPresent()) {
+            if (response.isPresent()) {
                 return ResponseEntity.ok(response.get());
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -242,7 +242,7 @@ public class DocumentController {
     @GetMapping("/root")
     public ResponseEntity<?> findRootPages(@RequestBody @Valid GetResourceWithPagination request,
                                            BindingResult bindingResult) {
-        if(bindingResult.hasErrors()){
+        if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
@@ -280,7 +280,7 @@ public class DocumentController {
     public ResponseEntity<?> findByName(@RequestBody @Valid GetResourceWithPagination request,
                                         BindingResult bindingResult,
                                         @RequestParam String name) {
-        if(bindingResult.hasErrors()){
+        if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
@@ -318,7 +318,7 @@ public class DocumentController {
     public ResponseEntity<?> findAllWithSort(@RequestBody @Valid GetResourceWithPagination request,
                                              BindingResult bindingResult,
                                              @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId) {
-        if(bindingResult.hasErrors()){
+        if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
@@ -331,6 +331,38 @@ public class DocumentController {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
             } catch (NoSuchElementException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
+            }
+        }
+    }
+
+    @Operation(summary = "Список последних посещённых пользователем страниц документов")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Список страниц документов", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = PageNameAndUpdateDateResponseList.class))
+            }),
+            @ApiResponse(responseCode = "400", description = "Некорректные индексы пагинации", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "404", description = "Указанного проекта не существует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
+    })
+    @GetMapping("/lasts")
+    public ResponseEntity<?> findLastSee(@RequestBody @Valid GetResourceWithPagination request, BindingResult bindingResult,
+                                         @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId) {
+        if(bindingResult.hasErrors()){
+            return entityConfigurator.createErrorResponse(bindingResult);
+        } else {
+            Optional<List<PageNameAndUpdateDateResponse>> responses = pageService.findLastSeeDocument(request.getId(),
+                    provider.getLoginFromToken(), zoneId);
+            if (responses.isPresent()) {
+                return ResponseEntity.ok(new PageNameAndUpdateDateResponseList(responses.get(), request.getPageIndex(),
+                        request.getCount()));
+            } else {
                 return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
             }
         }
@@ -350,14 +382,14 @@ public class DocumentController {
             })
     })
     @PutMapping("/transport")
-    public ResponseEntity<?> transport(@RequestBody @Valid TransportPageRequest request, BindingResult  bindingResult) {
-        if(bindingResult.hasErrors()){
+    public ResponseEntity<?> transport(@RequestBody @Valid TransportPageRequest request, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.INDEX_MUST_BE_MORE_0), HttpStatus.BAD_REQUEST);
         } else {
             try {
-                if(pageService.transport(request, provider.getLoginFromToken())){
+                if (pageService.transport(request, provider.getLoginFromToken())) {
                     return new ResponseEntity<>(HttpStatus.OK);
-                } else{
+                } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
             } catch (NoSuchElementException e) {
