@@ -331,7 +331,6 @@ public class PageService {
                             pageRepository.save(page);
                         });
             });
-            transportedPage.setUpdateTime(getEpochSeconds());
             transportedPage.setSerialNumber(request.getIndex());
             pageRepository.save(transportedPage);
             return true;

@@ -10,7 +10,9 @@ import java.time.ZoneOffset;
 @Getter
 @Schema(description = "Данные запрашиваемого ресурса")
 public class PageContentResponse {
+    @Schema(description = "Данные документа запрашиваемой страницы")
     private final String content;
+    @Schema(description = "Дата последнего изменения ресурса")
     private final String updateDate;
 
     public PageContentResponse(Page page, int zoneId) {

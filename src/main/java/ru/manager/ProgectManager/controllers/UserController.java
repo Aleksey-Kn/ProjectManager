@@ -158,7 +158,7 @@ public class UserController {
     @ApiResponse(responseCode = "200", description = "Список ресурсов, доступных пользователю, с фильтрацией по имени",
             content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ListPointerResources.class))
+                            schema = @Schema(implementation = VisitMarkListResponse.class))
             })
     @GetMapping("/user/lasts")
     public VisitMarkListResponse findLastSee(){
