@@ -31,6 +31,8 @@ public class User implements UserDetails {
     @Column(nullable = false, unique = true)
     private String email;
 
+    private boolean enabled;
+
     @Column(nullable = false)
     private String nickname;
 
@@ -84,7 +86,7 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return enabled;
     }
 
     @Override

@@ -29,8 +29,9 @@ public class UserService {
     private RoleRepository roleRepository;
     private UserRepository userRepository;
     private PasswordEncoder passwordEncoder;
+    private MailService mailService;
 
-    public Optional<User> saveUser(UserDTO userDTO) {
+    public boolean saveUser(UserDTO userDTO) {
         if (userRepository.findByUsername(userDTO.getLogin()) == null) {
             if (userRepository.findByEmail(userDTO.getEmail()).isPresent()) {
                 throw new EmailAlreadyUsedException();
@@ -43,10 +44,13 @@ public class UserService {
             user.setEmail(userDTO.getEmail());
             user.setNickname(userDTO.getNickname());
             user.setUserWithRoleConnectors(Collections.singleton(role));
+            user.setEnabled(false);
+            userRepository.save(user);
 
-            return Optional.of(userRepository.save(user));
+            mailService.sendEmailApprove(userDTO.getEmail());
+            return true;
         }
-        return Optional.empty();
+        return false;
     }
 
     public Optional<User> findByUsername(String username) {
@@ -150,5 +154,10 @@ public class UserService {
     @Autowired
     private void setUserRepository(UserRepository u) {
         userRepository = u;
+    }
+
+    @Autowired
+    public void setMailService(MailService mailService) {
+        this.mailService = mailService;
     }
 }
