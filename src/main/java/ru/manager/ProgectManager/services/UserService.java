@@ -47,10 +47,11 @@ public class UserService {
             user.setEnabled(false);
             userRepository.save(user);
 
-            mailService.sendEmailApprove(userDTO.getEmail());
+            mailService.sendEmailApprove(user);
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     public Optional<User> findByUsername(String username) {
