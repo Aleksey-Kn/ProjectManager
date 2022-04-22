@@ -6,16 +6,14 @@ import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.request.RefreshUserDTO;
 import ru.manager.ProgectManager.DTO.request.UserDTO;
 import ru.manager.ProgectManager.DTO.response.PointerResource;
-import ru.manager.ProgectManager.entitys.Project;
-import ru.manager.ProgectManager.entitys.Role;
-import ru.manager.ProgectManager.entitys.User;
-import ru.manager.ProgectManager.entitys.VisitMark;
+import ru.manager.ProgectManager.entitys.*;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithDocumentConnector;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
 import ru.manager.ProgectManager.enums.ResourceType;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.EmailAlreadyUsedException;
+import ru.manager.ProgectManager.repositories.ApproveEnabledUserRepository;
 import ru.manager.ProgectManager.repositories.RoleRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
 
@@ -30,6 +28,7 @@ public class UserService {
     private UserRepository userRepository;
     private PasswordEncoder passwordEncoder;
     private MailService mailService;
+    private ApproveEnabledUserRepository approveEnabledUserRepository;
 
     public boolean saveUser(UserDTO userDTO) {
         if (userRepository.findByUsername(userDTO.getLogin()) == null) {
@@ -48,6 +47,19 @@ public class UserService {
             userRepository.save(user);
 
             mailService.sendEmailApprove(user);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean enabledUser(String token) {
+        Optional<ApproveEnabledUser> approveEnabledUser = approveEnabledUserRepository.findById(token);
+        if(approveEnabledUser.isPresent()) {
+            User user = approveEnabledUser.get().getUser();
+            user.setEnabled(true);
+            userRepository.save(user);
+            approveEnabledUserRepository.delete(approveEnabledUser.get());
             return true;
         } else {
             return false;
@@ -160,5 +172,10 @@ public class UserService {
     @Autowired
     public void setMailService(MailService mailService) {
         this.mailService = mailService;
+    }
+
+    @Autowired
+    public void setApproveEnabledUserRepository(ApproveEnabledUserRepository approveEnabledUserRepository) {
+        this.approveEnabledUserRepository = approveEnabledUserRepository;
     }
 }

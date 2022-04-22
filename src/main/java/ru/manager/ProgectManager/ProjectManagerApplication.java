@@ -27,8 +27,8 @@ public class ProjectManagerApplication {
 		JavaMailSenderImpl javaMailSender = new JavaMailSenderImpl();
 		javaMailSender.setHost("smtp.gmail.com");
 		javaMailSender.setPort(587);
-		javaMailSender.setUsername("");
-		javaMailSender.setPassword("");
+		javaMailSender.setUsername("veeharkserver@gmail.com");
+		javaMailSender.setPassword("iqjs jwxg tkvs gwsu");
 
 		Properties properties = javaMailSender.getJavaMailProperties();
 		properties.put("mail.transport.protocol", "smtp");

@@ -10,9 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.RefreshTokenRequest;
 import ru.manager.ProgectManager.DTO.request.UserDTO;
 import ru.manager.ProgectManager.DTO.response.AuthResponse;
@@ -109,8 +107,8 @@ public class AuthController {
     @Operation(summary = "Обновление токенов",
             description = "Возвращает новые токены доступа по refresh-токену пользователя")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "403", description = "Некорректный refresh токен"),
-            @ApiResponse(responseCode = "200", content = {
+            @ApiResponse(responseCode = "401", description = "Некорректный refresh токен"),
+            @ApiResponse(responseCode = "200", description = "Токены успешно обновлены", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = AuthResponse.class))
             })
@@ -131,6 +129,20 @@ public class AuthController {
 
             return ResponseEntity.ok(authResponse);
         }
-        return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Operation(summary = "Подтверждение почты пользователя")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Некорректный токен"),
+            @ApiResponse(responseCode = "200", description = "Адрес электронной почты подтверждён")
+    })
+    @GetMapping("/approve")
+    public ResponseEntity<?> approve(@RequestParam String token) {
+        if(userService.enabledUser(token)){
+            return new ResponseEntity<>(HttpStatus.OK);
+        } else{
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
     }
 }

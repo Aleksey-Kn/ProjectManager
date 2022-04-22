@@ -35,7 +35,7 @@ public class MailService {
         approveEnabledUserRepository.save(approveEnabledUser);
 
         mailMessage.setText("For approvement your account follow this link: " +
-                String.format("https://%s:%s/users/user/approve?token=%s", host, port, token));
+                String.format("https://%s:%s/approve?token=%s", host, port, token));
         javaMailSender.send(mailMessage);
     }
 }
