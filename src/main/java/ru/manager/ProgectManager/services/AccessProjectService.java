@@ -154,7 +154,7 @@ public class AccessProjectService {
                                                                  int liveTime) {
         User user = userRepository.findByUsername(fromUser);
         Project project = projectRepository.findById(projectId).get();
-        if (typeRoleProject == TypeRoleProject.ADMIN && !disposable)
+        if (typeRoleProject == TypeRoleProject.ADMIN)
             throw new IllegalArgumentException();
         if (isAdmin(project, user)) {
             AccessProject accessProject = new AccessProject();

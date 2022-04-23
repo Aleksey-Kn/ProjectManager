@@ -1,6 +1,7 @@
 package ru.manager.ProgectManager.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.MailException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.request.RefreshUserDTO;
@@ -44,9 +45,14 @@ public class UserService {
             user.setNickname(userDTO.getNickname());
             user.setUserWithRoleConnectors(Collections.singleton(role));
             user.setEnabled(false);
-            userRepository.save(user);
+            user = userRepository.save(user);
+            try {
+                mailService.sendEmailApprove(user);
+            } catch (MailException e) {
+                userRepository.delete(user);
+                throw e;
+            }
 
-            mailService.sendEmailApprove(user);
             return true;
         } else {
             return false;

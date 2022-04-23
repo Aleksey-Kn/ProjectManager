@@ -17,11 +17,14 @@ public class MailService {
     private final JavaMailSender javaMailSender;
     private final ApproveEnabledUserRepository approveEnabledUserRepository;
 
-    @Value("${server.host}")
+    @Value("${front.host}")
     private String host;
 
-    @Value("${server.port}")
+    @Value("${front.port}")
     private String port;
+
+    @Value("${front.approve.mail.url}")
+    private String url;
 
     public void sendEmailApprove(User user) {
         SimpleMailMessage mailMessage = new SimpleMailMessage();
@@ -32,10 +35,10 @@ public class MailService {
         String token = UUID.randomUUID().toString();
         approveEnabledUser.setToken(token);
         approveEnabledUser.setUser(user);
-        approveEnabledUserRepository.save(approveEnabledUser);
 
         mailMessage.setText("For approvement your account follow this link: " +
-                String.format("https://%s:%s/approve?token=%s", host, port, token));
+                String.format("https://%s:%s/%s?token=%s", host, port, url, token));
         javaMailSender.send(mailMessage);
+        approveEnabledUserRepository.save(approveEnabledUser);
     }
 }

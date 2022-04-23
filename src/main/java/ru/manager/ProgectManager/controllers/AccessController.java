@@ -18,6 +18,7 @@ import ru.manager.ProgectManager.DTO.response.accessProject.AccessProjectRespons
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.accessProject.AccessProject;
 import ru.manager.ProgectManager.enums.Errors;
+import ru.manager.ProgectManager.exception.NoSuchResourceException;
 import ru.manager.ProgectManager.services.AccessProjectService;
 
 import javax.validation.Valid;
@@ -104,7 +105,7 @@ public class AccessController {
                             @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ErrorResponse.class))
                     }),
-            @ApiResponse(responseCode = "404", description = "Указанного проекта не существует", content = {
+            @ApiResponse(responseCode = "404", description = "Указанного проекта или роли не существует", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -113,7 +114,7 @@ public class AccessController {
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "406",
-                    description = "Попытка создать многоразовую ссылку для приглашения пользователя, как администратора",
+                    description = "Приглашать пользователя с ролью администратора можно только через отправку приглашения на почту",
                     content = {
                             @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ErrorResponse.class))
@@ -139,7 +140,11 @@ public class AccessController {
             } catch (NoSuchElementException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT),
                         HttpStatus.NOT_FOUND);
-            } catch (IllegalArgumentException e) {
+            } catch (NoSuchResourceException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CUSTOM_ROLE),
+                        HttpStatus.NOT_FOUND);
+            }
+            catch (IllegalArgumentException e) {
                 return new ResponseEntity<>(
                         new ErrorResponse(Errors.TOKEN_FOR_ACCESS_WITH_PROJECT_AS_ADMIN_MUST_BE_DISPOSABLE),
                         HttpStatus.NOT_ACCEPTABLE);

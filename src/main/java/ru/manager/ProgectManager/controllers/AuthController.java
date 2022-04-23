@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.MailException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.RefreshTokenRequest;
@@ -49,6 +50,10 @@ public class AuthController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
+            @ApiResponse(responseCode = "404", description = "Указанной почты не существует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
             @ApiResponse(responseCode = "200", description = "Пользователь успешно зарегестрирован")
     })
     @PostMapping("/register")
@@ -64,13 +69,15 @@ public class AuthController {
             } catch (EmailAlreadyUsedException e) {
                 return new ResponseEntity<>(
                         new ErrorResponse(Errors.USER_WITH_THIS_EMAIL_ALREADY_CREATED), HttpStatus.NOT_ACCEPTABLE);
+            } catch (MailException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_MAIL), HttpStatus.NOT_FOUND);
             }
         } else {
             return entityConfigurator.createErrorResponse(bindingResult);
         }
     }
 
-    @Operation(summary = "Аутентификация")
+    @Operation(summary = "Авторизация")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "401", description = "Некорректный логин или пароль", content = {
                     @Content(mediaType = "application/json",
