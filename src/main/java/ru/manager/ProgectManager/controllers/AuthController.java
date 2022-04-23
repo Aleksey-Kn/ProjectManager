@@ -12,8 +12,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.mail.MailException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import ru.manager.ProgectManager.DTO.request.AuthDto;
 import ru.manager.ProgectManager.DTO.request.RefreshTokenRequest;
-import ru.manager.ProgectManager.DTO.request.UserDTO;
+import ru.manager.ProgectManager.DTO.request.RegisterUserDTO;
 import ru.manager.ProgectManager.DTO.response.AuthResponse;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
@@ -24,8 +25,6 @@ import ru.manager.ProgectManager.exception.EmailAlreadyUsedException;
 import ru.manager.ProgectManager.services.RefreshTokenService;
 import ru.manager.ProgectManager.services.UserService;
 
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.util.Optional;
 
@@ -57,10 +56,10 @@ public class AuthController {
             @ApiResponse(responseCode = "200", description = "Пользователь успешно зарегестрирован")
     })
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody UserDTO userDTO, BindingResult bindingResult) {
+    public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterUserDTO registerUserDTO, BindingResult bindingResult) {
         if (!bindingResult.hasErrors()) {
             try {
-                if (userService.saveUser(userDTO)) {
+                if (userService.saveUser(registerUserDTO)) {
                     return new ResponseEntity<>(HttpStatus.OK);
                 } else {
                     return new ResponseEntity<>(
@@ -79,6 +78,11 @@ public class AuthController {
 
     @Operation(summary = "Авторизация")
     @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Данные логина или пароля отсутствуют в запросе",
+                    content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
             @ApiResponse(responseCode = "401", description = "Некорректный логин или пароль", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
@@ -89,25 +93,26 @@ public class AuthController {
             })
     })
     @PostMapping("/auth")
-    public ResponseEntity<?> auth(@RequestBody UserDTO request, HttpServletResponse response) {
-        Optional<User> userEntity = userService
-                .findByUsernameOrEmailAndPassword(request.getLogin(), request.getPassword());
-        if (userEntity.isPresent()) {
-            if (userEntity.get().isEnabled()) {
-                AuthResponse authResponse = new AuthResponse();
-                Cookie cookie = new Cookie("access", jwtProvider.generateToken(userEntity.get().getUsername()));
-                cookie.setPath("/");
-                cookie.setMaxAge(900);
-                cookie.setHttpOnly(true);
-                response.addCookie(cookie);//добавляем Cookie в запрос
-                response.setContentType("text/plain");//устанавливаем контент
-                authResponse.setRefresh(refreshTokenService.createToken(userEntity.get().getUsername()));
-                return ResponseEntity.ok(authResponse);
-            } else {
-                return new ResponseEntity<>(new ErrorResponse(Errors.ACCOUNT_IS_NOT_ENABLED), HttpStatus.UNAUTHORIZED);
-            }
+    public ResponseEntity<?> auth(@RequestBody @Valid AuthDto request, BindingResult bindingResult) {
+        if(bindingResult.hasErrors()){
+            return entityConfigurator.createErrorResponse(bindingResult);
         } else {
-            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_LOGIN_OR_PASSWORD), HttpStatus.UNAUTHORIZED);
+            Optional<User> userEntity = userService
+                    .findByUsernameOrEmailAndPassword(request.getLogin(), request.getPassword());
+            if (userEntity.isPresent()) {
+                if (userEntity.get().isEnabled()) {
+                    AuthResponse authResponse = new AuthResponse();
+                    authResponse.setAccess(jwtProvider.generateToken(userEntity.get().getUsername()));
+                    authResponse.setRefresh(refreshTokenService.createToken(userEntity.get().getUsername()));
+                    return ResponseEntity.ok(authResponse);
+                } else {
+                    return new ResponseEntity<>(new ErrorResponse(Errors.ACCOUNT_IS_NOT_ENABLED),
+                            HttpStatus.UNAUTHORIZED);
+                }
+            } else {
+                return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_LOGIN_OR_PASSWORD),
+                        HttpStatus.UNAUTHORIZED);
+            }
         }
     }
 
@@ -121,19 +126,12 @@ public class AuthController {
             })
     })
     @PostMapping("/refresh")
-    public ResponseEntity<?> refresh(@RequestBody RefreshTokenRequest tokenRequest, HttpServletResponse response) {
+    public ResponseEntity<?> refresh(@RequestBody RefreshTokenRequest tokenRequest) {
         Optional<String> login = refreshTokenService.findLoginFromToken(tokenRequest.getRefresh());
         if (login.isPresent()) {
             AuthResponse authResponse = new AuthResponse();
             authResponse.setRefresh(refreshTokenService.createToken(login.get()));
-
-            Cookie cookie = new Cookie("access", jwtProvider.generateToken(login.get()));
-            cookie.setPath("/");
-            cookie.setMaxAge(900);
-            cookie.setHttpOnly(true);
-            response.addCookie(cookie);//добавляем Cookie в запрос
-            response.setContentType("text/plain");//устанавливаем контекст
-
+            authResponse.setAccess(jwtProvider.generateToken(login.get()));
             return ResponseEntity.ok(authResponse);
         }
         return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);

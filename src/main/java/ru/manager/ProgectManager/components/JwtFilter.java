@@ -5,17 +5,17 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.filter.GenericFilterBean;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 @Component
 public class JwtFilter extends GenericFilterBean {
@@ -36,10 +36,13 @@ public class JwtFilter extends GenericFilterBean {
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
             throws IOException, ServletException {
-        String token = getTokenFromRequest((HttpServletRequest) servletRequest);
-        if (token != null && jwtProvider.validateToken(token)) {
+//        HttpServletResponse httpServletResponse = (HttpServletResponse) servletResponse;
+//        httpServletResponse.setHeader("Access-Control-Allow-Origin", "*");
+//        httpServletResponse.setHeader("Access-Control-Allow-Headers", "*");
+        Optional<String> token = getTokenFromRequest((HttpServletRequest) servletRequest);
+        if (token.isPresent() && jwtProvider.validateToken(token.get())) {
             try {
-                String userLogin = jwtProvider.getLoginFromToken(token);
+                String userLogin = jwtProvider.getLoginFromToken(token.get());
                 UserDetails customUserDetails = customUserDetailsService.loadUserByUsername(userLogin);
                 UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(customUserDetails,
                         null, customUserDetails.getAuthorities());
@@ -50,16 +53,12 @@ public class JwtFilter extends GenericFilterBean {
         filterChain.doFilter(servletRequest, servletResponse);
     }
 
-    private String getTokenFromRequest(HttpServletRequest request) {
-        Cookie[] cookies = request.getCookies();
-        if (cookies != null) {
-            return Arrays.stream(cookies)
-                    .filter(c -> c.getName().equals("access"))
-                    .findAny()
-                    .map(Cookie::getValue)
-                    .orElse(null);
+    private Optional<String> getTokenFromRequest(HttpServletRequest request) {
+        String bearer = request.getHeader("Authorization");
+        if(StringUtils.hasText(bearer) && bearer.startsWith("Bearer ")) {
+            return Optional.of(bearer.substring(7));
         } else {
-            return null;
+            return Optional.empty();
         }
     }
 }

@@ -8,4 +8,6 @@ import lombok.Data;
 public class AuthResponse {
     @Schema(description = "Refresh токен")
     private String refresh;
+    @Schema(description = "Access токен")
+    private String access;
 }

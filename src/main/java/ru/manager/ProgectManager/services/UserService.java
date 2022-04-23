@@ -5,7 +5,7 @@ import org.springframework.mail.MailException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.request.RefreshUserDTO;
-import ru.manager.ProgectManager.DTO.request.UserDTO;
+import ru.manager.ProgectManager.DTO.request.RegisterUserDTO;
 import ru.manager.ProgectManager.DTO.response.PointerResource;
 import ru.manager.ProgectManager.entitys.*;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithDocumentConnector;
@@ -31,23 +31,23 @@ public class UserService {
     private MailService mailService;
     private ApproveEnabledUserRepository approveEnabledUserRepository;
 
-    public boolean saveUser(UserDTO userDTO) {
-        if (userRepository.findByUsername(userDTO.getLogin()) == null) {
-            if (userRepository.findByEmail(userDTO.getEmail()).isPresent()) {
+    public boolean saveUser(RegisterUserDTO registerUserDTO) {
+        if (userRepository.findByUsername(registerUserDTO.getLogin()) == null) {
+            if (userRepository.findByEmail(registerUserDTO.getEmail()).isPresent()) {
                 throw new EmailAlreadyUsedException();
             }
 
             Role role = roleRepository.findByName("ROLE_USER");
             User user = new User();
-            user.setUsername(userDTO.getLogin());
-            user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
-            user.setEmail(userDTO.getEmail());
-            user.setNickname(userDTO.getNickname());
+            user.setUsername(registerUserDTO.getLogin());
+            user.setPassword(passwordEncoder.encode(registerUserDTO.getPassword()));
+            user.setEmail(registerUserDTO.getEmail());
+            user.setNickname(registerUserDTO.getNickname());
             user.setUserWithRoleConnectors(Collections.singleton(role));
             user.setEnabled(false);
             user = userRepository.save(user);
             try {
-                mailService.sendEmailApprove(user);
+                mailService.sendEmailApprove(user, registerUserDTO.getUrl());
             } catch (MailException e) {
                 userRepository.delete(user);
                 throw e;

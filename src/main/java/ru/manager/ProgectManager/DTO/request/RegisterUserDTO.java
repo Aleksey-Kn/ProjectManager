@@ -11,7 +11,7 @@ import javax.validation.constraints.Size;
 @Getter
 @Validated
 @Schema(description = "Запрос на создание пользователя")
-public class UserDTO {
+public class RegisterUserDTO {
     @NotBlank(message = "LOGIN_MUST_BE_CONTAINS_VISIBLE_SYMBOLS")
     @Schema(description = "Логин пользователя")
     private String login;
@@ -25,4 +25,6 @@ public class UserDTO {
     @NotBlank(message = "NICKNAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS")
     @Schema(description = "Отображаемое имя пользователя")
     private String nickname;
+    @Schema(description = "Часть url для формирования ссылки на подтверждение почты", required = true)
+    private String url;
 }
