@@ -36,9 +36,6 @@ public class JwtFilter extends GenericFilterBean {
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
             throws IOException, ServletException {
-//        HttpServletResponse httpServletResponse = (HttpServletResponse) servletResponse;
-//        httpServletResponse.setHeader("Access-Control-Allow-Origin", "*");
-//        httpServletResponse.setHeader("Access-Control-Allow-Headers", "*");
         Optional<String> token = getTokenFromRequest((HttpServletRequest) servletRequest);
         if (token.isPresent() && jwtProvider.validateToken(token.get())) {
             try {
