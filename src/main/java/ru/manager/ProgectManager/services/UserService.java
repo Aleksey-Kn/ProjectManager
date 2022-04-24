@@ -10,10 +10,11 @@ import ru.manager.ProgectManager.entitys.*;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithDocumentConnector;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
+import ru.manager.ProgectManager.enums.ActionType;
 import ru.manager.ProgectManager.enums.ResourceType;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.EmailAlreadyUsedException;
-import ru.manager.ProgectManager.repositories.ApproveEnabledUserRepository;
+import ru.manager.ProgectManager.repositories.ApproveActionTokenRepository;
 import ru.manager.ProgectManager.repositories.RoleRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
 
@@ -28,7 +29,7 @@ public class UserService {
     private UserRepository userRepository;
     private PasswordEncoder passwordEncoder;
     private MailService mailService;
-    private ApproveEnabledUserRepository approveEnabledUserRepository;
+    private ApproveActionTokenRepository approveActionTokenRepository;
 
     public boolean saveUser(RegisterUserDTO registerUserDTO) {
         if (userRepository.findByUsername(registerUserDTO.getLogin()) == null) {
@@ -59,17 +60,32 @@ public class UserService {
     }
 
     public boolean enabledUser(String token) {
-        Optional<ApproveEnabledUser> approveEnabledUser = approveEnabledUserRepository.findById(token);
-        if(approveEnabledUser.isPresent()) {
+        Optional<ApproveActionToken> approveEnabledUser = approveActionTokenRepository.findById(token);
+        if (approveEnabledUser.isPresent() && approveEnabledUser.get().getActionType() == ActionType.APPROVE_ENABLE) {
             User user = approveEnabledUser.get().getUser();
             user.setEnabled(true);
             userRepository.save(user);
-            approveEnabledUserRepository.delete(approveEnabledUser.get());
+            approveActionTokenRepository.delete(approveEnabledUser.get());
             return true;
         } else {
             return false;
         }
     }
+
+    public boolean attemptDropPass(String loginOrEmail, String url) {
+        Optional<User> user = findLoginOrEmail(loginOrEmail);
+        if(user.isPresent()) {
+            mailService.sendResetPass(user.get(), url);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+//    public boolean resetPass(String token, String newPassword) {
+//        Optional<ApproveActionToken> approveActionToken = approveActionTokenRepository.findById(token);
+//        if()
+//    }
 
     public Optional<User> findByUsername(String username) {
         return Optional.ofNullable(userRepository.findByUsername(username));
@@ -80,16 +96,9 @@ public class UserService {
     }
 
     public Optional<User> findByUsernameOrEmailAndPassword(String loginOrEmail, String password) {
-        User user = userRepository.findByUsername(loginOrEmail);
-        if (user != null) {
-            if (passwordEncoder.matches(password, user.getPassword())) {
-                return Optional.of(user);
-            }
-        } else {
-            Optional<User> u = userRepository.findByEmail(loginOrEmail);
-            if (u.isPresent() && passwordEncoder.matches(password, u.get().getPassword())) {
-                return u;
-            }
+        Optional<User> user = findLoginOrEmail(loginOrEmail);
+        if (user.isPresent() && passwordEncoder.matches(password, user.get().getPassword())) {
+            return user;
         }
         return Optional.empty();
     }
@@ -153,6 +162,15 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
+    private Optional<User> findLoginOrEmail(String loginOrEmail) {
+        Optional<User> user = Optional.ofNullable(userRepository.findByUsername(loginOrEmail));
+        if (user.isPresent()) {
+            return user;
+        } else {
+            return userRepository.findByEmail(loginOrEmail);
+        }
+    }
+
     @Autowired
     private void setPasswordEncoder(PasswordEncoder p) {
         passwordEncoder = p;
@@ -174,7 +192,7 @@ public class UserService {
     }
 
     @Autowired
-    public void setApproveEnabledUserRepository(ApproveEnabledUserRepository approveEnabledUserRepository) {
-        this.approveEnabledUserRepository = approveEnabledUserRepository;
+    public void setApproveEnabledUserRepository(ApproveActionTokenRepository approveActionTokenRepository) {
+        this.approveActionTokenRepository = approveActionTokenRepository;
     }
 }

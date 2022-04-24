@@ -2,20 +2,21 @@ package ru.manager.ProgectManager.entitys;
 
 import lombok.Getter;
 import lombok.Setter;
+import ru.manager.ProgectManager.enums.ActionType;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToOne;
+import javax.persistence.*;
 
 @Entity
 @Getter
 @Setter
-public class ApproveEnabledUser {
+public class ApproveActionToken {
     @Id
     private String token;
 
     @OneToOne(optional = false)
     @JoinColumn(name = "user_id")
     private User user;
+
+    @Enumerated
+    private ActionType actionType;
 }
