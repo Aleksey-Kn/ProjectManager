@@ -18,15 +18,25 @@ public class MailService {
 
     public void sendEmailApprove(User user, String url) {
         String token = UUID.randomUUID().toString();
-        SimpleMailMessage mailMessage = new SimpleMailMessage();
-        mailMessage.setTo(user.getEmail());
-        mailMessage.setSubject("Mail confirmation");
-        mailMessage.setText("For approvement your account follow this link: " + url + "?token=" + token);
-        javaMailSender.send(mailMessage);
+        send(user.getEmail(), "Mail confirmation",
+                "For approvement your account follow this link: " + url + "?token=" + token);
 
         ApproveEnabledUser approveEnabledUser = new ApproveEnabledUser();
         approveEnabledUser.setToken(token);
         approveEnabledUser.setUser(user);
         approveEnabledUserRepository.save(approveEnabledUser);
+    }
+
+    public void sendInvitationToProject(String email, String projectName, String url, String token) {
+        send(email, "Invitation to the project '" + projectName + "'",
+                "In order to join the project, you need to follow the link: " + url + "?token=" + token);
+    }
+
+    private void send(String address, String subject, String text) {
+        SimpleMailMessage mailMessage = new SimpleMailMessage();
+        mailMessage.setTo(address);
+        mailMessage.setSubject(subject);
+        mailMessage.setText(text);
+        javaMailSender.send(mailMessage);
     }
 }

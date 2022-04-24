@@ -2,6 +2,7 @@ package ru.manager.ProgectManager.services.project;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import ru.manager.ProgectManager.DTO.request.accessProject.AccessProjectTroughMailRequest;
 import ru.manager.ProgectManager.DTO.request.accessProject.CreateCustomRoleRequest;
 import ru.manager.ProgectManager.DTO.request.accessProject.EditUserRoleRequest;
 import ru.manager.ProgectManager.DTO.response.ProjectResponse;
@@ -13,6 +14,7 @@ import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.IllegalActionException;
 import ru.manager.ProgectManager.exception.NoSuchResourceException;
 import ru.manager.ProgectManager.repositories.*;
+import ru.manager.ProgectManager.services.MailService;
 
 import java.time.LocalDate;
 import java.util.Optional;
@@ -33,6 +35,7 @@ public class AccessProjectService {
     private final KanbanConnectorRepository kanbanConnectorRepository;
     private final CustomProjectRoleRepository customProjectRoleRepository;
     private final CustomRoleWithDocumentConnectorRepository documentConnectorRepository;
+    private final MailService mailService;
 
     public Optional<CustomProjectRole> createCustomRole(CreateCustomRoleRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
@@ -158,21 +161,41 @@ public class AccessProjectService {
         if (typeRoleProject == TypeRoleProject.ADMIN)
             throw new IllegalArgumentException();
         if (isAdmin(project, user)) {
-            AccessProject accessProject = new AccessProject();
-            accessProject.setProject(project);
-            accessProject.setTypeRoleProject(typeRoleProject);
-            if (typeRoleProject == TypeRoleProject.CUSTOM_ROLE) {
-                accessProject.setProjectRole(project.getAvailableRole().stream()
-                        .filter(r -> r.getId() == customProjectRoleId)
-                        .findAny()
-                        .orElseThrow(() -> new NoSuchResourceException("Custom project role: " + customProjectRoleId)));
-            }
-            accessProject.setDisposable(disposable);
-            accessProject.setCode(UUID.randomUUID().toString());
-            accessProject.setTimeForDie(LocalDate.now().plusDays(liveTime).toEpochDay());
-            return Optional.of(accessProjectRepository.save(accessProject));
+            return Optional.of(createAccessProject(UUID.randomUUID().toString(), project, typeRoleProject,
+                    customProjectRoleId, disposable, liveTime));
         }
         return Optional.empty();
+    }
+
+    public boolean sendInvitationToMail(AccessProjectTroughMailRequest request, String userLogin) {
+        User user = userRepository.findByUsername(userLogin);
+        Project project = projectRepository.findById(request.getProjectId()).orElseThrow();
+        if(isAdmin(project, user)) {
+            String token = UUID.randomUUID().toString();
+            mailService.sendInvitationToProject(request.getEmail(), project.getName(), request.getUrl(), token);
+            createAccessProject(token, project, request.getTypeRoleProject(), request.getRoleId(), true,
+                    request.getLiveTimeInDays());
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private AccessProject createAccessProject(String token, Project project, TypeRoleProject typeRoleProject,
+                                              long customProjectRoleId, boolean disposable, int liveTime) {
+        AccessProject accessProject = new AccessProject();
+        accessProject.setProject(project);
+        accessProject.setTypeRoleProject(typeRoleProject);
+        if (typeRoleProject == TypeRoleProject.CUSTOM_ROLE) {
+            accessProject.setProjectRole(project.getAvailableRole().stream()
+                    .filter(r -> r.getId() == customProjectRoleId)
+                    .findAny()
+                    .orElseThrow(NoSuchResourceException::new));
+        }
+        accessProject.setDisposable(disposable);
+        accessProject.setCode(token);
+        accessProject.setTimeForDie(LocalDate.now().plusDays(liveTime).toEpochDay());
+        return accessProjectRepository.save(accessProject);
     }
 
     public Optional<ProjectResponse> findInfoOfProjectFromAccessToken(String token) {

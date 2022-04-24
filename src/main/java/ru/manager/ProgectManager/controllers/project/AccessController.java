@@ -10,12 +10,15 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.MailException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.accessProject.AccessProjectRequest;
+import ru.manager.ProgectManager.DTO.request.accessProject.AccessProjectTroughMailRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.ProjectResponse;
 import ru.manager.ProgectManager.DTO.response.accessProject.AccessProjectResponse;
+import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.accessProject.AccessProject;
 import ru.manager.ProgectManager.enums.Errors;
@@ -36,6 +39,7 @@ import java.util.Optional;
 public class AccessController {
     private final AccessProjectService accessProjectService;
     private final JwtProvider provider;
+    private final ErrorResponseEntityConfigurator entityConfigurator;
 
     @Operation(summary = "Получение доступа",
             description = "Предоставляет доступ к проекту, к которому относится токен, пользователю, перешедшуму по данной ссылке")
@@ -70,9 +74,9 @@ public class AccessController {
     @Operation(summary = "Получение информации о проекте, к которому может быть предоставлен доступ")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "403", description = "Устаревший токен доступа к проекту", content = {
-                            @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ErrorResponse.class))
-                    }),
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
             @ApiResponse(responseCode = "400", description = "Некорректный токен доступа к проекту", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
@@ -111,7 +115,7 @@ public class AccessController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "400", description = "Роль пользователя не указана", content = {
+            @ApiResponse(responseCode = "400", description = "Некоректные входные данные", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -129,8 +133,7 @@ public class AccessController {
     public ResponseEntity<?> postAccess(@RequestBody @Valid AccessProjectRequest accessProjectRequest,
                                         BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
-                    HttpStatus.BAD_REQUEST);
+            return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
                 Optional<AccessProject> accessProject = accessProjectService.generateTokenForAccessProject(provider.getLoginFromToken(),
@@ -145,11 +148,53 @@ public class AccessController {
             } catch (NoSuchResourceException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CUSTOM_ROLE),
                         HttpStatus.NOT_FOUND);
-            }
-            catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException e) {
                 return new ResponseEntity<>(
                         new ErrorResponse(Errors.TOKEN_FOR_ACCESS_WITH_PROJECT_AS_ADMIN_MUST_BE_DISPOSABLE),
                         HttpStatus.NOT_ACCEPTABLE);
+            }
+        }
+    }
+
+    @Operation(summary = "Предоставление доступа через почту пользователя",
+            description = "Отправляет реферальную ссылку на указанную почту")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "403",
+                    description = "Пользователь, пытающийся предоставить доступ, не является администратором проекта",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
+            @ApiResponse(responseCode = "404", description = "Указанного проекта, почты или роли не существует",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
+            @ApiResponse(responseCode = "400", description = "Некоректные входные данные", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "200", description = "Отправка реферальной ссылки прошла успешно")
+    })
+    @PostMapping("/send")
+    public ResponseEntity<?> sendAccessToMail(@RequestBody @Valid AccessProjectTroughMailRequest request,
+                                              BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            return entityConfigurator.createErrorResponse(bindingResult);
+        } else {
+            try {
+                if (accessProjectService.sendInvitationToMail(request, provider.getLoginFromToken())) {
+                    return new ResponseEntity<>(HttpStatus.OK);
+                } else {
+                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+                }
+            } catch (NoSuchElementException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
+            } catch (NoSuchResourceException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CUSTOM_ROLE),
+                        HttpStatus.NOT_FOUND);
+            } catch (MailException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_MAIL), HttpStatus.NOT_FOUND);
             }
         }
     }
@@ -165,7 +210,7 @@ public class AccessController {
             @ApiResponse(responseCode = "200", description = "Текущий пользователь исключён из проекта")
     })
     @PostMapping("/leave")
-    public ResponseEntity<?> leave(@RequestParam @Parameter(description = "Идентификатор покидаемого проекта") long id){
+    public ResponseEntity<?> leave(@RequestParam @Parameter(description = "Идентификатор покидаемого проекта") long id) {
         try {
             if (accessProjectService.leave(id, provider.getLoginFromToken())) {
                 return new ResponseEntity<>(HttpStatus.OK);
@@ -179,18 +224,18 @@ public class AccessController {
 
     @ApiResponses(value = {
             @ApiResponse(responseCode = "403", description = "Пользователь, пытающийся удалить другого пользователя, " +
-                            "не является администратором проекта или пытается исключить себя или другого администратора"),
+                    "не является администратором проекта или пытается исключить себя или другого администратора"),
             @ApiResponse(responseCode = "404", description = "Указанного проекта или пользователя не существует",
                     content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class))
-            }),
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
             @ApiResponse(responseCode = "200", description = "Указанный пользователь исключён из проекта")
     })
     @DeleteMapping("/kick")
     public ResponseEntity<?> kick(@RequestParam long projectId, @RequestParam long userId) {
-        try{
-            if(accessProjectService.kick(projectId, userId, provider.getLoginFromToken())) {
+        try {
+            if (accessProjectService.kick(projectId, userId, provider.getLoginFromToken())) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);

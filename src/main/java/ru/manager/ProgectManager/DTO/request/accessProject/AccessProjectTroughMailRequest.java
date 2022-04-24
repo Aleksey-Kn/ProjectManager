@@ -5,13 +5,14 @@ import lombok.Getter;
 import org.springframework.validation.annotation.Validated;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 
+import javax.validation.constraints.Email;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
 @Getter
 @Validated
-@Schema(description = "Запрос на предоставление доступа к проекту")
-public class AccessProjectRequest {
+@Schema(description = "Запрос на отправку реферальной ссылки на почту")
+public class AccessProjectTroughMailRequest {
     @Schema(description = "Идентификатор проекта, к которому будет предоставлен доступ", required = true)
     private long projectId;
     @NotNull(message = "FIELD_MUST_BE_NOT_NULL")
@@ -20,9 +21,12 @@ public class AccessProjectRequest {
     @Schema(description =
             "Название кастомной роли. Необходимый параметр только в случае, если typeRoleProject выбран CUSTOM_ROLE")
     private long roleId;
-    @Schema(description = "Булевая величина, отображающая, будет ли сгенерированная ссылка одноразовой", required = true)
-    private boolean disposable;
     @Min(value = 1, message = "COUNT_MUST_BE_MORE_1")
     @Schema(description = "Срок действия ссылки в днях")
     private int liveTimeInDays;
+    @Email(message = "EMAIL_HAVE_INCORRECT_FORMAT")
+    @Schema(description = "Почта, на которую будет отправлена реферальная ссылка", required = true)
+    private String email;
+    @Schema(description = "Часть url для формирования реферальной ссылки", required = true)
+    private String url;
 }
