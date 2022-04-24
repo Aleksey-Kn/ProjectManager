@@ -1,4 +1,4 @@
-package ru.manager.ProgectManager.services;
+package ru.manager.ProgectManager.services.project;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -10,6 +10,7 @@ import ru.manager.ProgectManager.entitys.User;
 import ru.manager.ProgectManager.entitys.accessProject.*;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
+import ru.manager.ProgectManager.exception.IllegalActionException;
 import ru.manager.ProgectManager.exception.NoSuchResourceException;
 import ru.manager.ProgectManager.repositories.*;
 
@@ -35,7 +36,7 @@ public class AccessProjectService {
 
     public Optional<CustomProjectRole> createCustomRole(CreateCustomRoleRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        Project project = projectRepository.findById(request.getProjectId()).get();
+        Project project = projectRepository.findById(request.getProjectId()).orElseThrow();
         if (isAdmin(project, user)) {
             CustomProjectRole customProjectRole = new CustomProjectRole();
             setCustomProjectRoleData(project, customProjectRole, request);
@@ -49,7 +50,7 @@ public class AccessProjectService {
 
     public Optional<Set<CustomProjectRole>> findAllCustomProjectRole(long projectId, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        Project project = projectRepository.findById(projectId).get();
+        Project project = projectRepository.findById(projectId).orElseThrow();
         if (isAdmin(project, user)) {
             return Optional.of(project.getAvailableRole());
         } else {
@@ -59,7 +60,7 @@ public class AccessProjectService {
 
     public boolean deleteCustomRole(long projectId, long roleId, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        Project project = projectRepository.findById(projectId).get();
+        Project project = projectRepository.findById(projectId).orElseThrow();
         if (isAdmin(project, user)) {
             CustomProjectRole role = project.getAvailableRole().stream()
                     .filter(r -> r.getId() == roleId)
@@ -85,7 +86,7 @@ public class AccessProjectService {
 
     public boolean changeRole(long roleId, CreateCustomRoleRequest newCustomRole, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        Project project = projectRepository.findById(newCustomRole.getProjectId()).get();
+        Project project = projectRepository.findById(newCustomRole.getProjectId()).orElseThrow();
         if (isAdmin(project, user)) {
             CustomProjectRole customProjectRole = project.getAvailableRole().stream()
                     .filter(r -> r.getId() == roleId)
@@ -124,7 +125,7 @@ public class AccessProjectService {
 
     public boolean editUserRole(EditUserRoleRequest request, String adminLogin) {
         User admin = userRepository.findByUsername(adminLogin);
-        Project project = projectRepository.findById(request.getProjectId()).get();
+        Project project = projectRepository.findById(request.getProjectId()).orElseThrow();
         if (isAdmin(project, admin)) {
             User targetUser = userRepository.findById(request.getUserId())
                     .orElseThrow(() -> new NoSuchResourceException("User: " + request.getUserId()));
@@ -153,7 +154,7 @@ public class AccessProjectService {
                                                                  boolean disposable,
                                                                  int liveTime) {
         User user = userRepository.findByUsername(fromUser);
-        Project project = projectRepository.findById(projectId).get();
+        Project project = projectRepository.findById(projectId).orElseThrow();
         if (typeRoleProject == TypeRoleProject.ADMIN)
             throw new IllegalArgumentException();
         if (isAdmin(project, user)) {
@@ -175,7 +176,7 @@ public class AccessProjectService {
     }
 
     public Optional<ProjectResponse> findInfoOfProjectFromAccessToken(String token) {
-        AccessProject accessProject = accessProjectRepository.findById(token).get();
+        AccessProject accessProject = accessProjectRepository.findById(token).orElseThrow();
         if (accessProject.isDisposable() || LocalDate.ofEpochDay(accessProject.getTimeForDie()).isBefore(LocalDate.now())) {
             accessProjectRepository.delete(accessProject);
         }
@@ -190,7 +191,7 @@ public class AccessProjectService {
     }
 
     public boolean createAccessForUser(String token, String toUser) {
-        AccessProject accessProject = accessProjectRepository.findById(token).get();
+        AccessProject accessProject = accessProjectRepository.findById(token).orElseThrow();
         if (accessProject.isDisposable() || LocalDate.ofEpochDay(accessProject.getTimeForDie()).isBefore(LocalDate.now())) {
             accessProjectRepository.delete(accessProject);
         }
@@ -216,8 +217,47 @@ public class AccessProjectService {
         }
     }
 
+    public boolean leave(long projectId, String userLogin) {
+        Optional<Project> project = projectRepository.findById(projectId);
+        if (project.isPresent()) {
+            userRepository.findByUsername(userLogin).getUserWithProjectConnectors().parallelStream()
+                    .filter(c -> c.getProject().equals(project.get()))
+                    .findAny().ifPresent(connector -> {
+                        if (connector.getRoleType() != TypeRoleProject.ADMIN || project.get().getConnectors().stream()
+                                .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN).count() > 1) {
+                            removeConnector(connector, project.get());
+                        } else throw new IllegalActionException();
+                    });
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean kick(long projectId, long userId, String adminLogin) {
+        User admin = userRepository.findByUsername(adminLogin);
+        Project project = projectRepository.findById(projectId).orElseThrow();
+        User user = userRepository.findById(userId).orElseThrow(NoSuchResourceException::new);
+        if (isAdmin(project, admin) && !isAdmin(project, user)) {
+            user.getUserWithProjectConnectors().parallelStream()
+                    .filter(c -> c.getProject().equals(project))
+                    .forEach(c -> removeConnector(c, project));
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private void removeConnector(UserWithProjectConnector c, Project project) {
+        c.getUser().getUserWithProjectConnectors().remove(c);
+        userRepository.save(c.getUser());
+        project.getConnectors().remove(c);
+        projectRepository.save(project);
+        projectConnectorRepository.delete(c);
+    }
+
     public boolean canEditKanban(long id, String userLogin) {
-        Kanban kanban = kanbanRepository.findById(id).get();
+        Kanban kanban = kanbanRepository.findById(id).orElseThrow();
         return userRepository.findByUsername(userLogin).getUserWithProjectConnectors().stream()
                 .filter(c -> c.getProject().getKanbans().contains(kanban))
                 .anyMatch(c -> (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
@@ -228,10 +268,10 @@ public class AccessProjectService {
 
     public String findUserRoleName(String userLogin, long projectId) {
         User user = userRepository.findByUsername(userLogin);
-        Project project = projectRepository.findById(projectId).get();
+        Project project = projectRepository.findById(projectId).orElseThrow();
         UserWithProjectConnector connector = project.getConnectors().stream()
                 .filter(c -> c.getUser().equals(user))
-                .findAny().get();
+                .findAny().orElseThrow();
         return (connector.getRoleType() == TypeRoleProject.CUSTOM_ROLE ? connector.getCustomProjectRole().getName() :
                 connector.getRoleType().name());
     }

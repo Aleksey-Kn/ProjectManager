@@ -20,6 +20,6 @@ public class CustomAuthenticationFailureHandler implements AuthenticationEntryPo
             throws IOException, ServletException {
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setHeader("Content-Type", "application/json");
-        response.getOutputStream().println(gson.toJson(new ErrorResponse(Errors.TOKEN_EXPIRED)));
+        response.getOutputStream().println(gson.toJson(new ErrorResponse(Errors.TOKEN_EXPIRED_OR_INVALID)));
     }
 }

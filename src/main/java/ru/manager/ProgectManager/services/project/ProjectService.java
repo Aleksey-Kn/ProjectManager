@@ -1,4 +1,4 @@
-package ru.manager.ProgectManager.services;
+package ru.manager.ProgectManager.services.project;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,7 +25,7 @@ public class ProjectService {
 
     public Optional<Project> findProject(long id, String login) {
         User user = userRepository.findByUsername(login);
-        Project project = projectRepository.findById(id).get();
+        Project project = projectRepository.findById(id).orElseThrow();
         if (project.getConnectors().stream().anyMatch(c -> c.getUser().equals(user))) {
             return Optional.of(project);
         }
@@ -61,7 +61,7 @@ public class ProjectService {
 
     public boolean setPhoto(long id, byte[] photo, String userLogin, String filename) throws IOException {
         User admin = userRepository.findByUsername(userLogin);
-        Project project = projectRepository.findById(id).get();
+        Project project = projectRepository.findById(id).orElseThrow();
         if (isAdmin(project, admin)) {
             project.setPhoto(photo);
             project.setDatatypePhoto(new MimetypesFileTypeMap().getContentType(filename));
@@ -72,7 +72,7 @@ public class ProjectService {
     }
 
     public boolean setData(long id, ProjectDataRequest request, String userLogin) {
-        Project project = projectRepository.findById(id).get();
+        Project project = projectRepository.findById(id).orElseThrow();
         User admin = userRepository.findByUsername(userLogin);
         if (isAdmin(project, admin)) {
             project.setName(request.getName());
@@ -89,7 +89,7 @@ public class ProjectService {
 
     public boolean deleteProject(long id, String adminLogin) {
         User admin = userRepository.findByUsername(adminLogin);
-        Project project = projectRepository.findById(id).get();
+        Project project = projectRepository.findById(id).orElseThrow();
         if (isAdmin(project, admin)) {
             List<UserWithProjectConnector> removable = new LinkedList<>(project.getConnectors());
             project.getConnectors().clear();
@@ -107,7 +107,8 @@ public class ProjectService {
     }
 
     public Set<User> findAllParticipants(long id){
-        return projectRepository.findById(id).get().getConnectors().stream().map(UserWithProjectConnector::getUser)
+        return projectRepository.findById(id).orElseThrow().getConnectors().stream()
+                .map(UserWithProjectConnector::getUser)
                 .collect(Collectors.toSet());
     }
 

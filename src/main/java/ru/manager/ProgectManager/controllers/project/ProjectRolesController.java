@@ -1,4 +1,4 @@
-package ru.manager.ProgectManager.controllers;
+package ru.manager.ProgectManager.controllers.project;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -21,7 +21,7 @@ import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.accessProject.CustomProjectRole;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.exception.NoSuchResourceException;
-import ru.manager.ProgectManager.services.AccessProjectService;
+import ru.manager.ProgectManager.services.project.AccessProjectService;
 
 import javax.validation.Valid;
 import java.util.NoSuchElementException;

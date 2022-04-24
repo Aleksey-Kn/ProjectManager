@@ -12,7 +12,7 @@ import ru.manager.ProgectManager.exception.ExpiredTokenException;
 public class ExceptionController {
     @ExceptionHandler(ExpiredTokenException.class)
     public ResponseEntity<ErrorResponse> expiredToken(){
-        return new ResponseEntity<>(new ErrorResponse(Errors.TOKEN_EXPIRED),
+        return new ResponseEntity<>(new ErrorResponse(Errors.TOKEN_EXPIRED_OR_INVALID),
                 HttpStatus.UNAUTHORIZED);
     }
 }

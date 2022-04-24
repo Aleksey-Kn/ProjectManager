@@ -1,6 +1,7 @@
-package ru.manager.ProgectManager.controllers;
+package ru.manager.ProgectManager.controllers.project;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -18,8 +19,9 @@ import ru.manager.ProgectManager.DTO.response.accessProject.AccessProjectRespons
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.entitys.accessProject.AccessProject;
 import ru.manager.ProgectManager.enums.Errors;
+import ru.manager.ProgectManager.exception.IllegalActionException;
 import ru.manager.ProgectManager.exception.NoSuchResourceException;
-import ru.manager.ProgectManager.services.AccessProjectService;
+import ru.manager.ProgectManager.services.project.AccessProjectService;
 
 import javax.validation.Valid;
 import java.util.NoSuchElementException;
@@ -119,7 +121,7 @@ public class AccessController {
                             @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ErrorResponse.class))
                     }),
-            @ApiResponse(responseCode = "200", description = "Создание токена доступа произошло успешно", content = {
+            @ApiResponse(responseCode = "200", description = "Создание токена доступа прошло успешно", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = AccessProjectResponse.class))})
     })
@@ -149,6 +151,54 @@ public class AccessController {
                         new ErrorResponse(Errors.TOKEN_FOR_ACCESS_WITH_PROJECT_AS_ADMIN_MUST_BE_DISPOSABLE),
                         HttpStatus.NOT_ACCEPTABLE);
             }
+        }
+    }
+
+    @Operation(summary = "Исключение себя из проекта")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "404", description = "Указанного проекта не существует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "400",
+                    description = "Единственный существующий администратор не может выйти из проекта"),
+            @ApiResponse(responseCode = "200", description = "Текущий пользователь исключён из проекта")
+    })
+    @PostMapping("/leave")
+    public ResponseEntity<?> leave(@RequestParam @Parameter(description = "Идентификатор покидаемого проекта") long id){
+        try {
+            if (accessProjectService.leave(id, provider.getLoginFromToken())) {
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
+            }
+        } catch (IllegalActionException e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "403", description = "Пользователь, пытающийся удалить другого пользователя, " +
+                            "не является администратором проекта или пытается исключить себя или другого администратора"),
+            @ApiResponse(responseCode = "404", description = "Указанного проекта или пользователя не существует",
+                    content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "200", description = "Указанный пользователь исключён из проекта")
+    })
+    @DeleteMapping("/kick")
+    public ResponseEntity<?> kick(@RequestParam long projectId, @RequestParam long userId) {
+        try{
+            if(accessProjectService.kick(projectId, userId, provider.getLoginFromToken())) {
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
+        } catch (NoSuchResourceException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER), HttpStatus.NOT_FOUND);
         }
     }
 }
