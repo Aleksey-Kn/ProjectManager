@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.MailException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import ru.manager.ProgectManager.DTO.request.RefreshUserDTO;
 import ru.manager.ProgectManager.DTO.request.RegisterUserDTO;
 import ru.manager.ProgectManager.DTO.response.PointerResource;
 import ru.manager.ProgectManager.entitys.*;
@@ -95,16 +94,10 @@ public class UserService {
         return Optional.empty();
     }
 
-    public boolean refreshUserData(String login, RefreshUserDTO userDTO) {
+    public void renameUser(String login, String newName) {
         User user = userRepository.findByUsername(login);
-        if (passwordEncoder.matches(userDTO.getOldPassword(), user.getPassword())) {
-            user.setNickname(userDTO.getNickname());
-            user.setEmail(userDTO.getEmail());
-            user.setPassword(passwordEncoder.encode(userDTO.getNewPassword()));
-            userRepository.save(user);
-            return true;
-        }
-        return false;
+        user.setNickname(newName);
+        userRepository.save(user);
     }
 
     public void setPhoto(String login, byte[] file, String filename) throws IOException {

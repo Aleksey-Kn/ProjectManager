@@ -10,10 +10,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
+import ru.manager.ProgectManager.DTO.request.NameRequest;
 import ru.manager.ProgectManager.DTO.request.PhotoDTO;
-import ru.manager.ProgectManager.DTO.request.RefreshUserDTO;
 import ru.manager.ProgectManager.DTO.response.*;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.components.PhotoCompressor;
@@ -28,7 +27,6 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -67,30 +65,22 @@ public class UserController {
 
     @Operation(summary = "Изменение данных аккаунта")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "403", description = "Указан неверный пароль", content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class))
-            }),
-            @ApiResponse(responseCode = "400", description = "Вводимые данные не приемлимы", content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class))
-            }),
+            @ApiResponse(responseCode = "400", description = "Имя пользователя должно содержать видимые символы",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
             @ApiResponse(responseCode = "200", description = "Данные пользователя успешно изменены")
     })
     @PutMapping("/user")
-    public ResponseEntity<?> refreshMainData(@RequestBody @Valid RefreshUserDTO userDTO, BindingResult bindingResult) {
+    public ResponseEntity<?> refreshMainData(@RequestBody @Valid NameRequest request, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            return new ResponseEntity<>(new ErrorResponse(bindingResult.getAllErrors().stream()
-                    .map(ObjectError::getDefaultMessage)
-                    .map(Errors::valueOf)
-                    .map(Errors::getNumValue)
-                    .collect(Collectors.toList())),
+            return new ResponseEntity<>(new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
                     HttpStatus.BAD_REQUEST);
-        }
-        if (userService.refreshUserData(jwtProvider.getLoginFromToken(), userDTO)) {
+        } else {
+            userService.renameUser(jwtProvider.getLoginFromToken(), request.getName());
             return new ResponseEntity<>(HttpStatus.OK);
         }
-        return new ResponseEntity<>("Old password: incorrect password", HttpStatus.FORBIDDEN);
     }
 
     @Operation(summary = "Установление фотографии профиля", description = "Добавление или замена фотографии")
@@ -150,7 +140,7 @@ public class UserController {
                             schema = @Schema(implementation = ListPointerResources.class))
             })
     @GetMapping("/user/resources")
-    public ListPointerResources findResourcesByName(@RequestParam String name){
+    public ListPointerResources findResourcesByName(@RequestParam String name) {
         return new ListPointerResources(userService.availableResourceByName(name, jwtProvider.getLoginFromToken()));
     }
 
@@ -161,7 +151,7 @@ public class UserController {
                             schema = @Schema(implementation = VisitMarkListResponse.class))
             })
     @GetMapping("/user/lasts")
-    public VisitMarkListResponse findLastSee(){
+    public VisitMarkListResponse findLastSee() {
         return new VisitMarkListResponse(userService.lastVisits(jwtProvider.getLoginFromToken()));
     }
 }
