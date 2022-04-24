@@ -161,8 +161,8 @@ public class AccessProjectService {
         if (typeRoleProject == TypeRoleProject.ADMIN)
             throw new IllegalArgumentException();
         if (isAdmin(project, user)) {
-            return Optional.of(createAccessProject(UUID.randomUUID().toString(), project, typeRoleProject,
-                    customProjectRoleId, disposable, liveTime));
+            return Optional.of(accessProjectRepository.save(createAccessProject(UUID.randomUUID().toString(), project,
+                    typeRoleProject, customProjectRoleId, disposable, liveTime)));
         }
         return Optional.empty();
     }
@@ -172,9 +172,10 @@ public class AccessProjectService {
         Project project = projectRepository.findById(request.getProjectId()).orElseThrow();
         if(isAdmin(project, user)) {
             String token = UUID.randomUUID().toString();
+            AccessProject accessProject = createAccessProject(token, project, request.getTypeRoleProject(),
+                    request.getRoleId(), true, request.getLiveTimeInDays());
             mailService.sendInvitationToProject(request.getEmail(), project.getName(), request.getUrl(), token);
-            createAccessProject(token, project, request.getTypeRoleProject(), request.getRoleId(), true,
-                    request.getLiveTimeInDays());
+            accessProjectRepository.save(accessProject);
             return true;
         } else {
             return false;
@@ -195,7 +196,7 @@ public class AccessProjectService {
         accessProject.setDisposable(disposable);
         accessProject.setCode(token);
         accessProject.setTimeForDie(LocalDate.now().plusDays(liveTime).toEpochDay());
-        return accessProjectRepository.save(accessProject);
+        return accessProject;
     }
 
     public Optional<ProjectResponse> findInfoOfProjectFromAccessToken(String token) {
