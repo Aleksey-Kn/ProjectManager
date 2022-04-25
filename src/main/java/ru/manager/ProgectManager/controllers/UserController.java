@@ -13,7 +13,9 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.NameRequest;
 import ru.manager.ProgectManager.DTO.request.PhotoDTO;
+import ru.manager.ProgectManager.DTO.request.user.UpdatePassRequest;
 import ru.manager.ProgectManager.DTO.response.*;
+import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.components.JwtProvider;
 import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.entitys.Project;
@@ -37,6 +39,7 @@ public class UserController {
     private final JwtProvider jwtProvider;
     private final PhotoCompressor compressor;
     private final AccessProjectService accessProjectService;
+    private final ErrorResponseEntityConfigurator entityConfigurator;
 
     @Operation(summary = "Предоставление информации о пользователе",
             description = "Позволяет предоставлять информацию как о своём аккаунте, так и о чужих")
@@ -73,13 +76,40 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "Данные пользователя успешно изменены")
     })
     @PutMapping("/user")
-    public ResponseEntity<?> refreshMainData(@RequestBody @Valid NameRequest request, BindingResult bindingResult) {
+    public ResponseEntity<?> rename(@RequestBody @Valid NameRequest request, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
                     HttpStatus.BAD_REQUEST);
         } else {
             userService.renameUser(jwtProvider.getLoginFromToken(), request.getName());
             return new ResponseEntity<>(HttpStatus.OK);
+        }
+    }
+
+    @Operation(summary = "Изменение пароля аккаунта")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Неприемлемый пароль",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
+            @ApiResponse(responseCode = "200", description = "Пароль успешно изменён"),
+            @ApiResponse(responseCode = "403", description = "Неверный текущий пароль",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
+    })
+    @PutMapping("/user/pass")
+    public ResponseEntity<?> updatePass(@RequestBody @Valid UpdatePassRequest request, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            return entityConfigurator.createErrorResponse(bindingResult);
+        } else {
+            if (userService.updatePass(request.getOldPass(), request.getNewPass(), jwtProvider.getLoginFromToken())) {
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_LOGIN_OR_PASSWORD), HttpStatus.FORBIDDEN);
+            }
         }
     }
 

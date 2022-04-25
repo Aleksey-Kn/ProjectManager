@@ -12,9 +12,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.mail.MailException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-import ru.manager.ProgectManager.DTO.request.AuthDto;
 import ru.manager.ProgectManager.DTO.request.RefreshTokenRequest;
-import ru.manager.ProgectManager.DTO.request.RegisterUserDTO;
+import ru.manager.ProgectManager.DTO.request.user.AuthDto;
+import ru.manager.ProgectManager.DTO.request.user.DropPassRequest;
+import ru.manager.ProgectManager.DTO.request.user.RegisterUserDTO;
+import ru.manager.ProgectManager.DTO.request.user.ResetPassRequest;
 import ru.manager.ProgectManager.DTO.response.AuthResponse;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
@@ -30,7 +32,8 @@ import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
-@Tag(name = "Регистрация, авторизация и обновление токенов")
+@RequestMapping("/authorization")
+@Tag(name = "Регистрация, авторизация, обновление токенов, смена пароля и подтверждение почты")
 public class AuthController {
     private final UserService userService;
     private final JwtProvider jwtProvider;
@@ -139,7 +142,7 @@ public class AuthController {
 
     @Operation(summary = "Подтверждение почты пользователя")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Некорректный токен"),
+            @ApiResponse(responseCode = "403", description = "Некорректный токен"),
             @ApiResponse(responseCode = "200", description = "Адрес электронной почты подтверждён")
     })
     @GetMapping("/approve")
@@ -147,7 +150,58 @@ public class AuthController {
         if(userService.enabledUser(token)){
             return new ResponseEntity<>(HttpStatus.OK);
         } else{
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+    }
+
+    @Operation(summary = "Запрос на сброс пароля",
+            description = "Пользователю с указанным логином или почтой присылается письмо со ссылкой, по которой можно сбросить пароль")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Поле логина не должно быть пустым", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "200", description = "Ссылка для сброса пароля отправлена на почту"),
+            @ApiResponse(responseCode = "404",
+                    description = "Аккаунта, соответствующего введённым данным, не существует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
+    })
+    @PostMapping("/drop")
+    public ResponseEntity<?> dropPass(@RequestBody @Valid DropPassRequest request, BindingResult bindingResult) {
+        if(bindingResult.hasErrors()) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.LOGIN_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
+                    HttpStatus.BAD_REQUEST);
+        } else {
+            if(userService.attemptDropPass(request.getLoginOrEmail(), request.getUrl())) {
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER), HttpStatus.NOT_FOUND);
+            }
+        }
+    }
+
+    @Operation(summary = "Сброс пароля",
+            description = "Производится исходя из корректности данных, отправленных на почту")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Неприемлемый пароль", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "200", description = "Пароль успешно изменён"),
+            @ApiResponse(responseCode = "403", description = "Некорректный токен")
+    })
+    @PostMapping("/reset")
+    public ResponseEntity<?> resetPass(@RequestBody @Valid ResetPassRequest request, BindingResult bindingResult) {
+        if(bindingResult.hasErrors()) {
+            return entityConfigurator.createErrorResponse(bindingResult);
+        } else {
+            if(userService.resetPass(request.getToken(), request.getPassword())) {
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
         }
     }
 }

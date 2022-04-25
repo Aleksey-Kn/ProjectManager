@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.MailException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import ru.manager.ProgectManager.DTO.request.RegisterUserDTO;
+import ru.manager.ProgectManager.DTO.request.user.RegisterUserDTO;
 import ru.manager.ProgectManager.DTO.response.PointerResource;
 import ru.manager.ProgectManager.entitys.*;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithDocumentConnector;
@@ -82,10 +82,18 @@ public class UserService {
         }
     }
 
-//    public boolean resetPass(String token, String newPassword) {
-//        Optional<ApproveActionToken> approveActionToken = approveActionTokenRepository.findById(token);
-//        if()
-//    }
+    public boolean resetPass(String token, String newPassword) {
+        Optional<ApproveActionToken> approveActionToken = approveActionTokenRepository.findById(token);
+        if(approveActionToken.isPresent() && approveActionToken.get().getActionType() == ActionType.RESET_PASS) {
+            User user = approveActionToken.get().getUser();
+            user.setPassword(passwordEncoder.encode(newPassword));
+            userRepository.save(user);
+            approveActionTokenRepository.delete(approveActionToken.get());
+            return true;
+        } else {
+            return false;
+        }
+    }
 
     public Optional<User> findByUsername(String username) {
         return Optional.ofNullable(userRepository.findByUsername(username));
@@ -107,6 +115,17 @@ public class UserService {
         User user = userRepository.findByUsername(login);
         user.setNickname(newName);
         userRepository.save(user);
+    }
+
+    public boolean updatePass(String oldPass, String newPass, String userLogin) {
+        User user = userRepository.findByUsername(userLogin);
+        if(passwordEncoder.matches(oldPass, user.getPassword())) {
+            user.setPassword(passwordEncoder.encode(newPass));
+            userRepository.save(user);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public void setPhoto(String login, byte[] file, String filename) throws IOException {
