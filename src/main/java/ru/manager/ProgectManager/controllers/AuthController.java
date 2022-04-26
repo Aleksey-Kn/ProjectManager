@@ -81,7 +81,7 @@ public class AuthController {
 
     @Operation(summary = "Авторизация")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Данные логина или пароля отсутствуют в запросе",
+            @ApiResponse(responseCode = "400", description = "Необходимые данные отсутствуют в запросе",
                     content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
