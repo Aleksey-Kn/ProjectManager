@@ -1,7 +1,7 @@
 package ru.manager.ProgectManager.repositories;
 
 import org.springframework.data.repository.CrudRepository;
-import ru.manager.ProgectManager.entitys.User;
+import ru.manager.ProgectManager.entitys.user.User;
 
 import java.util.Optional;
 

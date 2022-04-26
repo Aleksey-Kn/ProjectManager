@@ -21,7 +21,7 @@ import ru.manager.ProgectManager.DTO.response.AuthResponse;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.components.authorization.JwtProvider;
-import ru.manager.ProgectManager.entitys.User;
+import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.exception.EmailAlreadyUsedException;
 import ru.manager.ProgectManager.services.RefreshTokenService;
@@ -100,8 +100,7 @@ public class AuthController {
         if(bindingResult.hasErrors()){
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
-            Optional<User> userEntity = userService
-                    .findByUsernameOrEmailAndPassword(request.getLogin(), request.getPassword());
+            Optional<User> userEntity = userService.login(request);
             if (userEntity.isPresent()) {
                 if (userEntity.get().isEnabled()) {
                     AuthResponse authResponse = new AuthResponse();

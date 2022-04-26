@@ -2,7 +2,7 @@ package ru.manager.ProgectManager.entitys.kanban;
 
 import lombok.Getter;
 import lombok.Setter;
-import ru.manager.ProgectManager.entitys.User;
+import ru.manager.ProgectManager.entitys.user.User;
 
 import javax.persistence.*;
 import java.util.Objects;

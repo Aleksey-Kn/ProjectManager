@@ -2,8 +2,8 @@ package ru.manager.ProgectManager.DTO.response.documents;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
-import ru.manager.ProgectManager.entitys.User;
 import ru.manager.ProgectManager.entitys.documents.Page;
+import ru.manager.ProgectManager.entitys.user.User;
 
 import java.util.Comparator;
 import java.util.List;

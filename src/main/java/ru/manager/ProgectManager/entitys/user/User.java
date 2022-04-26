@@ -1,4 +1,4 @@
-package ru.manager.ProgectManager.entitys;
+package ru.manager.ProgectManager.entitys.user;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -53,6 +53,9 @@ public class User implements UserDetails {
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<VisitMark> visitMarks;
+
+    @OneToMany(cascade = CascadeType.REMOVE)
+    private Set<UsedAddress> usedAddresses;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

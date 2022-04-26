@@ -3,7 +3,7 @@ package ru.manager.ProgectManager.entitys.accessProject;
 import lombok.Getter;
 import lombok.Setter;
 import ru.manager.ProgectManager.entitys.Project;
-import ru.manager.ProgectManager.entitys.User;
+import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 
 import javax.persistence.*;

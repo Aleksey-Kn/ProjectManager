@@ -2,8 +2,8 @@ package ru.manager.ProgectManager.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.manager.ProgectManager.entitys.User;
-import ru.manager.ProgectManager.entitys.VisitMark;
+import ru.manager.ProgectManager.entitys.user.User;
+import ru.manager.ProgectManager.entitys.user.VisitMark;
 import ru.manager.ProgectManager.enums.ResourceType;
 import ru.manager.ProgectManager.repositories.UserRepository;
 import ru.manager.ProgectManager.repositories.VisitMarkRepository;

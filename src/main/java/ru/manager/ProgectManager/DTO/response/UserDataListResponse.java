@@ -2,7 +2,7 @@ package ru.manager.ProgectManager.DTO.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
-import ru.manager.ProgectManager.entitys.User;
+import ru.manager.ProgectManager.entitys.user.User;
 
 import java.util.List;
 import java.util.Set;

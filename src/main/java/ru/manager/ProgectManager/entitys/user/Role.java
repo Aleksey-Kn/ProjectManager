@@ -1,4 +1,4 @@
-package ru.manager.ProgectManager.entitys;
+package ru.manager.ProgectManager.entitys.user;
 
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;

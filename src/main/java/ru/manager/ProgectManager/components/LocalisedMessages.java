@@ -26,6 +26,13 @@ public class LocalisedMessages {
         };
     }
 
+    public String buildSubjectAboutAuthorisation(Locale locale) {
+        return switch (locale) {
+            case ru -> "Зафиксирован вход в ваш аккаунт";
+            case en -> "Signed in to your account";
+        };
+    }
+
     public String buildTextForMailApprove(Locale locale, String url, String token) {
         return switch (locale) {
             case en -> "For approvement your account follow this link: ";
@@ -47,5 +54,14 @@ public class LocalisedMessages {
             case en -> "In order to join the project '" + projectName + "' , you need to follow the link: ";
             case ru -> "Для того, чтобы присоединиться к проекту '" + projectName + "', перейдите по данной ссылке: ";
         } + url + "?token=" + token;
+    }
+
+    public String buildTextAboutAuthorisation(Locale locale, String ip, String browser, String country, String city){
+        return switch (locale) {
+            case ru -> String.format("Зарегестрирован вход в ваш аккаунт из браузера %s через ip-адрес %s, " +
+                    "находящийся в %s, %s.", browser, ip, city, country);
+            case en -> String.format("Logged in to your account from a browser %s using ip-address %s located in %s, %s.",
+                    browser, ip, city, country);
+        };
     }
 }

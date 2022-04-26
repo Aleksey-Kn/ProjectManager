@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import ru.manager.ProgectManager.entitys.StatisticsUsing;
+import ru.manager.ProgectManager.entitys.user.StatisticsUsing;
 import ru.manager.ProgectManager.repositories.StatisticsRepository;
 
 import java.util.List;

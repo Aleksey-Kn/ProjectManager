@@ -5,8 +5,8 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.components.LocalisedMessages;
-import ru.manager.ProgectManager.entitys.ApproveActionToken;
-import ru.manager.ProgectManager.entitys.User;
+import ru.manager.ProgectManager.entitys.user.ApproveActionToken;
+import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.ActionType;
 import ru.manager.ProgectManager.enums.Locale;
 import ru.manager.ProgectManager.repositories.ApproveActionTokenRepository;
@@ -47,6 +47,12 @@ public class MailService {
     public void sendInvitationToProject(String email, String projectName, String url, String token, Locale locale) {
         send(email, localisedMessages.buildSubjectForInvitationToProject(locale, projectName),
                 localisedMessages.buildTextForInvitationToProject(locale, projectName, url, token));
+    }
+
+    public void sendAboutAuthorisation(String email, String ip, String browser, String country, String city,
+                                       Locale locale) {
+        send(email, localisedMessages.buildSubjectAboutAuthorisation(locale),
+                localisedMessages.buildTextAboutAuthorisation(locale, ip, browser, country, city));
     }
 
     private void send(String address, String subject, String text) {

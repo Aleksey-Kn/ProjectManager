@@ -4,18 +4,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.MailException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import ru.manager.ProgectManager.DTO.request.user.AuthDto;
 import ru.manager.ProgectManager.DTO.request.user.RegisterUserDTO;
 import ru.manager.ProgectManager.DTO.response.PointerResource;
-import ru.manager.ProgectManager.entitys.*;
+import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithDocumentConnector;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
+import ru.manager.ProgectManager.entitys.user.*;
 import ru.manager.ProgectManager.enums.ActionType;
 import ru.manager.ProgectManager.enums.ResourceType;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.EmailAlreadyUsedException;
 import ru.manager.ProgectManager.repositories.ApproveActionTokenRepository;
 import ru.manager.ProgectManager.repositories.RoleRepository;
+import ru.manager.ProgectManager.repositories.UsedAddressRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
 
 import javax.activation.MimetypesFileTypeMap;
@@ -30,6 +33,7 @@ public class UserService {
     private PasswordEncoder passwordEncoder;
     private MailService mailService;
     private ApproveActionTokenRepository approveActionTokenRepository;
+    private UsedAddressRepository usedAddressRepository;
 
     public boolean saveUser(RegisterUserDTO registerUserDTO) {
         if (userRepository.findByUsername(registerUserDTO.getLogin()) == null) {
@@ -103,10 +107,19 @@ public class UserService {
         return userRepository.findById(id);
     }
 
-    public Optional<User> findByUsernameOrEmailAndPassword(String loginOrEmail, String password) {
-        Optional<User> user = findLoginOrEmail(loginOrEmail);
-        if (user.isPresent() && passwordEncoder.matches(password, user.get().getPassword())) {
-            return user;
+    public Optional<User> login(AuthDto authDto) {
+        Optional<User> user = findLoginOrEmail(authDto.getLogin());
+        if (user.isPresent() && passwordEncoder.matches(authDto.getPassword(), user.get().getPassword())) {
+            if(user.get().getUsedAddresses().stream().map(UsedAddress::getIp).noneMatch(ip -> ip.equals(authDto.getIp()))){
+                mailService.sendAboutAuthorisation(user.get().getEmail(), authDto.getIp(), authDto.getBrowser(),
+                        authDto.getCountry(), authDto.getCity(), authDto.getLocale());
+                UsedAddress usedAddress = new UsedAddress();
+                usedAddress.setIp(authDto.getIp());
+                user.get().getUsedAddresses().add(usedAddressRepository.save(usedAddress));
+                return Optional.of(userRepository.save(user.get()));
+            } else {
+                return user;
+            }
         }
         return Optional.empty();
     }
@@ -213,5 +226,10 @@ public class UserService {
     @Autowired
     public void setApproveEnabledUserRepository(ApproveActionTokenRepository approveActionTokenRepository) {
         this.approveActionTokenRepository = approveActionTokenRepository;
+    }
+
+    @Autowired
+    public void setUsedAddressRepository(UsedAddressRepository usedAddressRepository) {
+        this.usedAddressRepository = usedAddressRepository;
     }
 }

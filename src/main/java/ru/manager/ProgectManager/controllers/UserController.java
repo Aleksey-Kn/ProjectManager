@@ -19,7 +19,7 @@ import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.entitys.Project;
-import ru.manager.ProgectManager.entitys.User;
+import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.UserService;
 import ru.manager.ProgectManager.services.project.AccessProjectService;

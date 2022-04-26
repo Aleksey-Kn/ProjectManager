@@ -7,9 +7,9 @@ import ru.manager.ProgectManager.DTO.request.accessProject.CreateCustomRoleReque
 import ru.manager.ProgectManager.DTO.request.accessProject.EditUserRoleRequest;
 import ru.manager.ProgectManager.DTO.response.ProjectResponse;
 import ru.manager.ProgectManager.entitys.Project;
-import ru.manager.ProgectManager.entitys.User;
 import ru.manager.ProgectManager.entitys.accessProject.*;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
+import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.IllegalActionException;
 import ru.manager.ProgectManager.exception.NoSuchResourceException;
