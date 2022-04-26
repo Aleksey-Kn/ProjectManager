@@ -3,9 +3,11 @@ package ru.manager.ProgectManager.DTO.request.user;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import org.springframework.validation.annotation.Validated;
+import ru.manager.ProgectManager.enums.Locale;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
 @Getter
@@ -27,4 +29,7 @@ public class RegisterUserDTO {
     private String nickname;
     @Schema(description = "Часть url для формирования ссылки на подтверждение почты", required = true)
     private String url;
+    @NotNull(message = "FIELD_MUST_BE_NOT_NULL")
+    @Schema(description = "Язык письма, отправляемого на почту пользователю")
+    private Locale locale;
 }

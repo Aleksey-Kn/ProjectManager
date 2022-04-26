@@ -1,15 +1,16 @@
 package ru.manager.ProgectManager.DTO.request.accessProject;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Getter;
+import lombok.Data;
 import org.springframework.validation.annotation.Validated;
+import ru.manager.ProgectManager.enums.Locale;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
-@Getter
+@Data
 @Validated
 @Schema(description = "Запрос на отправку реферальной ссылки на почту")
 public class AccessProjectTroughMailRequest {
@@ -29,4 +30,7 @@ public class AccessProjectTroughMailRequest {
     private String email;
     @Schema(description = "Часть url для формирования реферальной ссылки", required = true)
     private String url;
+    @NotNull(message = "FIELD_MUST_BE_NOT_NULL")
+    @Schema(description = "Язык письма, отправляемого на почту пользователю")
+    private Locale locale;
 }

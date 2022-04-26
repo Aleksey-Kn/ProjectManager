@@ -171,8 +171,7 @@ public class AuthController {
     @PostMapping("/drop")
     public ResponseEntity<?> dropPass(@RequestBody @Valid DropPassRequest request, BindingResult bindingResult) {
         if(bindingResult.hasErrors()) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.LOGIN_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
-                    HttpStatus.BAD_REQUEST);
+            return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             if(userService.attemptDropPass(request.getLoginOrEmail(), request.getUrl())) {
                 return new ResponseEntity<>(HttpStatus.OK);
