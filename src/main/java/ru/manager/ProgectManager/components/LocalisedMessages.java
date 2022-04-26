@@ -3,6 +3,9 @@ package ru.manager.ProgectManager.components;
 import org.springframework.stereotype.Component;
 import ru.manager.ProgectManager.enums.Locale;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+
 @Component
 public class LocalisedMessages {
     public String buildSubjectForMailApprove(Locale locale) {
@@ -57,11 +60,14 @@ public class LocalisedMessages {
     }
 
     public String buildTextAboutAuthorisation(Locale locale, String ip, String browser, String country, String city){
+        String date = LocalDate.now().toString();
+        String time = LocalTime.now().toString();
+        time = time.substring(0, time.indexOf('.'));
         return switch (locale) {
             case ru -> String.format("Зарегистрирован вход в ваш аккаунт из браузера %s через ip-адрес %s, " +
-                    "находящийся в %s, %s.", browser, ip, city, country);
-            case en -> String.format("Logged in to your account from a browser %s using ip-address %s located in %s, %s.",
-                    browser, ip, city, country);
+                    "находящийся в %s, %s. Авторизация произошла %s в %s.", browser, ip, city, country, date, time);
+            case en -> String.format("Logged in to your account from a browser %s using ip-address %s located in %s, %s. " +
+                    "Authorization reproduced by %s in %s.", browser, ip, city, country, date, time);
         };
     }
 }
