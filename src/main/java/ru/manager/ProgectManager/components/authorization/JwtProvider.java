@@ -1,4 +1,4 @@
-package ru.manager.ProgectManager.components;
+package ru.manager.ProgectManager.components.authorization;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

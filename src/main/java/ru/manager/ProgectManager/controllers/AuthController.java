@@ -20,7 +20,7 @@ import ru.manager.ProgectManager.DTO.request.user.ResetPassRequest;
 import ru.manager.ProgectManager.DTO.response.AuthResponse;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
-import ru.manager.ProgectManager.components.JwtProvider;
+import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.entitys.User;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.exception.EmailAlreadyUsedException;
@@ -95,7 +95,7 @@ public class AuthController {
                             schema = @Schema(implementation = AuthResponse.class))
             })
     })
-    @PostMapping("/auth")
+    @PostMapping("/login")
     public ResponseEntity<?> auth(@RequestBody @Valid AuthDto request, BindingResult bindingResult) {
         if(bindingResult.hasErrors()){
             return entityConfigurator.createErrorResponse(bindingResult);
@@ -173,7 +173,7 @@ public class AuthController {
         if(bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
-            if(userService.attemptDropPass(request.getLoginOrEmail(), request.getUrl())) {
+            if(userService.attemptDropPass(request.getLoginOrEmail(), request.getUrl(), request.getLocale())) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER), HttpStatus.NOT_FOUND);

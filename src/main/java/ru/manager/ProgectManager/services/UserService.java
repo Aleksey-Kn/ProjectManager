@@ -47,7 +47,7 @@ public class UserService {
             user.setEnabled(false);
             user = userRepository.save(user);
             try {
-                mailService.sendEmailApprove(user, registerUserDTO.getUrl());
+                mailService.sendEmailApprove(user, registerUserDTO.getUrl(), registerUserDTO.getLocale());
             } catch (MailException e) {
                 userRepository.delete(user);
                 throw e;
@@ -72,10 +72,10 @@ public class UserService {
         }
     }
 
-    public boolean attemptDropPass(String loginOrEmail, String url) {
+    public boolean attemptDropPass(String loginOrEmail, String url, ru.manager.ProgectManager.enums.Locale locale) {
         Optional<User> user = findLoginOrEmail(loginOrEmail);
         if(user.isPresent()) {
-            mailService.sendResetPass(user.get(), url);
+            mailService.sendResetPass(user.get(), url, locale);
             return true;
         } else {
             return false;

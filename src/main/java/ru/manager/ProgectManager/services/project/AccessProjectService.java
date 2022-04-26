@@ -174,7 +174,8 @@ public class AccessProjectService {
             String token = UUID.randomUUID().toString();
             AccessProject accessProject = createAccessProject(token, project, request.getTypeRoleProject(),
                     request.getRoleId(), true, request.getLiveTimeInDays());
-            mailService.sendInvitationToProject(request.getEmail(), project.getName(), request.getUrl(), token);
+            mailService.sendInvitationToProject(request.getEmail(), project.getName(), request.getUrl(), token,
+                    request.getLocale());
             accessProjectRepository.save(accessProject);
             return true;
         } else {

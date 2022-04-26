@@ -4,9 +4,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import ru.manager.ProgectManager.components.LocalisedMessages;
 import ru.manager.ProgectManager.entitys.ApproveActionToken;
 import ru.manager.ProgectManager.entitys.User;
 import ru.manager.ProgectManager.enums.ActionType;
+import ru.manager.ProgectManager.enums.Locale;
 import ru.manager.ProgectManager.repositories.ApproveActionTokenRepository;
 
 import java.util.UUID;
@@ -16,11 +18,12 @@ import java.util.UUID;
 public class MailService {
     private final JavaMailSender javaMailSender;
     private final ApproveActionTokenRepository approveActionTokenRepository;
+    private final LocalisedMessages localisedMessages;
 
-    public void sendEmailApprove(User user, String url) {
+    public void sendEmailApprove(User user, String url, Locale locale) {
         String token = UUID.randomUUID().toString();
-        send(user.getEmail(), "Mail confirmation",
-                "For approvement your account follow this link: " + url + "?token=" + token);
+        send(user.getEmail(), localisedMessages.buildSubjectForMailApprove(locale),
+                localisedMessages.buildTextForMailApprove(locale, url, token));
 
         ApproveActionToken approveActionToken = new ApproveActionToken();
         approveActionToken.setToken(token);
@@ -29,10 +32,10 @@ public class MailService {
         approveActionTokenRepository.save(approveActionToken);
     }
 
-    public void sendResetPass(User user, String url) {
+    public void sendResetPass(User user, String url, Locale locale) {
         String token = UUID.randomUUID().toString();
-        send(user.getEmail(), "Reset password", "For reset password follow this link: \n" + url + "?token=" +
-                token + "\nIf you have not tried to reset your password, please ignore this message.");
+        send(user.getEmail(), localisedMessages.buildSubjectForResetPassword(locale),
+                localisedMessages.buildTextForResetPass(locale, url, token));
 
         ApproveActionToken approveActionToken = new ApproveActionToken();
         approveActionToken.setToken(token);
@@ -41,9 +44,9 @@ public class MailService {
         approveActionTokenRepository.save(approveActionToken);
     }
 
-    public void sendInvitationToProject(String email, String projectName, String url, String token) {
-        send(email, "Invitation to the project '" + projectName + "'",
-                "In order to join the project, you need to follow the link: " + url + "?token=" + token);
+    public void sendInvitationToProject(String email, String projectName, String url, String token, Locale locale) {
+        send(email, localisedMessages.buildSubjectForInvitationToProject(locale, projectName),
+                localisedMessages.buildTextForInvitationToProject(locale, projectName, url, token));
     }
 
     private void send(String address, String subject, String text) {

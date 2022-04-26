@@ -13,7 +13,7 @@ public class ApproveActionToken {
     @Id
     private String token;
 
-    @OneToOne(optional = false)
+    @ManyToOne(optional = false)
     @JoinColumn(name = "user_id")
     private User user;
 

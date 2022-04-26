@@ -1,4 +1,4 @@
-package ru.manager.ProgectManager.components;
+package ru.manager.ProgectManager.components.authorization;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,6 +18,6 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return userService.findByUsername(username).get();
+        return userService.findByUsername(username).orElseThrow();
     }
 }

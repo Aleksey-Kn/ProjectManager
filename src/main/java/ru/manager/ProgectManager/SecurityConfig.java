@@ -10,7 +10,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
-import ru.manager.ProgectManager.components.JwtFilter;
+import ru.manager.ProgectManager.components.authorization.JwtFilter;
 import ru.manager.ProgectManager.handler.CustomAuthenticationFailureHandler;
 
 import java.util.List;
