@@ -35,7 +35,7 @@ public class LocalisedMessages {
 
     public String buildTextForMailApprove(Locale locale, String url, String token) {
         return switch (locale) {
-            case en -> "For approvement your account follow this link: ";
+            case en -> "For approval your account follow this link: ";
             case ru -> "Для подтверждения вашего аккаунта перейдите по ссылке: ";
         } + url + "?token=" + token;
     }
@@ -58,7 +58,7 @@ public class LocalisedMessages {
 
     public String buildTextAboutAuthorisation(Locale locale, String ip, String browser, String country, String city){
         return switch (locale) {
-            case ru -> String.format("Зарегестрирован вход в ваш аккаунт из браузера %s через ip-адрес %s, " +
+            case ru -> String.format("Зарегистрирован вход в ваш аккаунт из браузера %s через ip-адрес %s, " +
                     "находящийся в %s, %s.", browser, ip, city, country);
             case en -> String.format("Logged in to your account from a browser %s using ip-address %s located in %s, %s.",
                     browser, ip, city, country);
