@@ -32,6 +32,7 @@ public class User implements UserDetails {
     private String email;
 
     private boolean enabled;
+    private boolean accountNonLocked;
 
     @Column(nullable = false)
     private String nickname;
