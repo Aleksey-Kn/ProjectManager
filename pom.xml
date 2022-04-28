@@ -11,6 +11,7 @@
 	<groupId>ru.manager</groupId>
 	<artifactId>ProgectManager</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
+	<packaging>jar</packaging>
 	<name>ProgectManager</name>
 	<description>Дипломная работа СибГУТИ</description>
 	<properties>
@@ -92,6 +93,10 @@
 					<source>15</source>
 					<target>15</target>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
 		</plugins>
 	</build>
