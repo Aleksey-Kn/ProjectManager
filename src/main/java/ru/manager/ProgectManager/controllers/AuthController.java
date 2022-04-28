@@ -90,6 +90,10 @@ public class AuthController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
+            @ApiResponse(responseCode = "403", description = "Аккаунт пользователя заблокирован", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
             @ApiResponse(responseCode = "200", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = AuthResponse.class))
@@ -103,10 +107,14 @@ public class AuthController {
             Optional<User> userEntity = userService.login(request);
             if (userEntity.isPresent()) {
                 if (userEntity.get().isEnabled()) {
-                    AuthResponse authResponse = new AuthResponse();
-                    authResponse.setAccess(jwtProvider.generateToken(userEntity.get().getUsername()));
-                    authResponse.setRefresh(refreshTokenService.createToken(userEntity.get().getUsername()));
-                    return ResponseEntity.ok(authResponse);
+                    if(userEntity.get().isAccountNonLocked()) {
+                        AuthResponse authResponse = new AuthResponse();
+                        authResponse.setAccess(jwtProvider.generateToken(userEntity.get().getUsername()));
+                        authResponse.setRefresh(refreshTokenService.createToken(userEntity.get().getUsername()));
+                        return ResponseEntity.ok(authResponse);
+                    } else {
+                        return new ResponseEntity<>(new ErrorResponse(Errors.ACCOUNT_IS_LOCKED), HttpStatus.FORBIDDEN);
+                    }
                 } else {
                     return new ResponseEntity<>(new ErrorResponse(Errors.ACCOUNT_IS_NOT_ENABLED),
                             HttpStatus.UNAUTHORIZED);
@@ -122,6 +130,10 @@ public class AuthController {
             description = "Возвращает новые токены доступа по refresh-токену пользователя")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "401", description = "Некорректный refresh токен"),
+            @ApiResponse(responseCode = "403", description = "Аккаунт пользователя заблокирован", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
             @ApiResponse(responseCode = "200", description = "Токены успешно обновлены", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = AuthResponse.class))
@@ -131,12 +143,17 @@ public class AuthController {
     public ResponseEntity<?> refresh(@RequestBody RefreshTokenRequest tokenRequest) {
         Optional<String> login = refreshTokenService.findLoginFromToken(tokenRequest.getRefresh());
         if (login.isPresent()) {
-            AuthResponse authResponse = new AuthResponse();
-            authResponse.setRefresh(refreshTokenService.createToken(login.get()));
-            authResponse.setAccess(jwtProvider.generateToken(login.get()));
-            return ResponseEntity.ok(authResponse);
+            if(userService.findByUsername(login.get()).orElseThrow().isAccountNonLocked()) {
+                AuthResponse authResponse = new AuthResponse();
+                authResponse.setRefresh(refreshTokenService.createToken(login.get()));
+                authResponse.setAccess(jwtProvider.generateToken(login.get()));
+                return ResponseEntity.ok(authResponse);
+            } else {
+                return new ResponseEntity<>(new ErrorResponse(Errors.ACCOUNT_IS_LOCKED), HttpStatus.FORBIDDEN);
+            }
+        } else {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
-        return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
     }
 
     @Operation(summary = "Подтверждение почты пользователя")

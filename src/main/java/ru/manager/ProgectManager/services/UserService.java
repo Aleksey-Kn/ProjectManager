@@ -49,6 +49,7 @@ public class UserService {
             user.setNickname(registerUserDTO.getNickname());
             user.setUserWithRoleConnectors(Collections.singleton(role));
             user.setEnabled(false);
+            user.setAccountNonLocked(true);
             user = userRepository.save(user);
             try {
                 mailService.sendEmailApprove(user, registerUserDTO.getUrl(), registerUserDTO.getLocale());
