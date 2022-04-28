@@ -16,14 +16,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.enums.Errors;
-import ru.manager.ProgectManager.services.AdminService;
+import ru.manager.ProgectManager.services.TestService;
 
 @RestController
 @RequiredArgsConstructor
 @Tag(name = "Функционал для удобства тестирования")
 @RequestMapping("/test")
 public class TestController {
-    private final AdminService adminService;
+    private final TestService testService;
 
     @Operation(summary = "Удаление пользователя")
     @ApiResponses(value = {
@@ -36,7 +36,7 @@ public class TestController {
     @DeleteMapping("/remove")
     public ResponseEntity<?> removeUser(@RequestParam @Parameter(description = "Идентификатор удаляемого пользователя")
                                                 String idOrLogin) {
-        if (adminService.removeUser(idOrLogin)) {
+        if (testService.removeUser(idOrLogin)) {
             return new ResponseEntity<>(HttpStatus.OK);
         } else {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER), HttpStatus.NOT_FOUND);
