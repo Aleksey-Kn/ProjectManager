@@ -34,6 +34,7 @@ public class AuthDto {
     @NotNull(message = "FIELD_MUST_BE_NOT_NULL")
     @Schema(description = "Язык письма, отправляемого на почту пользователю")
     private Locale locale;
+    @NotNull(message = "INCORRECT_TIME_ZONE_FORMAT")
     @Schema(description = "Часовой пояс текущего пользователя. Если это число, оно должно начинаться со знака")
     private String zoneId;
 }
