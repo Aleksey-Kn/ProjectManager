@@ -28,6 +28,7 @@ import ru.manager.ProgectManager.services.RefreshTokenService;
 import ru.manager.ProgectManager.services.UserService;
 
 import javax.validation.Valid;
+import java.time.DateTimeException;
 import java.util.Optional;
 
 @RestController
@@ -94,6 +95,10 @@ public class AuthController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
+            @ApiResponse(responseCode = "406", description = "Неприемлемые данные чаового пояса", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
             @ApiResponse(responseCode = "200", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = AuthResponse.class))
@@ -101,28 +106,33 @@ public class AuthController {
     })
     @PostMapping("/login")
     public ResponseEntity<?> auth(@RequestBody @Valid AuthDto request, BindingResult bindingResult) {
-        if(bindingResult.hasErrors()){
-            return entityConfigurator.createErrorResponse(bindingResult);
-        } else {
-            Optional<User> userEntity = userService.login(request);
-            if (userEntity.isPresent()) {
-                if (userEntity.get().isEnabled()) {
-                    if(userEntity.get().isAccountNonLocked()) {
-                        AuthResponse authResponse = new AuthResponse();
-                        authResponse.setAccess(jwtProvider.generateToken(userEntity.get().getUsername()));
-                        authResponse.setRefresh(refreshTokenService.createToken(userEntity.get().getUsername()));
-                        return ResponseEntity.ok(authResponse);
+        try {
+            if (bindingResult.hasErrors()) {
+                return entityConfigurator.createErrorResponse(bindingResult);
+            } else {
+                Optional<User> userEntity = userService.login(request);
+                if (userEntity.isPresent()) {
+                    if (userEntity.get().isEnabled()) {
+                        if (userEntity.get().isAccountNonLocked()) {
+                            AuthResponse authResponse = new AuthResponse();
+                            authResponse.setAccess(jwtProvider.generateToken(userEntity.get().getUsername()));
+                            authResponse.setRefresh(refreshTokenService.createToken(userEntity.get().getUsername()));
+                            return ResponseEntity.ok(authResponse);
+                        } else {
+                            return new ResponseEntity<>(new ErrorResponse(Errors.ACCOUNT_IS_LOCKED), HttpStatus.FORBIDDEN);
+                        }
                     } else {
-                        return new ResponseEntity<>(new ErrorResponse(Errors.ACCOUNT_IS_LOCKED), HttpStatus.FORBIDDEN);
+                        return new ResponseEntity<>(new ErrorResponse(Errors.ACCOUNT_IS_NOT_ENABLED),
+                                HttpStatus.UNAUTHORIZED);
                     }
                 } else {
-                    return new ResponseEntity<>(new ErrorResponse(Errors.ACCOUNT_IS_NOT_ENABLED),
+                    return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_LOGIN_OR_PASSWORD),
                             HttpStatus.UNAUTHORIZED);
                 }
-            } else {
-                return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_LOGIN_OR_PASSWORD),
-                        HttpStatus.UNAUTHORIZED);
             }
+        } catch (DateTimeException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_TIME_ZONE_FORMAT),
+                    HttpStatus.NOT_ACCEPTABLE);
         }
     }
 

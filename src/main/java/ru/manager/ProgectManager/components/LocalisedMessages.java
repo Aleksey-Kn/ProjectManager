@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component;
 import ru.manager.ProgectManager.enums.Locale;
 
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 @Component
@@ -61,11 +61,13 @@ public class LocalisedMessages {
     }
 
     public String buildTextAboutAuthorisation(Locale locale, String ip, String browser, String country, String city,
-                                              int zoneId){
-        ZonedDateTime dateTime = ZonedDateTime.of(LocalDateTime.now(), ZoneOffset.ofHours(zoneId));
-        String date = dateTime.toLocalDate().toString();
-        String time = dateTime.toLocalTime().toString();
-        time = time.substring(0, time.indexOf('.'));
+                                              String zoneId){
+        ZonedDateTime dateTime = ZonedDateTime.of(LocalDateTime.now(), ZoneId.systemDefault());
+        dateTime = dateTime.withZoneSameInstant(ZoneId.of(zoneId));
+        String date = dateTime.toString();
+        date = date.substring(0, date.indexOf('T'));
+        String time = dateTime.toString();
+        time = time.substring(time.indexOf('T') + 1, time.indexOf('.'));
         return switch (locale) {
             case ru -> String.format("Зарегистрирован вход в ваш аккаунт из браузера %s через ip-адрес %s, " +
                     "находящийся в %s, %s. Авторизация произошла %s в %s.", browser, ip, city, country, date, time);

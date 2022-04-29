@@ -49,7 +49,7 @@ public class MailService {
                 localisedMessages.buildTextForInvitationToProject(locale, projectName, url, token));
     }
 
-    public void sendAboutAuthorisation(String email, String ip, String browser, String country, String city, int zoneId,
+    public void sendAboutAuthorisation(String email, String ip, String browser, String country, String city, String zoneId,
                                        Locale locale) {
         send(email, localisedMessages.buildSubjectAboutAuthorisation(locale),
                 localisedMessages.buildTextAboutAuthorisation(locale, ip, browser, country, city, zoneId));
