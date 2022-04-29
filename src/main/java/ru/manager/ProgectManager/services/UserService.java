@@ -113,7 +113,7 @@ public class UserService {
         if (user.isPresent() && passwordEncoder.matches(authDto.getPassword(), user.get().getPassword())) {
             if(user.get().getUsedAddresses().stream().map(UsedAddress::getIp).noneMatch(ip -> ip.equals(authDto.getIp()))){
                 mailService.sendAboutAuthorisation(user.get().getEmail(), authDto.getIp(), authDto.getBrowser(),
-                        authDto.getCountry(), authDto.getCity(), authDto.getLocale());
+                        authDto.getCountry(), authDto.getCity(), authDto.getZoneId(), authDto.getLocale());
                 UsedAddress usedAddress = new UsedAddress();
                 usedAddress.setIp(authDto.getIp());
                 user.get().getUsedAddresses().add(usedAddressRepository.save(usedAddress));

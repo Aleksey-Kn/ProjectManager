@@ -3,8 +3,9 @@ package ru.manager.ProgectManager.components;
 import org.springframework.stereotype.Component;
 import ru.manager.ProgectManager.enums.Locale;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 
 @Component
 public class LocalisedMessages {
@@ -59,9 +60,11 @@ public class LocalisedMessages {
         } + url + "?token=" + token;
     }
 
-    public String buildTextAboutAuthorisation(Locale locale, String ip, String browser, String country, String city){
-        String date = LocalDate.now().toString();
-        String time = LocalTime.now().toString();
+    public String buildTextAboutAuthorisation(Locale locale, String ip, String browser, String country, String city,
+                                              int zoneId){
+        ZonedDateTime dateTime = ZonedDateTime.of(LocalDateTime.now(), ZoneOffset.ofHours(zoneId));
+        String date = dateTime.toLocalDate().toString();
+        String time = dateTime.toLocalTime().toString();
         time = time.substring(0, time.indexOf('.'));
         return switch (locale) {
             case ru -> String.format("Зарегистрирован вход в ваш аккаунт из браузера %s через ip-адрес %s, " +
