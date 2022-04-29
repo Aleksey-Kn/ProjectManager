@@ -37,6 +37,22 @@ public class LocalisedMessages {
         };
     }
 
+    public String buildSubjectAboutLockAccount(Locale locale) {
+        return switch (locale){
+            case ru -> "Ваш аккаунт заблокирован";
+            case en -> "Your account is blocked";
+        };
+    }
+
+    public String buildSubjectAboutnUlockAccount(Locale locale) {
+        return switch (locale){
+            case ru -> "Ваш аккаунт разблокирован";
+            case en -> "Your account is unlocked";
+        };
+    }
+
+
+
     public String buildTextForMailApprove(Locale locale, String url, String token) {
         return switch (locale) {
             case en -> "For approval your account follow this link: ";
@@ -74,5 +90,12 @@ public class LocalisedMessages {
             case en -> String.format("Logged in to your account from a browser %s using ip-address %s located in %s, %s. " +
                     "Authorization reproduced by %s in %s.", browser, ip, city, country, date, time);
         };
+    }
+
+    public String buildTextAboutLockAccount(Locale locale, String cause) {
+        return switch (locale) {
+            case ru -> "Ваш аккаунт заблокирован администратором веб-ресурса. Комментарий администратора: ";
+            case en -> "Your account has been blocked by the web resource administrator. Admin comment: ";
+        } + cause;
     }
 }
