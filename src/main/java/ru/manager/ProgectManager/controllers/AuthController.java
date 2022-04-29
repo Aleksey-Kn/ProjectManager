@@ -151,7 +151,7 @@ public class AuthController {
     })
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(@RequestBody RefreshTokenRequest tokenRequest) {
-        Optional<String> login = refreshTokenService.findLoginFromToken(tokenRequest.getRefresh());
+        Optional<String> login = refreshTokenService.findLoginAndDropToken(tokenRequest.getRefresh());
         if (login.isPresent()) {
             if(userService.findByUsername(login.get()).orElseThrow().isAccountNonLocked()) {
                 AuthResponse authResponse = new AuthResponse();

@@ -15,7 +15,6 @@ public class RefreshTokenService {
     private final RefreshTokenRepository refreshTokenRepository;
 
     public String createToken(String login){
-        refreshTokenRepository.findByLogin(login).ifPresent(refreshTokenRepository::delete);
         String token = UUID.randomUUID().toString();
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setToken(token);
@@ -25,7 +24,7 @@ public class RefreshTokenService {
         return token;
     }
 
-    public Optional<String> findLoginFromToken(String token){
+    public Optional<String> findLoginAndDropToken(String token){
         Optional<RefreshToken> refreshToken = refreshTokenRepository.findById(token);
         if(refreshToken.isPresent()){
             if(LocalDate.ofEpochDay(refreshToken.get().getTimeToDie()).isAfter(LocalDate.now())) {

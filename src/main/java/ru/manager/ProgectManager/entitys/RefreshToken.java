@@ -19,7 +19,7 @@ public class RefreshToken {
     @Column
     private long timeToDie;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String login;
 
     @Override
