@@ -7,6 +7,7 @@ import org.hibernate.Hibernate;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
+import ru.manager.ProgectManager.enums.Locale;
 
 import javax.persistence.*;
 import java.util.Collection;
@@ -36,6 +37,9 @@ public class User implements UserDetails {
 
     @Column(nullable = false)
     private String nickname;
+
+    @Enumerated
+    private Locale locale;
 
     @Column(length = 524_288)
     @Lob

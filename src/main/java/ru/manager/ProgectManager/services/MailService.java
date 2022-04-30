@@ -55,6 +55,16 @@ public class MailService {
                 localisedMessages.buildTextAboutAuthorisation(locale, ip, browser, country, city, zoneId));
     }
 
+    public void sendAboutLockAccount(User user, String cause) {
+        send(user.getEmail(), localisedMessages.buildSubjectAboutLockAccount(user.getLocale()),
+                localisedMessages.buildTextAboutLockAccount(user.getLocale(), cause));
+    }
+
+    public void sendAboutUnlockAccount(User user) {
+        send(user.getEmail(), localisedMessages.buildSubjectAboutUnlockAccount(user.getLocale()),
+                localisedMessages.buildTextAboutUnlockAccount(user.getLocale()));
+    }
+
     private void send(String address, String subject, String text) {
         SimpleMailMessage mailMessage = new SimpleMailMessage();
         mailMessage.setTo(address);

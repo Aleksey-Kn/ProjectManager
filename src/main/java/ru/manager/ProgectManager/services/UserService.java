@@ -50,6 +50,7 @@ public class UserService {
             user.setUserWithRoleConnectors(Collections.singleton(role));
             user.setEnabled(false);
             user.setAccountNonLocked(true);
+            user.setLocale(registerUserDTO.getLocale()); //TODO: реализовать возможность обновления локали
             user = userRepository.save(user);
             try {
                 mailService.sendEmailApprove(user, registerUserDTO.getUrl(), registerUserDTO.getLocale());

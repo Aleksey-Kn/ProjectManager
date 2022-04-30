@@ -10,14 +10,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.*;
+import ru.manager.ProgectManager.DTO.request.adminAction.LockRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.AdminService;
 
+import javax.validation.Valid;
 import java.util.NoSuchElementException;
 
 @RestController
@@ -30,6 +30,10 @@ public class AdminController {
     @Operation(summary = "Блокирование пользователя")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Пользователь успешно заблокирован"),
+            @ApiResponse(responseCode = "400", description = "Необходимо указать причину блокировки", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
             @ApiResponse(responseCode = "403", description = "Нельзя блокировать суперпользователей"),
             @ApiResponse(responseCode = "404", description = "Указанного пользователя не существует", content = {
                     @Content(mediaType = "application/json",
@@ -37,16 +41,20 @@ public class AdminController {
             })
     })
     @PostMapping("/lock")
-    public ResponseEntity<?> lock(@RequestParam @Parameter(description = "Идентификатор блокируемого пользователя")
-                                              long id) {
-        try {
-            if(adminService.lockAccount(id)) {
-                return new ResponseEntity<>(HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+    public ResponseEntity<?> lock(@RequestBody @Valid LockRequest lockRequest, BindingResult bindingResult) {
+        if(bindingResult.hasErrors()) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.TEXT_MUST_BE_CONTAINS_VISIBLE_SYMBOL),
+                    HttpStatus.BAD_REQUEST);
+        } else {
+            try {
+                if (adminService.lockAccount(lockRequest)) {
+                    return new ResponseEntity<>(HttpStatus.OK);
+                } else {
+                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+                }
+            } catch (NoSuchElementException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER), HttpStatus.NOT_FOUND);
             }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER), HttpStatus.NOT_FOUND);
         }
     }
 

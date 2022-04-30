@@ -9,6 +9,8 @@ import java.time.ZonedDateTime;
 
 @Component
 public class LocalisedMessages {
+
+    // Заголовки письма
     public String buildSubjectForMailApprove(Locale locale) {
         return switch(locale) {
             case en -> "Mail confirmation";
@@ -44,14 +46,14 @@ public class LocalisedMessages {
         };
     }
 
-    public String buildSubjectAboutnUlockAccount(Locale locale) {
+    public String buildSubjectAboutUnlockAccount(Locale locale) {
         return switch (locale){
             case ru -> "Ваш аккаунт разблокирован";
             case en -> "Your account is unlocked";
         };
     }
 
-
+    // Тексты письма
 
     public String buildTextForMailApprove(Locale locale, String url, String token) {
         return switch (locale) {
@@ -97,5 +99,12 @@ public class LocalisedMessages {
             case ru -> "Ваш аккаунт заблокирован администратором веб-ресурса. Комментарий администратора: ";
             case en -> "Your account has been blocked by the web resource administrator. Admin comment: ";
         } + cause;
+    }
+
+    public String buildTextAboutUnlockAccount(Locale locale) {
+        return switch (locale) {
+            case ru -> "Ваш аккаунт разблокирован и вновь доступен для использования.";
+            case en -> "Your account has been unlocked and is available for use again.";
+        };
     }
 }
