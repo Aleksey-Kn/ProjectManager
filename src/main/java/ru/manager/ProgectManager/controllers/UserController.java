@@ -13,6 +13,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.NameRequest;
 import ru.manager.ProgectManager.DTO.request.PhotoDTO;
+import ru.manager.ProgectManager.DTO.request.user.LocaleRequest;
 import ru.manager.ProgectManager.DTO.request.user.UpdatePassRequest;
 import ru.manager.ProgectManager.DTO.response.*;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
@@ -66,14 +67,14 @@ public class UserController {
         }
     }
 
-    @Operation(summary = "Изменение данных аккаунта")
+    @Operation(summary = "Изменение отображаемого имени аккаунта")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "400", description = "Имя пользователя должно содержать видимые символы",
                     content = {
                             @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ErrorResponse.class))
                     }),
-            @ApiResponse(responseCode = "200", description = "Данные пользователя успешно изменены")
+            @ApiResponse(responseCode = "200", description = "Имя пользователя успешно изменено")
     })
     @PutMapping("/user")
     public ResponseEntity<?> rename(@RequestBody @Valid NameRequest request, BindingResult bindingResult) {
@@ -110,6 +111,24 @@ public class UserController {
             } else {
                 return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_LOGIN_OR_PASSWORD), HttpStatus.FORBIDDEN);
             }
+        }
+    }
+
+    @Operation(summary = "Изменение языка аккаунта пользователя")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Неприемлемый язык", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "200", description = "Язык успешно изменён")
+    })
+    @PutMapping("/user/locale")
+    public ResponseEntity<?> updateLocale(@RequestBody @Valid LocaleRequest request, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.FIELD_MUST_BE_NOT_NULL), HttpStatus.BAD_REQUEST);
+        } else {
+            userService.updateLocale(request, jwtProvider.getLoginFromToken());
+            return new ResponseEntity<>(HttpStatus.OK);
         }
     }
 

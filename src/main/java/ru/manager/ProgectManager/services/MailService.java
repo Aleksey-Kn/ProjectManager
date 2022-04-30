@@ -32,10 +32,10 @@ public class MailService {
         approveActionTokenRepository.save(approveActionToken);
     }
 
-    public void sendResetPass(User user, String url, Locale locale) {
+    public void sendResetPass(User user, String url) {
         String token = UUID.randomUUID().toString();
-        send(user.getEmail(), localisedMessages.buildSubjectForResetPassword(locale),
-                localisedMessages.buildTextForResetPass(locale, url, token));
+        send(user.getEmail(), localisedMessages.buildSubjectForResetPassword(user.getLocale()),
+                localisedMessages.buildTextForResetPass(user.getLocale(), url, token));
 
         ApproveActionToken approveActionToken = new ApproveActionToken();
         approveActionToken.setToken(token);
@@ -44,15 +44,14 @@ public class MailService {
         approveActionTokenRepository.save(approveActionToken);
     }
 
-    public void sendInvitationToProject(String email, String projectName, String url, String token, Locale locale) {
-        send(email, localisedMessages.buildSubjectForInvitationToProject(locale, projectName),
-                localisedMessages.buildTextForInvitationToProject(locale, projectName, url, token));
+    public void sendInvitationToProject(User user, String projectName, String url, String token) {
+        send(user.getEmail(), localisedMessages.buildSubjectForInvitationToProject(user.getLocale(), projectName),
+                localisedMessages.buildTextForInvitationToProject(user.getLocale(), projectName, url, token));
     }
 
-    public void sendAboutAuthorisation(String email, String ip, String browser, String country, String city, String zoneId,
-                                       Locale locale) {
-        send(email, localisedMessages.buildSubjectAboutAuthorisation(locale),
-                localisedMessages.buildTextAboutAuthorisation(locale, ip, browser, country, city, zoneId));
+    public void sendAboutAuthorisation(User user, String ip, String browser, String country, String city, String zoneId) {
+        send(user.getEmail(), localisedMessages.buildSubjectAboutAuthorisation(user.getLocale()),
+                localisedMessages.buildTextAboutAuthorisation(user.getLocale(), ip, browser, country, city, zoneId));
     }
 
     public void sendAboutLockAccount(User user, String cause) {

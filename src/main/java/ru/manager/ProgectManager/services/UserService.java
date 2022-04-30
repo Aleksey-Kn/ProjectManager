@@ -5,6 +5,7 @@ import org.springframework.mail.MailException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.request.user.AuthDto;
+import ru.manager.ProgectManager.DTO.request.user.LocaleRequest;
 import ru.manager.ProgectManager.DTO.request.user.RegisterUserDTO;
 import ru.manager.ProgectManager.DTO.response.PointerResource;
 import ru.manager.ProgectManager.entitys.Project;
@@ -50,7 +51,7 @@ public class UserService {
             user.setUserWithRoleConnectors(Collections.singleton(role));
             user.setEnabled(false);
             user.setAccountNonLocked(true);
-            user.setLocale(registerUserDTO.getLocale()); //TODO: реализовать возможность обновления локали
+            user.setLocale(registerUserDTO.getLocale());
             user = userRepository.save(user);
             try {
                 mailService.sendEmailApprove(user, registerUserDTO.getUrl(), registerUserDTO.getLocale());
@@ -78,10 +79,10 @@ public class UserService {
         }
     }
 
-    public boolean attemptDropPass(String loginOrEmail, String url, ru.manager.ProgectManager.enums.Locale locale) {
+    public boolean attemptDropPass(String loginOrEmail, String url) {
         Optional<User> user = findLoginOrEmail(loginOrEmail);
         if(user.isPresent()) {
-            mailService.sendResetPass(user.get(), url, locale);
+            mailService.sendResetPass(user.get(), url);
             return true;
         } else {
             return false;
@@ -113,8 +114,8 @@ public class UserService {
         Optional<User> user = findLoginOrEmail(authDto.getLogin());
         if (user.isPresent() && passwordEncoder.matches(authDto.getPassword(), user.get().getPassword())) {
             if(user.get().getUsedAddresses().stream().map(UsedAddress::getIp).noneMatch(ip -> ip.equals(authDto.getIp()))){
-                mailService.sendAboutAuthorisation(user.get().getEmail(), authDto.getIp(), authDto.getBrowser(),
-                        authDto.getCountry(), authDto.getCity(), authDto.getZoneId(), authDto.getLocale());
+                mailService.sendAboutAuthorisation(user.get(), authDto.getIp(), authDto.getBrowser(),
+                        authDto.getCountry(), authDto.getCity(), authDto.getZoneId());
                 UsedAddress usedAddress = new UsedAddress();
                 usedAddress.setIp(authDto.getIp());
                 user.get().getUsedAddresses().add(usedAddressRepository.save(usedAddress));
@@ -141,6 +142,12 @@ public class UserService {
         } else {
             return false;
         }
+    }
+
+    public void updateLocale(LocaleRequest localeRequest, String userLogin) {
+        User user = userRepository.findByUsername(userLogin);
+        user.setLocale(localeRequest.getLocale());
+        userRepository.save(user);
     }
 
     public void setPhoto(String login, byte[] file, String filename) throws IOException {

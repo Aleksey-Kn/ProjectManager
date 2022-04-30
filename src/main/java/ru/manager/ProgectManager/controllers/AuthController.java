@@ -199,7 +199,7 @@ public class AuthController {
         if(bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
-            if(userService.attemptDropPass(request.getLoginOrEmail(), request.getUrl(), request.getLocale())) {
+            if(userService.attemptDropPass(request.getLoginOrEmail(), request.getUrl())) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER), HttpStatus.NOT_FOUND);
