@@ -23,6 +23,7 @@ import ru.manager.ProgectManager.DTO.response.documents.*;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.enums.Errors;
+import ru.manager.ProgectManager.services.UserService;
 import ru.manager.ProgectManager.services.documents.PageService;
 
 import javax.validation.Valid;
@@ -39,6 +40,7 @@ public class DocumentController {
     private final PageService pageService;
     private final JwtProvider provider;
     private final ErrorResponseEntityConfigurator entityConfigurator;
+    private final UserService userService;
 
     @Operation(summary = "Добавление страницы документации")
     @ApiResponses(value = {
@@ -138,10 +140,11 @@ public class DocumentController {
             })
     })
     @GetMapping("/content")
-    public ResponseEntity<?> getContent(@RequestParam @Parameter(description = "Идентификатор страницы") long id,
-                                        @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId) {
+    public ResponseEntity<?> getContent(@RequestParam @Parameter(description = "Идентификатор страницы") long id) {
         try {
-            Optional<PageContentResponse> response = pageService.findContent(id, provider.getLoginFromToken(), zoneId);
+            String login = provider.getLoginFromToken();
+            int zoneId = userService.findZoneIdForThisUser(login);
+            Optional<PageContentResponse> response = pageService.findContent(id, login, zoneId);
             if (response.isPresent()) {
                 return ResponseEntity.ok(response.get());
             } else {
@@ -316,14 +319,15 @@ public class DocumentController {
     })
     @GetMapping("/all")
     public ResponseEntity<?> findAllWithSort(@RequestBody @Valid GetResourceWithPagination request,
-                                             BindingResult bindingResult,
-                                             @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId) {
+                                             BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
+                String login = provider.getLoginFromToken();
+                int zoneId = userService.findZoneIdForThisUser(login);
                 Optional<List<PageNameAndUpdateDateResponse>> pages = pageService.findAllWithSort(request.getId(),
-                        provider.getLoginFromToken(), zoneId);
+                        login, zoneId);
                 if (pages.isPresent()) {
                     return ResponseEntity.ok(new PageNameAndUpdateDateResponseList(pages.get(), request.getPageIndex(),
                             request.getCount()));
@@ -352,13 +356,15 @@ public class DocumentController {
             })
     })
     @GetMapping("/lasts")
-    public ResponseEntity<?> findLastSee(@RequestBody @Valid GetResourceWithPagination request, BindingResult bindingResult,
-                                         @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId) {
+    public ResponseEntity<?> findLastSee(@RequestBody @Valid GetResourceWithPagination request,
+                                         BindingResult bindingResult) {
         if(bindingResult.hasErrors()){
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
+            String login = provider.getLoginFromToken();
+            int zoneId = userService.findZoneIdForThisUser(login);
             Optional<List<PageNameAndUpdateDateResponse>> responses = pageService.findLastSeeDocument(request.getId(),
-                    provider.getLoginFromToken(), zoneId);
+                    login, zoneId);
             if (responses.isPresent()) {
                 return ResponseEntity.ok(new PageNameAndUpdateDateResponseList(responses.get(), request.getPageIndex(),
                         request.getCount()));

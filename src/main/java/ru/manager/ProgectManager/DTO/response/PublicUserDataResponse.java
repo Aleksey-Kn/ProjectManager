@@ -4,6 +4,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import ru.manager.ProgectManager.entitys.user.User;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+
 @Getter
 @Schema(description = "Информация о пользователе, находящаяся в публичном доступе")
 public class PublicUserDataResponse {
@@ -17,6 +20,9 @@ public class PublicUserDataResponse {
     private final byte[] photo;
     @Schema(description = "Тип данных фотографии")
     private final String datatypePhoto;
+    @Schema(description = "Дата последнего посещения или null в случае регистрации, но отстутствии авторизации",
+            nullable = true)
+    private final String lastVisit;
 
     public PublicUserDataResponse(User user){
         email = user.getEmail();
@@ -24,5 +30,7 @@ public class PublicUserDataResponse {
         id = user.getUserId();
         photo = user.getPhoto();
         datatypePhoto = user.getContentTypePhoto();
+        lastVisit = (user.getLastVisit() == 0? null: LocalDateTime
+                .ofEpochSecond(user.getLastVisit(), 0, ZoneOffset.ofHours(user.getZoneId())).toString());
     }
 }

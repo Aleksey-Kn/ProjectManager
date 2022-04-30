@@ -153,7 +153,9 @@ public class AuthController {
     public ResponseEntity<?> refresh(@RequestBody RefreshTokenRequest tokenRequest) {
         Optional<String> login = refreshTokenService.findLoginAndDropToken(tokenRequest.getRefresh());
         if (login.isPresent()) {
-            if(userService.findByUsername(login.get()).orElseThrow().isAccountNonLocked()) {
+            User user = userService.findByUsername(login.get()).orElseThrow();
+            if(user.isAccountNonLocked()) {
+                userService.updateLastVisitAndZone(user, tokenRequest.getZoneId());
                 AuthResponse authResponse = new AuthResponse();
                 authResponse.setRefresh(refreshTokenService.createToken(login.get()));
                 authResponse.setAccess(jwtProvider.generateToken(login.get()));

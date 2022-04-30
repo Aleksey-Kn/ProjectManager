@@ -34,6 +34,8 @@ public class User implements UserDetails {
 
     private boolean enabled;
     private boolean accountNonLocked;
+    private long lastVisit;
+    private int zoneId;
 
     @Column(nullable = false)
     private String nickname;

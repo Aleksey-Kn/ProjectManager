@@ -1,7 +1,6 @@
 package ru.manager.ProgectManager.controllers.kanban;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -26,6 +25,7 @@ import ru.manager.ProgectManager.entitys.kanban.KanbanColumn;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.exception.IncorrectStatusException;
+import ru.manager.ProgectManager.services.UserService;
 import ru.manager.ProgectManager.services.kanban.KanbanElementAttributesService;
 import ru.manager.ProgectManager.services.kanban.KanbanElementService;
 
@@ -43,6 +43,7 @@ public class KanbanElementController {
     private final KanbanElementAttributesService attributesService;
     private final JwtProvider provider;
     private final ErrorResponseEntityConfigurator entityConfigurator;
+    private final UserService userService;
 
     @Operation(summary = "Получение элемента канбана", description = "Получение полной информации об элементе канбана")
     @ApiResponses(value = {
@@ -61,12 +62,13 @@ public class KanbanElementController {
             })
     })
     @GetMapping("/get")
-    public ResponseEntity<?> getContent(@RequestParam long elementId,
-                                        @RequestParam @Parameter(description = "Часовой пояс текущего пользователя") int zoneId) {
+    public ResponseEntity<?> getContent(@RequestParam long elementId) {
         try {
+            String login = provider.getLoginFromToken();
             Optional<KanbanElement> content = kanbanElementService
-                    .getContentFromElement(elementId, provider.getLoginFromToken());
+                    .getContentFromElement(elementId, login);
             if (content.isPresent()) {
+                int zoneId = userService.findZoneIdForThisUser(login);
                 return ResponseEntity.ok(new KanbanElementContentResponse(content.get(), zoneId));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);

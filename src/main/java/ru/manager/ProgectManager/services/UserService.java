@@ -24,6 +24,9 @@ import ru.manager.ProgectManager.repositories.UserRepository;
 
 import javax.activation.MimetypesFileTypeMap;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -52,6 +55,7 @@ public class UserService {
             user.setEnabled(false);
             user.setAccountNonLocked(true);
             user.setLocale(registerUserDTO.getLocale());
+            user.setLastVisit(0);
             user = userRepository.save(user);
             try {
                 mailService.sendEmailApprove(user, registerUserDTO.getUrl(), registerUserDTO.getLocale());
@@ -64,6 +68,13 @@ public class UserService {
         } else {
             return false;
         }
+    }
+
+    public void updateLastVisitAndZone(User user, int zoneId){
+        user.setLastVisit(LocalDateTime.now()
+                .toEpochSecond(ZoneOffset.systemDefault().getRules().getOffset(Instant.now())));
+        user.setZoneId(zoneId);
+        userRepository.save(user);
     }
 
     public boolean enabledUser(String token) {
@@ -113,16 +124,17 @@ public class UserService {
     public Optional<User> login(AuthDto authDto) {
         Optional<User> user = findLoginOrEmail(authDto.getLogin());
         if (user.isPresent() && passwordEncoder.matches(authDto.getPassword(), user.get().getPassword())) {
+            user.get().setZoneId(Integer.parseInt(authDto.getZoneId()));
+            user.get().setLastVisit(LocalDateTime.now()
+                    .toEpochSecond(ZoneOffset.systemDefault().getRules().getOffset(Instant.now())));
             if(user.get().getUsedAddresses().stream().map(UsedAddress::getIp).noneMatch(ip -> ip.equals(authDto.getIp()))){
                 mailService.sendAboutAuthorisation(user.get(), authDto.getIp(), authDto.getBrowser(),
                         authDto.getCountry(), authDto.getCity(), authDto.getZoneId());
                 UsedAddress usedAddress = new UsedAddress();
                 usedAddress.setIp(authDto.getIp());
                 user.get().getUsedAddresses().add(usedAddressRepository.save(usedAddress));
-                return Optional.of(userRepository.save(user.get()));
-            } else {
-                return user;
             }
+            return Optional.of(userRepository.save(user.get()));
         }
         return Optional.empty();
     }
@@ -201,6 +213,10 @@ public class UserService {
                 .sorted(Comparator.comparing(VisitMark::getSerialNumber))
                 .limit(20)
                 .collect(Collectors.toList());
+    }
+
+    public int findZoneIdForThisUser(String userLogin){
+        return userRepository.findByUsername(userLogin).getZoneId();
     }
 
     private Optional<User> findLoginOrEmail(String loginOrEmail) {

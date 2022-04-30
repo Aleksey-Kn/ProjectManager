@@ -31,6 +31,7 @@ public class AuthDto {
     @Schema(description = "Город, из которого осуществляется авторизация")
     private String city;
     @NotNull(message = "INCORRECT_TIME_ZONE_FORMAT")
-    @Schema(description = "Часовой пояс текущего пользователя. Если это число, оно должно начинаться со знака")
+    @Schema(description = "Часовой пояс текущего пользователя. Если это число, оно должно начинаться со знака",
+            example = "+7")
     private String zoneId;
 }
