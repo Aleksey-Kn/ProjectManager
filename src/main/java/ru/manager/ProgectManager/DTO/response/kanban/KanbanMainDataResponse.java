@@ -20,14 +20,14 @@ public class KanbanMainDataResponse {
     @Schema(description = "Список пользователей, имеющих доступ к данной доске")
     private final List<PublicUserDataResponse> participants;
 
-    public KanbanMainDataResponse(Kanban kanban){
+    public KanbanMainDataResponse(Kanban kanban, int zoneId){
         id = kanban.getId();
         name = kanban.getName();
         participants = kanban.getProject().getConnectors().parallelStream()
                 .filter(c -> c.getRoleType() != TypeRoleProject.CUSTOM_ROLE || c.getCustomProjectRole()
                         .getCustomRoleWithKanbanConnectors().parallelStream().anyMatch(kc -> kc.getKanban().equals(kanban)))
                 .map(UserWithProjectConnector::getUser)
-                .map(PublicUserDataResponse::new)
+                .map(user -> new PublicUserDataResponse(user, zoneId))
                 .limit(3)
                 .collect(Collectors.toList());
     }

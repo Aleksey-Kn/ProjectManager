@@ -24,13 +24,13 @@ public class PublicUserDataResponse {
             nullable = true)
     private final String lastVisit;
 
-    public PublicUserDataResponse(User user){
+    public PublicUserDataResponse(User user, int zoneId){
         email = user.getEmail();
         nickname = user.getNickname();
         id = user.getUserId();
         photo = user.getPhoto();
         datatypePhoto = user.getContentTypePhoto();
         lastVisit = (user.getLastVisit() == 0? null: LocalDateTime
-                .ofEpochSecond(user.getLastVisit(), 0, ZoneOffset.ofHours(user.getZoneId())).toString());
+                .ofEpochSecond(user.getLastVisit(), 0, ZoneOffset.ofHours(zoneId)).toString());
     }
 }

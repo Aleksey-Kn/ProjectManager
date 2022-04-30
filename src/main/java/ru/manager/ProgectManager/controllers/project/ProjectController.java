@@ -24,6 +24,7 @@ import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.enums.Errors;
+import ru.manager.ProgectManager.services.UserService;
 import ru.manager.ProgectManager.services.kanban.KanbanService;
 import ru.manager.ProgectManager.services.project.AccessProjectService;
 import ru.manager.ProgectManager.services.project.ProjectService;
@@ -44,6 +45,7 @@ public class ProjectController {
     private final PhotoCompressor compressor;
     private final KanbanService kanbanService;
     private final AccessProjectService accessProjectService;
+    private final UserService userService;
 
     @Operation(summary = "Создание проекта")
     @ApiResponses(value = {
@@ -86,7 +88,8 @@ public class ProjectController {
             Optional<Project> project = projectService.findProject(id, login);
             if (project.isPresent()) {
                 return ResponseEntity.ok(new ProjectResponse(project.get(),
-                        accessProjectService.findUserRoleName(login, project.get().getId())));
+                        accessProjectService.findUserRoleName(login, project.get().getId()),
+                        userService.findZoneIdForThisUser(login)));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
@@ -175,9 +178,10 @@ public class ProjectController {
     public ResponseEntity<?> allKanbanOfThisUser(@RequestParam @Parameter(description = "Идентификатор проекта")
                                                               long id){
         try {
-            Optional<Set<Kanban>> kanbans = kanbanService.findAllKanban(id, provider.getLoginFromToken());
+            String login = provider.getLoginFromToken();
+            Optional<Set<Kanban>> kanbans = kanbanService.findAllKanban(id, login);
             if (kanbans.isPresent()) {
-                return ResponseEntity.ok(new KanbanListResponse(kanbans.get()));
+                return ResponseEntity.ok(new KanbanListResponse(kanbans.get(), userService.findZoneIdForThisUser(login)));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
@@ -204,9 +208,10 @@ public class ProjectController {
     public ResponseEntity<?> allKanbanOfThisUser(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
                                                  @RequestParam String name){
         try {
-            Optional<Set<Kanban>> kanbans = kanbanService.findKanbansByName(id, name, provider.getLoginFromToken());
+            String login = provider.getLoginFromToken();
+            Optional<Set<Kanban>> kanbans = kanbanService.findKanbansByName(id, name, login);
             if (kanbans.isPresent()) {
-                return ResponseEntity.ok(new KanbanListResponse(kanbans.get()));
+                return ResponseEntity.ok(new KanbanListResponse(kanbans.get(), userService.findZoneIdForThisUser(login)));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
@@ -231,7 +236,8 @@ public class ProjectController {
     public ResponseEntity<?> allParticipants(@RequestParam @Parameter(description = "Идентификатор проекта")
                                                          long id){
         try{
-            return ResponseEntity.ok(new UserDataListResponse(projectService.findAllParticipants(id)));
+            return ResponseEntity.ok(new UserDataListResponse(projectService.findAllParticipants(id),
+                    userService.findZoneIdForThisUser(provider.getLoginFromToken())));
         } catch (NoSuchElementException e){
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
         }

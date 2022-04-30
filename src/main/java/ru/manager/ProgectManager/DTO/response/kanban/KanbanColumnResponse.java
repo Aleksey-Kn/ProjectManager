@@ -22,7 +22,7 @@ public class KanbanColumnResponse {
     @Schema(description = "Список элементов, содержащихся в данной колонке")
     private final List<KanbanElementMainDataResponse> kanbanElements;
 
-    public KanbanColumnResponse(KanbanColumn kanbanColumn, int pageIndex, int count){
+    public KanbanColumnResponse(KanbanColumn kanbanColumn, int pageIndex, int count, int zoneId){
         id = kanbanColumn.getId();
         serialNumber = kanbanColumn.getSerialNumber();
         name = kanbanColumn.getName();
@@ -31,7 +31,7 @@ public class KanbanColumnResponse {
                 : kanbanColumn.getElements().stream()
                 .filter(e -> e.getStatus() == ElementStatus.ALIVE)
                 .sorted(Comparator.comparing(KanbanElement::getSerialNumber))
-                .map(KanbanElementMainDataResponse::new)
+                .map(element -> new KanbanElementMainDataResponse(element, zoneId))
                 .skip(pageIndex)
                 .limit(count)
                 .collect(Collectors.toList()));

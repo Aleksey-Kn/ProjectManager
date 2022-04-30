@@ -14,7 +14,8 @@ public class UserDataListResponse {
     @Schema(description = "Список участников проекта")
     private final List<PublicUserDataResponse> participants;
 
-    public UserDataListResponse(Set<User> users){
-        participants = users.parallelStream().map(PublicUserDataResponse::new).collect(Collectors.toList());
+    public UserDataListResponse(Set<User> users, int zoneId){
+        participants = users.parallelStream().map(user -> new PublicUserDataResponse(user, zoneId))
+                .collect(Collectors.toList());
     }
 }

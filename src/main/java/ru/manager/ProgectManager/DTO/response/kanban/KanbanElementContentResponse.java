@@ -50,8 +50,8 @@ public class KanbanElementContentResponse {
         serialNumber = kanbanElement.getSerialNumber();
         name = kanbanElement.getName();
         tags = kanbanElement.getTags();
-        creator = new PublicUserDataResponse(kanbanElement.getOwner());
-        lastRedactor = new PublicUserDataResponse(kanbanElement.getLastRedactor());
+        creator = new PublicUserDataResponse(kanbanElement.getOwner(), zoneId);
+        lastRedactor = new PublicUserDataResponse(kanbanElement.getLastRedactor(), zoneId);
         content = kanbanElement.getContent();
         selectedDate = kanbanElement.getSelectedDate();
         comments = (kanbanElement.getComments() == null? List.of():

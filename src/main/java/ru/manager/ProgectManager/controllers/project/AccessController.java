@@ -24,6 +24,7 @@ import ru.manager.ProgectManager.entitys.accessProject.AccessProject;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.exception.IllegalActionException;
 import ru.manager.ProgectManager.exception.NoSuchResourceException;
+import ru.manager.ProgectManager.services.UserService;
 import ru.manager.ProgectManager.services.project.AccessProjectService;
 
 import javax.validation.Valid;
@@ -40,6 +41,7 @@ public class AccessController {
     private final AccessProjectService accessProjectService;
     private final JwtProvider provider;
     private final ErrorResponseEntityConfigurator entityConfigurator;
+    private final UserService userService;
 
     @Operation(summary = "Получение доступа",
             description = "Предоставляет доступ к проекту, к которому относится токен, пользователю, перешедшуму по данной ссылке")
@@ -90,7 +92,8 @@ public class AccessController {
     @GetMapping("/info")
     public ResponseEntity<?> getInfo(@RequestParam String token) {
         try {
-            Optional<ProjectResponse> response = accessProjectService.findInfoOfProjectFromAccessToken(token);
+            Optional<ProjectResponse> response = accessProjectService.findInfoOfProjectFromAccessToken(token,
+                    userService.findZoneIdForThisUser(provider.getLoginFromToken()));
             if (response.isPresent()) {
                 return ResponseEntity.ok(response.get());
             } else {

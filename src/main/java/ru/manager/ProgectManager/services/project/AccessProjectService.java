@@ -199,7 +199,7 @@ public class AccessProjectService {
         return accessProject;
     }
 
-    public Optional<ProjectResponse> findInfoOfProjectFromAccessToken(String token) {
+    public Optional<ProjectResponse> findInfoOfProjectFromAccessToken(String token, int zoneId) {
         AccessProject accessProject = accessProjectRepository.findById(token).orElseThrow();
         if (accessProject.isDisposable() || LocalDate.ofEpochDay(accessProject.getTimeForDie()).isBefore(LocalDate.now())) {
             accessProjectRepository.delete(accessProject);
@@ -208,7 +208,7 @@ public class AccessProjectService {
             return Optional.of(new ProjectResponse(accessProject.getProject(),
                     (accessProject.getTypeRoleProject() == TypeRoleProject.CUSTOM_ROLE
                             ? accessProject.getProjectRole().getName()
-                            : accessProject.getTypeRoleProject().name())));
+                            : accessProject.getTypeRoleProject().name()), zoneId));
         } else {
             return Optional.empty();
         }

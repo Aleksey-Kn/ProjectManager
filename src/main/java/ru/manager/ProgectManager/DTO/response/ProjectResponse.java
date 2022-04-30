@@ -34,13 +34,13 @@ public class ProjectResponse {
     @Schema(description = "Название роли этого пользователя в проекте")
     private final String roleName;
 
-    public ProjectResponse(Project project, String userRoleName){
+    public ProjectResponse(Project project, String userRoleName, int zoneId){
         name = project.getName();
         id = project.getId();
         photo = project.getPhoto();
         participants = project.getConnectors().stream()
                 .map(UserWithProjectConnector::getUser)
-                .map(PublicUserDataResponse::new)
+                .map(user -> new PublicUserDataResponse(user, zoneId))
                 .limit(3)
                 .collect(Collectors.toList());
         datatypePhoto = project.getDatatypePhoto();

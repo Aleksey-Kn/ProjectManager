@@ -135,10 +135,12 @@ public class KanbanElementController {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
+                String login = provider.getLoginFromToken();
                 Optional<Set<KanbanElement>> elements = kanbanElementService.findElements(request.getKanbanId(),
-                        request.getType(), request.getName(), request.getStatus(), provider.getLoginFromToken());
+                        request.getType(), request.getName(), request.getStatus(), login);
                 if (elements.isPresent()) {
-                    return ResponseEntity.ok(new KanbanElements(elements.get(), request.getPageIndex(), request.getCount()));
+                    return ResponseEntity.ok(new KanbanElements(elements.get(), request.getPageIndex(),
+                            request.getCount(), userService.findZoneIdForThisUser(login)));
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }

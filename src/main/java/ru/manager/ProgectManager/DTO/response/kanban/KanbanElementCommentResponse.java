@@ -23,7 +23,7 @@ public class KanbanElementCommentResponse {
     public KanbanElementCommentResponse(KanbanElementComment comment, int zoneId){
         id = comment.getId();
         text = comment.getText();
-        owner = new PublicUserDataResponse(comment.getOwner());
+        owner = new PublicUserDataResponse(comment.getOwner(), zoneId);
         dateTime = LocalDateTime
                 .ofEpochSecond(comment.getDateTime(), 0, ZoneOffset.ofHours(zoneId)).toString();
     }

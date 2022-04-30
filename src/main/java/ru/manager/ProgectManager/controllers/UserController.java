@@ -57,10 +57,11 @@ public class UserController {
     })
     @GetMapping("/user")
     public ResponseEntity<?> findAllData(@RequestParam(defaultValue = "-1") long id) {
-        Optional<User> user = (id == -1 ? userService.findByUsername(jwtProvider.getLoginFromToken()) :
-                userService.findById(id));
-        if (user.isPresent()) {
-            return ResponseEntity.ok(new PublicUserDataResponse(user.get()));
+        String login = jwtProvider.getLoginFromToken();
+        Optional<User> targetUser = (id == -1 ? userService.findByUsername(login) : userService.findById(id));
+        if (targetUser.isPresent()) {
+            return ResponseEntity.ok(new PublicUserDataResponse(targetUser.get(),
+                    userService.findZoneIdForThisUser(login)));
         } else {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER),
                     HttpStatus.NOT_FOUND);
@@ -164,7 +165,7 @@ public class UserController {
         List<Project> projectList = userService.allProjectOfThisUser(login);
         List<String> roles = new LinkedList<>();
         projectList.forEach(p -> roles.add(accessProjectService.findUserRoleName(login, p.getId())));
-        return new ProjectListResponse(projectList, roles);
+        return new ProjectListResponse(projectList, roles, userService.findZoneIdForThisUser(login));
     }
 
     @Operation(summary = "Результат поиска проектов по имени")
@@ -179,7 +180,7 @@ public class UserController {
         List<Project> projects = userService.projectsByNameOfThisUser(name, login);
         List<String> roles = new LinkedList<>();
         projects.forEach(p -> roles.add(accessProjectService.findUserRoleName(login, p.getId())));
-        return new ProjectListResponse(projects, roles);
+        return new ProjectListResponse(projects, roles, userService.findZoneIdForThisUser(login));
     }
 
     @Operation(summary = "Результат поиска ресурсов по имени")

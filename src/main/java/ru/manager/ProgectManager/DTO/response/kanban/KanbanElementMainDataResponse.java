@@ -30,14 +30,14 @@ public class KanbanElementMainDataResponse {
     @Schema(description = "Выбранная пользователем дата")
     private final String selectedDate;
 
-    public KanbanElementMainDataResponse(KanbanElement kanbanElement) {
+    public KanbanElementMainDataResponse(KanbanElement kanbanElement, int zoneId) {
         id = kanbanElement.getId();
         serialNumber = kanbanElement.getSerialNumber();
         name = kanbanElement.getName();
         tags = kanbanElement.getTags();
         selectedDate = kanbanElement.getSelectedDate();
-        creator = new PublicUserDataResponse(kanbanElement.getOwner());
-        lastRedactor = new PublicUserDataResponse(kanbanElement.getLastRedactor());
+        creator = new PublicUserDataResponse(kanbanElement.getOwner(), zoneId);
+        lastRedactor = new PublicUserDataResponse(kanbanElement.getLastRedactor(), zoneId);
         commentCount = (kanbanElement.getComments() == null? 0: kanbanElement.getComments().size());
         attachCount = (kanbanElement.getKanbanAttachments() == null? 0: kanbanElement.getKanbanAttachments().size());
     }

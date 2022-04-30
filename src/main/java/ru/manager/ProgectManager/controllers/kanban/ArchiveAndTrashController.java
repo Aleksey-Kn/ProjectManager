@@ -17,6 +17,7 @@ import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.exception.IncorrectStatusException;
+import ru.manager.ProgectManager.services.UserService;
 import ru.manager.ProgectManager.services.kanban.ArchiveAndTrashService;
 
 import java.util.List;
@@ -30,6 +31,7 @@ import java.util.Optional;
 public class ArchiveAndTrashController {
     private final ArchiveAndTrashService trashService;
     private final JwtProvider provider;
+    private final UserService userService;
 
     @Operation(summary = "Перемещение элемента в архив")
     @ApiResponses(value = {
@@ -109,9 +111,11 @@ public class ArchiveAndTrashController {
     public ResponseEntity<?> getArchive(@RequestParam @Parameter(description = "Идентификатор канбана") long id,
                                         @RequestParam int pageIndex, @RequestParam int rowCount){
         try {
-            Optional<List<KanbanElement>> elements = trashService.findArchive(id, provider.getLoginFromToken());
+            String login = provider.getLoginFromToken();
+            Optional<List<KanbanElement>> elements = trashService.findArchive(id, login);
             if(elements.isPresent()){
-                return ResponseEntity.ok(new KanbanElements(elements.get(), pageIndex, rowCount));
+                return ResponseEntity.ok(new KanbanElements(elements.get(), pageIndex, rowCount,
+                        userService.findZoneIdForThisUser(login)));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
@@ -137,9 +141,11 @@ public class ArchiveAndTrashController {
     public ResponseEntity<?> getTrash(@RequestParam @Parameter(description = "Идентификатор канбана") long id,
                                       @RequestParam int pageIndex, @RequestParam int rowCount){
         try {
-            Optional<List<KanbanElement>> elements = trashService.findTrash(id, provider.getLoginFromToken());
+            String login = provider.getLoginFromToken();
+            Optional<List<KanbanElement>> elements = trashService.findTrash(id, login);
             if(elements.isPresent()){
-                return ResponseEntity.ok(new KanbanElements(elements.get(), pageIndex, rowCount));
+                return ResponseEntity.ok(new KanbanElements(elements.get(), pageIndex, rowCount,
+                        userService.findZoneIdForThisUser(login)));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }

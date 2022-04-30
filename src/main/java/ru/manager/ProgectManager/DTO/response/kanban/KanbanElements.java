@@ -11,17 +11,17 @@ import java.util.stream.Collectors;
 public class KanbanElements {
     private final List<KanbanElementMainDataResponse> elements;
 
-    public KanbanElements(List<KanbanElement> input, int pageIndex, int rowCount){
+    public KanbanElements(List<KanbanElement> input, int pageIndex, int rowCount, int zoneId){
         elements = input.stream()
                 .skip(pageIndex)
                 .limit(rowCount)
-                .map(KanbanElementMainDataResponse::new).collect(Collectors.toList());
+                .map(element -> new KanbanElementMainDataResponse(element, zoneId)).collect(Collectors.toList());
     }
 
-    public KanbanElements(Set<KanbanElement> elementSet, int pageIndex, int rowCount){
+    public KanbanElements(Set<KanbanElement> elementSet, int pageIndex, int rowCount, int zoneId){
         elements = elementSet.stream()
                 .skip(pageIndex)
                 .limit(rowCount)
-                .map(KanbanElementMainDataResponse::new).collect(Collectors.toList());
+                .map(element -> new KanbanElementMainDataResponse(element, zoneId)).collect(Collectors.toList());
     }
 }

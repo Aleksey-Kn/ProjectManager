@@ -14,7 +14,9 @@ public class KanbanListResponse {
     @Schema(description = "Список канбан-досок")
     private final List<KanbanMainDataResponse> kanbans;
 
-    public KanbanListResponse(Set<Kanban> kanbanSet){
-        kanbans = kanbanSet.stream().map(KanbanMainDataResponse::new).collect(Collectors.toList());
+    public KanbanListResponse(Set<Kanban> kanbanSet, int zoneId){
+        kanbans = kanbanSet.stream()
+                .map(kanban -> new KanbanMainDataResponse(kanban, zoneId))
+                .collect(Collectors.toList());
     }
 }

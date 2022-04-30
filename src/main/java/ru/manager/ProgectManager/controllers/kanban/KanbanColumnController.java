@@ -25,6 +25,7 @@ import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.entitys.kanban.KanbanColumn;
 import ru.manager.ProgectManager.enums.Errors;
+import ru.manager.ProgectManager.services.UserService;
 import ru.manager.ProgectManager.services.kanban.KanbanColumnService;
 
 import javax.validation.Valid;
@@ -39,6 +40,7 @@ public class KanbanColumnController {
     private final KanbanColumnService kanbanColumnService;
     private final JwtProvider provider;
     private final ErrorResponseEntityConfigurator entityConfigurator;
+    private final UserService userService;
 
     @Operation(summary = "Добавление колонки")
     @ApiResponses(value = {
@@ -98,11 +100,11 @@ public class KanbanColumnController {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
-                Optional<KanbanColumn> kanbanColumn = kanbanColumnService.findKanbanColumn(request.getId(),
-                        provider.getLoginFromToken());
+                String login = provider.getLoginFromToken();
+                Optional<KanbanColumn> kanbanColumn = kanbanColumnService.findKanbanColumn(request.getId(), login);
                 if (kanbanColumn.isPresent()) {
                     return ResponseEntity.ok(new KanbanColumnResponse(kanbanColumn.get(), request.getPageIndex(),
-                            request.getCount()));
+                            request.getCount(), userService.findZoneIdForThisUser(login)));
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
@@ -221,10 +223,12 @@ public class KanbanColumnController {
     public ResponseEntity<?> sortColumn(@RequestBody SortColumnRequest sortColumnRequest, @RequestParam int pageIndex,
                                         @RequestParam int rowCount) {
         try {
+            String login = provider.getLoginFromToken();
             Optional<KanbanColumn> kanbanColumn = kanbanColumnService
-                    .sortColumn(sortColumnRequest, provider.getLoginFromToken());
+                    .sortColumn(sortColumnRequest, login);
             if (kanbanColumn.isPresent()) {
-                return ResponseEntity.ok(new KanbanColumnResponse(kanbanColumn.get(), pageIndex, rowCount));
+                return ResponseEntity.ok(new KanbanColumnResponse(kanbanColumn.get(), pageIndex, rowCount,
+                        userService.findZoneIdForThisUser(login)));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
