@@ -1,11 +1,10 @@
-package ru.manager.ProgectManager.entitys;
+package ru.manager.ProgectManager.entitys.user;
 
 import lombok.Getter;
 import lombok.Setter;
+import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.util.Objects;
 
 @Entity
@@ -15,6 +14,17 @@ public class WorkTrack {
     @Id
     @GeneratedValue
     private long id;
+
+    private int workTime;
+    private long workDate;
+
+    @ManyToOne
+    @JoinColumn(name = "owner_id")
+    private User owner;
+
+    @ManyToOne
+    @JoinColumn(name = "task_id")
+    private KanbanElement task;
 
     @Override
     public boolean equals(Object o) {

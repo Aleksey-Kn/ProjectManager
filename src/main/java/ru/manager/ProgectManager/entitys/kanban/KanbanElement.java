@@ -3,6 +3,7 @@ package ru.manager.ProgectManager.entitys.kanban;
 import lombok.Getter;
 import lombok.Setter;
 import ru.manager.ProgectManager.entitys.user.User;
+import ru.manager.ProgectManager.entitys.user.WorkTrack;
 import ru.manager.ProgectManager.enums.ElementStatus;
 
 import javax.persistence.*;
@@ -60,6 +61,9 @@ public class KanbanElement {
 
     @OneToMany(mappedBy = "element", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<CheckBox> checkBoxes;
+
+    @OneToMany(mappedBy = "task")
+    private Set<WorkTrack> workTrackSet;
 
     @ManyToMany(cascade = {
             CascadeType.REFRESH,

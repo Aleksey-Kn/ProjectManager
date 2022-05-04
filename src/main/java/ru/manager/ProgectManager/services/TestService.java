@@ -4,9 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
 import ru.manager.ProgectManager.entitys.user.User;
-import ru.manager.ProgectManager.repositories.ProjectRepository;
-import ru.manager.ProgectManager.repositories.UserRepository;
-import ru.manager.ProgectManager.repositories.UserWithProjectConnectorRepository;
+import ru.manager.ProgectManager.entitys.user.WorkTrack;
+import ru.manager.ProgectManager.repositories.*;
 
 import java.util.Optional;
 
@@ -16,6 +15,8 @@ public class TestService {
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
     private final UserWithProjectConnectorRepository connectorRepository;
+    private final KanbanElementRepository elementRepository;
+    private final WorkTrackRepository workTrackRepository;
 
     public boolean removeUser(String idOrLogin) {
         Optional<User> user = Optional.ofNullable(userRepository.findByUsername(idOrLogin));
@@ -29,12 +30,17 @@ public class TestService {
             user = userRepository.findById(id);
         }
         if(user.isPresent()) {
-            user.get().getUserWithRoleConnectors().clear();
             for(UserWithProjectConnector connector: user.get().getUserWithProjectConnectors()) {
                 connector.getProject().getConnectors().remove(connector);
                 user.get().getUserWithProjectConnectors().remove(connector);
                 projectRepository.save(connector.getProject());
                 connectorRepository.delete(connector);
+            }
+            for(WorkTrack workTrack: user.get().getWorkTrackSet()) {
+                workTrack.getTask().getWorkTrackSet().remove(workTrack);
+                user.get().getWorkTrackSet().remove(workTrack);
+                elementRepository.save(workTrack.getTask());
+                workTrackRepository.delete(workTrack);
             }
             userRepository.delete(userRepository.save(user.get()));
             return true;

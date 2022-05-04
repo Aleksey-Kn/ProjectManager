@@ -55,6 +55,9 @@ public class User implements UserDetails {
             inverseJoinColumns = {@JoinColumn(name = "role_key")})
     private Set<Role> userWithRoleConnectors;
 
+    @OneToMany(mappedBy = "owner")
+    private Set<WorkTrack> workTrackSet;
+
     @OneToMany(mappedBy = "user")
     private Set<UserWithProjectConnector> userWithProjectConnectors;
 

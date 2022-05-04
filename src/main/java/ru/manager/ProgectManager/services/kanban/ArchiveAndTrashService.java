@@ -29,19 +29,21 @@ public class ArchiveAndTrashService {
     private final KanbanRepository kanbanRepository;
 
     public void finalDeleteElementFromTrash(long id) {
-        KanbanElement element = elementRepository.findById(id).get();
+        KanbanElement element = elementRepository.findById(id).orElseThrow();
         if (element.getStatus() != ElementStatus.UTILISE)
             throw new IncorrectStatusException();
 
-        KanbanColumn column = element.getKanbanColumn();
-        column.getElements().remove(element);
-        elementRepository.delete(element);
-        columnRepository.save(column);
+        if(element.getWorkTrackSet().isEmpty()) {
+            KanbanColumn column = element.getKanbanColumn();
+            column.getElements().remove(element);
+            elementRepository.delete(element);
+            columnRepository.save(column);
+        }
     }
 
     public boolean archive(long id, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        KanbanElement element = elementRepository.findById(id).get();
+        KanbanElement element = elementRepository.findById(id).orElseThrow();
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (canEditResource(kanban, user)) {
             if (element.getStatus() == ElementStatus.ARCHIVED)
@@ -64,7 +66,7 @@ public class ArchiveAndTrashService {
 
     public boolean reestablish(long id, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        KanbanElement element = elementRepository.findById(id).get();
+        KanbanElement element = elementRepository.findById(id).orElseThrow();
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (canEditResource(kanban, user)) {
             if (element.getStatus() == ElementStatus.ALIVE)
@@ -87,7 +89,7 @@ public class ArchiveAndTrashService {
 
     public Optional<List<KanbanElement>> findArchive(long kanbanId, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        Kanban kanban = kanbanRepository.findById(kanbanId).get();
+        Kanban kanban = kanbanRepository.findById(kanbanId).orElseThrow();
         if (canSeeResource(kanban, user)) {
             return Optional.of(kanban.getKanbanColumns().stream()
                     .flatMap(c -> c.getElements().stream())
@@ -100,7 +102,7 @@ public class ArchiveAndTrashService {
 
     public Optional<List<KanbanElement>> findTrash(long kanbanId, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        Kanban kanban = kanbanRepository.findById(kanbanId).get();
+        Kanban kanban = kanbanRepository.findById(kanbanId).orElseThrow();
         if (canSeeResource(kanban, user)) {
             return Optional.of(kanban.getKanbanColumns().stream()
                     .flatMap(c -> c.getElements().stream())
