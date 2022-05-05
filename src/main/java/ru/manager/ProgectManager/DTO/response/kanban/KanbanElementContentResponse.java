@@ -23,8 +23,6 @@ public class KanbanElementContentResponse {
     private final String content;
     @Schema(description = "Идентификатор элемента")
     private final long id;
-    @Schema(description = "Порядковый номер элемента в столбце")
-    private final int serialNumber;
     @Schema(description = "Название элемента")
     private final String name;
     @Schema(description = "Теги элемента")
@@ -50,7 +48,6 @@ public class KanbanElementContentResponse {
 
     public KanbanElementContentResponse(KanbanElement kanbanElement, int zoneId) {
         id = kanbanElement.getId();
-        serialNumber = kanbanElement.getSerialNumber();
         name = kanbanElement.getName();
         tags = kanbanElement.getTags();
         creator = new PublicUserDataResponse(kanbanElement.getOwner(), zoneId);

@@ -2,18 +2,21 @@ package ru.manager.ProgectManager.services.kanban;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.manager.ProgectManager.DTO.request.user.WorkTrackRequest;
+import ru.manager.ProgectManager.DTO.request.user.CreateWorkTrackRequest;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
 import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.entitys.user.WorkTrack;
+import ru.manager.ProgectManager.enums.ElementStatus;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
+import ru.manager.ProgectManager.exception.IncorrectStatusException;
 import ru.manager.ProgectManager.repositories.KanbanElementRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
 import ru.manager.ProgectManager.repositories.WorkTrackRepository;
 
 import java.time.LocalDate;
+import java.util.NoSuchElementException;
 
 @Service
 @RequiredArgsConstructor
@@ -22,7 +25,7 @@ public class WorkTrackService {
     private final UserRepository userRepository;
     private final KanbanElementRepository elementRepository;
 
-    public boolean addWorkTrack(WorkTrackRequest request, String userLogin) {
+    public boolean addWorkTrack(CreateWorkTrackRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(request.getTaskId()).orElseThrow();
         Kanban kanban = element.getKanbanColumn().getKanban();
@@ -31,6 +34,7 @@ public class WorkTrackService {
                 || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
                 .filter(CustomRoleWithKanbanConnector::isCanEdit)
                 .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
+            checkElement(element);
             WorkTrack workTrack = new WorkTrack();
             workTrack.setWorkDate(LocalDate.now().toEpochDay());
             workTrack.setWorkTime(request.getWorkTime());
@@ -54,6 +58,7 @@ public class WorkTrackService {
         User user = userRepository.findByUsername(userLogin);
         WorkTrack workTrack = workTrackRepository.findById(trackId).orElseThrow();
         if(workTrack.getOwner().equals(user)) {
+            checkElement(workTrack.getTask());
             user.getWorkTrackSet().remove(workTrack);
             userRepository.save(user);
             workTrack.getTask().getWorkTrackSet().remove(workTrack);
@@ -63,5 +68,12 @@ public class WorkTrackService {
         } else {
             return false;
         }
+    }
+
+    private void checkElement(KanbanElement element) {
+        if(element.getStatus() == ElementStatus.UTILISE)
+            throw new IncorrectStatusException();
+        if(element.getStatus() == ElementStatus.DELETED)
+            throw new NoSuchElementException();
     }
 }
