@@ -7,6 +7,7 @@ import ru.manager.ProgectManager.entitys.kanban.CheckBox;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElementComment;
 import ru.manager.ProgectManager.entitys.kanban.Tag;
+import ru.manager.ProgectManager.entitys.user.WorkTrack;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -44,6 +45,8 @@ public class KanbanElementContentResponse {
     private final String updateDate;
     @Schema(description = "Выбранная пользователем дата")
     private final String selectedDate;
+    @Schema(description = "Список зафиксированных работ")
+    private final List<WorkTrackShortResponse> workTracks;
 
     public KanbanElementContentResponse(KanbanElement kanbanElement, int zoneId) {
         id = kanbanElement.getId();
@@ -67,5 +70,9 @@ public class KanbanElementContentResponse {
                 .ofEpochSecond(kanbanElement.getTimeOfCreate(), 0, ZoneOffset.ofHours(zoneId)).toString();
         updateDate = LocalDateTime
                 .ofEpochSecond(kanbanElement.getTimeOfUpdate(), 0, ZoneOffset.ofHours(zoneId)).toString();
+        workTracks = kanbanElement.getWorkTrackSet().parallelStream()
+                .sorted(Comparator.comparing(WorkTrack::getWorkDate).reversed())
+                .map(WorkTrackShortResponse::new)
+                .collect(Collectors.toList());
     }
 }

@@ -18,6 +18,9 @@ public class WorkTrack {
     private int workTime;
     private long workDate;
 
+    @Column(nullable = false)
+    private String comment;
+
     @ManyToOne
     @JoinColumn(name = "owner_id")
     private User owner;
