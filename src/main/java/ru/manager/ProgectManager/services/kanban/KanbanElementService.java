@@ -19,10 +19,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -35,7 +32,7 @@ public class KanbanElementService {
     private final KanbanRepository kanbanRepository;
 
     public Optional<KanbanElement> addElement(CreateKanbanElementRequest request, String userLogin) {
-        KanbanColumn column = columnRepository.findById(request.getColumnId()).get();
+        KanbanColumn column = columnRepository.findById(request.getColumnId()).orElseThrow();
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = column.getKanban();
         if (canEditKanban(kanban, user)) {
@@ -64,12 +61,11 @@ public class KanbanElementService {
     }
 
     public Optional<KanbanElement> setElement(long id, UpdateKanbanElementRequest request, String userLogin) {
-        KanbanElement element = elementRepository.findById(id).get();
+        KanbanElement element = elementRepository.findById(id).orElseThrow();
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
-            if (element.getStatus() == ElementStatus.UTILISE || element.getStatus() == ElementStatus.DELETED)
-                throw new IncorrectStatusException();
+            checkElement(element);
             element.setContent(request.getContent());
             element.setName(request.getName());
             element.setTimeOfUpdate(getEpochSeconds());
@@ -83,7 +79,7 @@ public class KanbanElementService {
 
     public boolean transportElement(TransportElementRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        KanbanElement element = elementRepository.findById(request.getId()).get();
+        KanbanElement element = elementRepository.findById(request.getId()).orElseThrow();
         int from = element.getSerialNumber();
         KanbanColumn fromColumn = element.getKanbanColumn();
         Kanban kanban = fromColumn.getKanban();
@@ -109,7 +105,7 @@ public class KanbanElementService {
 
                     elementRepository.saveAll(allElements);
                 } else {
-                    KanbanColumn toColumn = columnRepository.findById((long) request.getToColumn()).get();
+                    KanbanColumn toColumn = columnRepository.findById((long) request.getToColumn()).orElseThrow();
                     Set<KanbanElement> fromColumnElements = fromColumn.getElements();
                     Set<KanbanElement> toColumnElements = toColumn.getElements();
                     fromColumnElements.stream()
@@ -141,7 +137,7 @@ public class KanbanElementService {
 
     public Optional<KanbanColumn> utilizeElementFromUser(long id, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        KanbanElement element = elementRepository.findById(id).get();
+        KanbanElement element = elementRepository.findById(id).orElseThrow();
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
             TimeRemover timeRemover;
@@ -169,12 +165,11 @@ public class KanbanElementService {
         timeRemover.setHard(true);
         timeRemover.setTimeToDelete(LocalDate.now().plusDays(6).toEpochDay());
         timeRemoverRepository.save(timeRemover);
-        utiliseElement(elementRepository.findById(id).get());
+        utiliseElement(elementRepository.findById(id).orElseThrow());
     }
 
     private void utiliseElement(KanbanElement element) {
-        if (element.getStatus() == ElementStatus.UTILISE || element.getStatus() == ElementStatus.DELETED)
-            throw new IncorrectStatusException();
+        checkElement(element);
 
         element.setTimeOfUpdate(getEpochSeconds());
         element.setStatus(ElementStatus.UTILISE);
@@ -187,10 +182,12 @@ public class KanbanElementService {
     }
 
     public Optional<KanbanElement> getContentFromElement(long id, String userLogin) {
-        KanbanElement kanbanElement = elementRepository.findById(id).get();
+        KanbanElement kanbanElement = elementRepository.findById(id).orElseThrow();
+        if(kanbanElement.getStatus() == ElementStatus.DELETED)
+            throw new NoSuchElementException();
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = kanbanElement.getKanbanColumn().getKanban();
-        if (canSeeKanban(kanban, user) && kanbanElement.getStatus() != ElementStatus.DELETED) {
+        if (canSeeKanban(kanban, user)) {
             return Optional.of(kanbanElement);
         }
         return Optional.empty();
@@ -198,7 +195,7 @@ public class KanbanElementService {
 
     public Optional<Set<KanbanElement>> findElements(long kanbanId, SearchElementType type, String name,
                                                      ElementStatus from, String userLogin){
-        Kanban kanban = kanbanRepository.findById(kanbanId).get();
+        Kanban kanban = kanbanRepository.findById(kanbanId).orElseThrow();
         User user = userRepository.findByUsername(userLogin);
         if(canSeeKanban(kanban, user)){
             if(type == SearchElementType.NAME){
@@ -260,5 +257,12 @@ public class KanbanElementService {
                 || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
                 .filter(CustomRoleWithKanbanConnector::isCanEdit)
                 .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))));
+    }
+
+    private void checkElement(KanbanElement element) {
+        if(element.getStatus() == ElementStatus.UTILISE)
+            throw new IncorrectStatusException();
+        if(element.getStatus() == ElementStatus.DELETED)
+            throw new NoSuchElementException();
     }
 }

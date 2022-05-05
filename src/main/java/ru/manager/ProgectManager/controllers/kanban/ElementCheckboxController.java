@@ -19,6 +19,7 @@ import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.entitys.kanban.CheckBox;
 import ru.manager.ProgectManager.enums.Errors;
+import ru.manager.ProgectManager.exception.IncorrectStatusException;
 import ru.manager.ProgectManager.services.kanban.KanbanElementAttributesService;
 
 import javax.validation.Valid;
@@ -48,7 +49,12 @@ public class ElementCheckboxController {
             @ApiResponse(responseCode = "404", description = "Указанного элемента канбана не существует", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
-            })
+            }),
+            @ApiResponse(responseCode = "410", description = "Элемент перемещён в корзину и недоступен для изменеия",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    })
     })
     @PostMapping("/add")
     public ResponseEntity<?> addCheckbox(@RequestBody @Valid CheckboxRequest request, BindingResult bindingResult){
@@ -65,6 +71,9 @@ public class ElementCheckboxController {
                 }
             } catch (NoSuchElementException e){
                 return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
+            } catch (IncorrectStatusException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
+                        HttpStatus.GONE);
             }
         }
     }
@@ -77,7 +86,12 @@ public class ElementCheckboxController {
             @ApiResponse(responseCode = "404", description = "Указанного чекбокса не существует", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
-            })
+            }),
+            @ApiResponse(responseCode = "410", description = "Элемент перемещён в корзину и недоступен для изменеия",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    })
     })
     @DeleteMapping("/delete")
     public ResponseEntity<?> removeCheckbox(@RequestParam @Parameter(description = "Идентификатор чекбокса") long id){
@@ -89,6 +103,9 @@ public class ElementCheckboxController {
             }
         } catch (NoSuchElementException e){
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CHECKBOX), HttpStatus.NOT_FOUND);
+        } catch (IncorrectStatusException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
+                    HttpStatus.GONE);
         }
     }
 
@@ -100,7 +117,12 @@ public class ElementCheckboxController {
             @ApiResponse(responseCode = "404", description = "Указанного чекбокса не существует", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
-            })
+            }),
+            @ApiResponse(responseCode = "410", description = "Элемент перемещён в корзину и недоступен для изменеия",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    })
     })
     @PutMapping("/select")
     public ResponseEntity<?> click(@RequestParam @Parameter(description = "Идентификатор чекбокса") long id){
@@ -112,6 +134,9 @@ public class ElementCheckboxController {
             }
         } catch (NoSuchElementException e){
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CHECKBOX), HttpStatus.NOT_FOUND);
+        } catch (IncorrectStatusException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
+                    HttpStatus.GONE);
         }
     }
 
@@ -123,7 +148,12 @@ public class ElementCheckboxController {
             @ApiResponse(responseCode = "404", description = "Указанного чекбокса не существует", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
-            })
+            }),
+            @ApiResponse(responseCode = "410", description = "Элемент перемещён в корзину и недоступен для изменеия",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    })
     })
     @PutMapping("/rename")
     public ResponseEntity<?> rename(@RequestParam @Parameter(description = "Идентификатор чекбокса") long id,
@@ -136,6 +166,9 @@ public class ElementCheckboxController {
             }
         } catch (NoSuchElementException e){
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CHECKBOX), HttpStatus.NOT_FOUND);
+        } catch (IncorrectStatusException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
+                    HttpStatus.GONE);
         }
     }
 }

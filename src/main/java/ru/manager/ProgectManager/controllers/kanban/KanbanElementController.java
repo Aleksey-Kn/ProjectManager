@@ -130,8 +130,8 @@ public class KanbanElementController {
             })
     })
     @GetMapping("/find")
-    public ResponseEntity<?> findElementsByName(@RequestBody @Valid FindKanbanElements request, BindingResult bindingResult){
-        if(bindingResult.hasErrors()){
+    public ResponseEntity<?> findElementsByName(@RequestBody @Valid FindKanbanElements request, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
@@ -144,7 +144,7 @@ public class KanbanElementController {
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
-            } catch (NoSuchElementException e){
+            } catch (NoSuchElementException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.NOT_FOUND);
             }
         }
@@ -217,7 +217,7 @@ public class KanbanElementController {
             }
         } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
-        } catch (IncorrectStatusException e){
+        } catch (IncorrectStatusException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
                     HttpStatus.GONE);
         }
@@ -271,24 +271,32 @@ public class KanbanElementController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "404", description = "Обращение к несуществующему элементу или тегу",
                     content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class))
-            }),
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному ресурсу"),
+            @ApiResponse(responseCode = "410", description = "Элемент перемещён в корзину и недоступен для изменеия",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
             @ApiResponse(responseCode = "200", description = "Тег успешно добавлен"),
     })
     @PostMapping("/tag")
-    public ResponseEntity<?> addTag(@RequestParam long elementId, @RequestParam long tagId){
-        try{
-            if(attributesService.addTag(elementId, tagId, provider.getLoginFromToken())){
+    public ResponseEntity<?> addTag(@RequestParam long elementId, @RequestParam long tagId) {
+        try {
+            if (attributesService.addTag(elementId, tagId, provider.getLoginFromToken())) {
                 return new ResponseEntity<>(HttpStatus.OK);
-            } else{
+            } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
-        } catch (NoSuchElementException e){
+        } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
-        } catch (IllegalArgumentException e){
+        } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_TAG), HttpStatus.NOT_FOUND);
+        } catch (IncorrectStatusException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
+                    HttpStatus.GONE);
         }
     }
 
@@ -300,18 +308,26 @@ public class KanbanElementController {
                                     schema = @Schema(implementation = ErrorResponse.class))
                     }),
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному ресурсу"),
+            @ApiResponse(responseCode = "410", description = "Элемент перемещён в корзину и недоступен для изменеия",
+                    content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
             @ApiResponse(responseCode = "200", description = "Тег успешно удалён"),
     })
     @DeleteMapping("/tag")
-    public ResponseEntity<?> removeTag(@RequestParam long elementId, @RequestParam long tagId){
-        try{
-            if(attributesService.removeTag(elementId, tagId, provider.getLoginFromToken())){
+    public ResponseEntity<?> removeTag(@RequestParam long elementId, @RequestParam long tagId) {
+        try {
+            if (attributesService.removeTag(elementId, tagId, provider.getLoginFromToken())) {
                 return new ResponseEntity<>(HttpStatus.OK);
-            } else{
+            } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
-        } catch (NoSuchElementException e){
+        } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
+        } catch (IncorrectStatusException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
+                    HttpStatus.GONE);
         }
     }
 }

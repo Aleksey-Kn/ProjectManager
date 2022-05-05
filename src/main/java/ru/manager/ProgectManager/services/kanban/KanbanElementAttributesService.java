@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Service
@@ -30,11 +31,10 @@ public class KanbanElementAttributesService {
 
     public Optional<KanbanElementComment> addComment(KanbanCommentRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        KanbanElement element = elementRepository.findById(request.getId()).get();
+        KanbanElement element = elementRepository.findById(request.getId()).orElseThrow();
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
-            if (element.getStatus() == ElementStatus.UTILISE)
-                throw new IncorrectStatusException();
+            checkElement(element);
             KanbanElementComment comment = new KanbanElementComment();
             comment.setText(request.getText());
             comment.setOwner(user);
@@ -53,13 +53,12 @@ public class KanbanElementAttributesService {
 
     public Optional<KanbanElement> deleteComment(long id, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        KanbanElementComment comment = commentRepository.findById(id).get();
+        KanbanElementComment comment = commentRepository.findById(id).orElseThrow();
         if (comment.getOwner().equals(user)
                 || comment.getKanbanElement().getKanbanColumn().getKanban().getProject().getConnectors().stream()
                 .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
                 .anyMatch(c -> c.getUser().equals(user))) {
-            if (comment.getKanbanElement().getStatus() == ElementStatus.UTILISE)
-                throw new IncorrectStatusException();
+            checkElement(comment.getKanbanElement());
             KanbanElement element = comment.getKanbanElement();
             element.setTimeOfUpdate(getEpochSeconds());
             element.getComments().remove(comment);
@@ -72,10 +71,9 @@ public class KanbanElementAttributesService {
 
     public Optional<KanbanElementComment> updateComment(KanbanCommentRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        KanbanElementComment comment = commentRepository.findById(request.getId()).get();
+        KanbanElementComment comment = commentRepository.findById(request.getId()).orElseThrow();
         if (comment.getOwner().equals(user)) {
-            if (comment.getKanbanElement().getStatus() == ElementStatus.UTILISE)
-                throw new IncorrectStatusException();
+            checkElement(comment.getKanbanElement());
             comment.getKanbanElement().setTimeOfUpdate(getEpochSeconds());
             comment.setText(request.getText());
             comment.setDateTime(getEpochSeconds());
@@ -87,11 +85,10 @@ public class KanbanElementAttributesService {
 
     public Optional<KanbanAttachment> addAttachment(long id, String userLogin, MultipartFile file) throws IOException {
         User user = userRepository.findByUsername(userLogin);
-        KanbanElement element = elementRepository.findById(id).get();
+        KanbanElement element = elementRepository.findById(id).orElseThrow();
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
-            if (element.getStatus() == ElementStatus.UTILISE)
-                throw new IncorrectStatusException();
+            checkElement(element);
             KanbanAttachment attachment = new KanbanAttachment();
             attachment.setFileData(file.getBytes());
             attachment.setFilename(file.getOriginalFilename());
@@ -102,14 +99,17 @@ public class KanbanElementAttributesService {
             element.getKanbanAttachments().add(attachment);
             elementRepository.save(element);
             return Optional.of(attachment);
+        } else {
+            return Optional.empty();
         }
-        return Optional.empty();
     }
 
     public Optional<KanbanAttachment> getAttachment(long id, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        KanbanAttachment attachment = attachmentRepository.findById(id).get();
+        KanbanAttachment attachment = attachmentRepository.findById(id).orElseThrow();
         Kanban kanban = attachment.getElement().getKanbanColumn().getKanban();
+        if(attachment.getElement().getStatus() == ElementStatus.DELETED)
+            throw new NoSuchElementException();
         if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
                 && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
                 || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
@@ -122,11 +122,10 @@ public class KanbanElementAttributesService {
 
     public Optional<KanbanElement> deleteAttachment(long id, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        KanbanAttachment attachment = attachmentRepository.findById(id).get();
+        KanbanAttachment attachment = attachmentRepository.findById(id).orElseThrow();
         Kanban kanban = attachment.getElement().getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
-            if (attachment.getElement().getStatus() == ElementStatus.UTILISE)
-                throw new IncorrectStatusException();
+            checkElement(attachment.getElement());
             KanbanElement element = attachment.getElement();
             element.setTimeOfUpdate(getEpochSeconds());
             element.getKanbanAttachments().remove(attachment);
@@ -137,10 +136,11 @@ public class KanbanElementAttributesService {
     }
 
     public boolean addTag(long elementId, long tagId, String userLogin){
-        KanbanElement element = elementRepository.findById(elementId).get();
+        KanbanElement element = elementRepository.findById(elementId).orElseThrow();
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
+            checkElement(element);
             element.getTags().add(element.getKanbanColumn().getKanban().getAvailableTags().stream()
                     .filter(t -> t.getId() == tagId)
                     .findAny().orElseThrow(IllegalArgumentException::new));
@@ -152,10 +152,11 @@ public class KanbanElementAttributesService {
     }
 
     public boolean removeTag(long elementId, long tagId, String userLogin){
-        KanbanElement element = elementRepository.findById(elementId).get();
+        KanbanElement element = elementRepository.findById(elementId).orElseThrow();
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
+            checkElement(element);
             element.getTags().removeIf(tag -> tag.getId() == tagId);
             elementRepository.save(element);
             return true;
@@ -165,10 +166,11 @@ public class KanbanElementAttributesService {
     }
 
     public Optional<CheckBox> addCheckbox(CheckboxRequest request, String userLogin){
-        KanbanElement element = elementRepository.findById(request.getElementId()).get();
+        KanbanElement element = elementRepository.findById(request.getElementId()).orElseThrow();
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
+            checkElement(element);
             CheckBox checkBox = new CheckBox();
             checkBox.setCheck(false);
             checkBox.setText(request.getText());
@@ -183,11 +185,12 @@ public class KanbanElementAttributesService {
     }
 
     public boolean deleteCheckbox(long id, String userLogin){
-        CheckBox checkBox = checkboxRepository.findById(id).get();
+        CheckBox checkBox = checkboxRepository.findById(id).orElseThrow();
         KanbanElement element = checkBox.getElement();
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
+            checkElement(element);
             element.getCheckBoxes().remove(checkBox);
             elementRepository.save(element);
             return true;
@@ -197,10 +200,11 @@ public class KanbanElementAttributesService {
     }
 
     public boolean tapCheckbox(long id, String userLogin){
-        CheckBox checkBox = checkboxRepository.findById(id).get();
+        CheckBox checkBox = checkboxRepository.findById(id).orElseThrow();
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = checkBox.getElement().getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
+            checkElement(checkBox.getElement());
             checkBox.setCheck(!checkBox.isCheck());
             checkboxRepository.save(checkBox);
             return true;
@@ -210,10 +214,11 @@ public class KanbanElementAttributesService {
     }
 
     public boolean editCheckbox(long id, String newText, String userLogin){
-        CheckBox checkBox = checkboxRepository.findById(id).get();
+        CheckBox checkBox = checkboxRepository.findById(id).orElseThrow();
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = checkBox.getElement().getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
+            checkElement(checkBox.getElement());
             checkBox.setText(newText);
             checkboxRepository.save(checkBox);
             return true;
@@ -232,5 +237,12 @@ public class KanbanElementAttributesService {
                 || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
                 .filter(CustomRoleWithKanbanConnector::isCanEdit)
                 .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))));
+    }
+
+    private void checkElement(KanbanElement element) {
+        if(element.getStatus() == ElementStatus.UTILISE)
+            throw new IncorrectStatusException();
+        if(element.getStatus() == ElementStatus.DELETED)
+            throw new NoSuchElementException();
     }
 }
