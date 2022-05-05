@@ -183,8 +183,6 @@ public class KanbanElementService {
 
     public Optional<KanbanElement> getContentFromElement(long id, String userLogin) {
         KanbanElement kanbanElement = elementRepository.findById(id).orElseThrow();
-        if(kanbanElement.getStatus() == ElementStatus.DELETED)
-            throw new NoSuchElementException();
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = kanbanElement.getKanbanColumn().getKanban();
         if (canSeeKanban(kanban, user)) {
