@@ -33,12 +33,7 @@ public class ArchiveAndTrashService {
         if (element.getStatus() != ElementStatus.UTILISE)
             throw new IncorrectStatusException();
 
-        if(element.getWorkTrackSet().isEmpty()) {
-            KanbanColumn column = element.getKanbanColumn();
-            column.getElements().remove(element);
-            elementRepository.delete(element);
-            columnRepository.save(column);
-        }
+        element.setStatus(ElementStatus.DELETED);
     }
 
     public boolean archive(long id, String userLogin) {
