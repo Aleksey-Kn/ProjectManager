@@ -6,6 +6,7 @@ import ru.manager.ProgectManager.DTO.request.user.CreateWorkTrackRequest;
 import ru.manager.ProgectManager.DTO.response.workTrack.AllWorkUserInfo;
 import ru.manager.ProgectManager.DTO.response.workTrack.ElementWithWorkResponse;
 import ru.manager.ProgectManager.DTO.response.workTrack.WorkTrackShortResponse;
+import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
@@ -15,6 +16,7 @@ import ru.manager.ProgectManager.enums.ElementStatus;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.IncorrectStatusException;
 import ru.manager.ProgectManager.repositories.KanbanElementRepository;
+import ru.manager.ProgectManager.repositories.ProjectRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
 import ru.manager.ProgectManager.repositories.WorkTrackRepository;
 
@@ -22,6 +24,7 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,6 +33,7 @@ public class WorkTrackService {
     private final WorkTrackRepository workTrackRepository;
     private final UserRepository userRepository;
     private final KanbanElementRepository elementRepository;
+    private final ProjectRepository projectRepository;
 
     public boolean addWorkTrack(CreateWorkTrackRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
@@ -76,19 +80,41 @@ public class WorkTrackService {
         }
     }
 
-    public AllWorkUserInfo findWorkTrackMyself(String from, String to, String userLogin) {
-        LocalDate fromDate = LocalDate.parse(from);
-        LocalDate toDate = LocalDate.parse(to);
+    public Optional<AllWorkUserInfo> findWorkTrackMyself(String from, String to, long projectId, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
+        Project project = projectRepository.findById(projectId).orElseThrow();
+        if(project.getConnectors().parallelStream().anyMatch(c -> c.getUser().equals(user))) {
+            return Optional.of(findWorkTrack(LocalDate.parse(from), LocalDate.parse(to), project, user));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    public Optional<AllWorkUserInfo> findOtherWorkTrackAsAdmin(String from, String to, long projectId, long targetUserId,
+                                                               String adminLogin) {
+        User admin = userRepository.findByUsername(adminLogin);
+        Project project = projectRepository.findById(projectId).orElseThrow();
+        if(project.getConnectors().parallelStream()
+                .anyMatch(c -> c.getUser().equals(admin) && c.getRoleType() == TypeRoleProject.ADMIN)) {
+            return Optional.of(findWorkTrack(LocalDate.parse(from), LocalDate.parse(to), project,
+                    userRepository.findById(targetUserId).orElseThrow(IllegalArgumentException::new)));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private AllWorkUserInfo findWorkTrack(LocalDate fromDate, LocalDate toDate, Project project, User user) {
         AllWorkUserInfo info = new AllWorkUserInfo();
 
         info.setTasks(user.getWorkTrackSet().parallelStream()
                 .map(WorkTrack::getTask)
+                .filter(kanbanElement -> kanbanElement.getKanbanColumn().getKanban().getProject().equals(project))
                 .map(element -> new ElementWithWorkResponse(element, user, fromDate, toDate))
                 .collect(Collectors.toSet()));
 
         Map<Long, Integer> dateTime = new HashMap<>();
         user.getWorkTrackSet().parallelStream()
+                .filter(workTrack -> workTrack.getTask().getKanbanColumn().getKanban().getProject().equals(project))
                 .filter(workTrack -> LocalDate.ofEpochDay(workTrack.getWorkDate()).isAfter(fromDate))
                 .filter(workTrack -> LocalDate.ofEpochDay(workTrack.getWorkDate()).isBefore(toDate))
                 .forEach(workTrack -> {
@@ -105,6 +131,7 @@ public class WorkTrackService {
                 .collect(Collectors.toList()));
 
         info.setSummaryWorkInDiapason(user.getWorkTrackSet().parallelStream()
+                .filter(workTrack -> workTrack.getTask().getKanbanColumn().getKanban().getProject().equals(project))
                 .filter(workTrack -> LocalDate.ofEpochDay(workTrack.getWorkDate()).isAfter(fromDate))
                 .filter(workTrack -> LocalDate.ofEpochDay(workTrack.getWorkDate()).isBefore(toDate))
                 .mapToInt(WorkTrack::getWorkTime)
