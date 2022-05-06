@@ -76,7 +76,7 @@ public class WorkTrackService {
         }
     }
 
-    public AllWorkUserInfo findWorkTracks(String from, String to, String userLogin) {
+    public AllWorkUserInfo findWorkTrackMyself(String from, String to, String userLogin) {
         LocalDate fromDate = LocalDate.parse(from);
         LocalDate toDate = LocalDate.parse(to);
         User user = userRepository.findByUsername(userLogin);
