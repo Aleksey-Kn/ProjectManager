@@ -1,4 +1,4 @@
-package ru.manager.ProgectManager.DTO.response.kanban;
+package ru.manager.ProgectManager.DTO.response.workTrack;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -8,17 +8,17 @@ import java.time.LocalDate;
 
 @Getter
 @Schema(description = "Данные об отработанном времени")
-public class WorkTrackShortResponse {
+public class WorkTrackAllResponse {
     @Schema(description = "Дата, в которую была совершена работа")
     private final String workDate;
-    @Schema(description = "Количество времени, затраченное на задачу")
+    @Schema(description = "Количество времени, затраченного на задачу, в минутах")
     private final int workTime;
     @Schema(description = "Коментарий к выполненному объёму работы")
     private final String comment;
     @Schema(description = "Идентификатор пользователя, выполнившего работу")
     private final long userId;
 
-    public WorkTrackShortResponse(WorkTrack workTrack) {
+    public WorkTrackAllResponse(WorkTrack workTrack) {
         workDate = LocalDate.ofEpochDay(workTrack.getWorkDate()).toString();
         workTime = workTrack.getWorkTime();
         comment = workTrack.getComment();

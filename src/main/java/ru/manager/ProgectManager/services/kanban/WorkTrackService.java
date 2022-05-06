@@ -3,6 +3,8 @@ package ru.manager.ProgectManager.services.kanban;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.request.user.CreateWorkTrackRequest;
+import ru.manager.ProgectManager.DTO.response.workTrack.AllWorkUserInfo;
+import ru.manager.ProgectManager.DTO.response.workTrack.ElementWithWorkResponse;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
@@ -17,6 +19,7 @@ import ru.manager.ProgectManager.repositories.WorkTrackRepository;
 
 import java.time.LocalDate;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -68,6 +71,19 @@ public class WorkTrackService {
         } else {
             return false;
         }
+    }
+
+    public AllWorkUserInfo findWorkTracks(String from, String to, String userLogin) {
+        LocalDate fromDate = LocalDate.parse(from);
+        LocalDate toDate = LocalDate.parse(to);
+        User user = userRepository.findByUsername(userLogin);
+        AllWorkUserInfo info = new AllWorkUserInfo();
+        info.setTasks(user.getWorkTrackSet().parallelStream()
+                .map(WorkTrack::getTask)
+                .map(element -> new ElementWithWorkResponse(element, user, fromDate, toDate))
+                .collect(Collectors.toSet()));
+
+        return info;
     }
 
     private void checkElement(KanbanElement element) {

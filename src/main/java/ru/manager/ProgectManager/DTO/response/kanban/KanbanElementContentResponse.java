@@ -3,6 +3,7 @@ package ru.manager.ProgectManager.DTO.response.kanban;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import ru.manager.ProgectManager.DTO.response.PublicUserDataResponse;
+import ru.manager.ProgectManager.DTO.response.workTrack.WorkTrackAllResponse;
 import ru.manager.ProgectManager.entitys.kanban.CheckBox;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElementComment;
@@ -44,7 +45,7 @@ public class KanbanElementContentResponse {
     @Schema(description = "Выбранная пользователем дата")
     private final String selectedDate;
     @Schema(description = "Список зафиксированных работ")
-    private final List<WorkTrackShortResponse> workTracks;
+    private final List<WorkTrackAllResponse> workTracks;
 
     public KanbanElementContentResponse(KanbanElement kanbanElement, int zoneId) {
         id = kanbanElement.getId();
@@ -69,7 +70,7 @@ public class KanbanElementContentResponse {
                 .ofEpochSecond(kanbanElement.getTimeOfUpdate(), 0, ZoneOffset.ofHours(zoneId)).toString();
         workTracks = kanbanElement.getWorkTrackSet().parallelStream()
                 .sorted(Comparator.comparing(WorkTrack::getWorkDate).reversed())
-                .map(WorkTrackShortResponse::new)
+                .map(WorkTrackAllResponse::new)
                 .collect(Collectors.toList());
     }
 }
