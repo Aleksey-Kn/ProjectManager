@@ -19,7 +19,7 @@ public class ElementWithWorkResponse {
     public ElementWithWorkResponse(KanbanElement kanbanElement, User user, LocalDate from, LocalDate to) {
         id = kanbanElement.getId();
         name = kanbanElement.getName();
-        works = kanbanElement.getWorkTrackSet().parallelStream()
+        works = kanbanElement.getWorkTrackSet().stream()
                 .filter(workTrack -> workTrack.getOwner().equals(user))
                 .filter(workTrack -> LocalDate.ofEpochDay(workTrack.getWorkDate()).isAfter(from))
                 .filter(workTrack -> LocalDate.ofEpochDay(workTrack.getWorkDate()).isBefore(to))

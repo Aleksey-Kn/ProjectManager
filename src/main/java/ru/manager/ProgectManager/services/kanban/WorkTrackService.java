@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.request.user.CreateWorkTrackRequest;
 import ru.manager.ProgectManager.DTO.response.workTrack.AllWorkUserInfo;
 import ru.manager.ProgectManager.DTO.response.workTrack.ElementWithWorkResponse;
+import ru.manager.ProgectManager.DTO.response.workTrack.WorkTrackShortResponse;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
@@ -18,6 +19,8 @@ import ru.manager.ProgectManager.repositories.UserRepository;
 import ru.manager.ProgectManager.repositories.WorkTrackRepository;
 
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
@@ -60,7 +63,7 @@ public class WorkTrackService {
     public boolean removeWorkTrack(long trackId, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         WorkTrack workTrack = workTrackRepository.findById(trackId).orElseThrow();
-        if(workTrack.getOwner().equals(user)) {
+        if (workTrack.getOwner().equals(user)) {
             checkElement(workTrack.getTask());
             user.getWorkTrackSet().remove(workTrack);
             userRepository.save(user);
@@ -78,18 +81,42 @@ public class WorkTrackService {
         LocalDate toDate = LocalDate.parse(to);
         User user = userRepository.findByUsername(userLogin);
         AllWorkUserInfo info = new AllWorkUserInfo();
+
         info.setTasks(user.getWorkTrackSet().parallelStream()
                 .map(WorkTrack::getTask)
                 .map(element -> new ElementWithWorkResponse(element, user, fromDate, toDate))
                 .collect(Collectors.toSet()));
 
+        Map<Long, Integer> dateTime = new HashMap<>();
+        user.getWorkTrackSet().parallelStream()
+                .filter(workTrack -> LocalDate.ofEpochDay(workTrack.getWorkDate()).isAfter(fromDate))
+                .filter(workTrack -> LocalDate.ofEpochDay(workTrack.getWorkDate()).isBefore(toDate))
+                .forEach(workTrack -> {
+                    if (dateTime.containsKey(workTrack.getWorkDate())) {
+                        dateTime.put(workTrack.getWorkDate(),
+                                dateTime.get(workTrack.getWorkDate()) + workTrack.getWorkTime());
+                    } else {
+                        dateTime.put(workTrack.getWorkDate(), workTrack.getWorkTime());
+                    }
+                });
+        info.setWorkInConcreteDay(dateTime.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(e -> new WorkTrackShortResponse(LocalDate.ofEpochDay(e.getKey()).toString(), e.getValue()))
+                .collect(Collectors.toList()));
+
+        info.setSummaryWorkInDiapason(user.getWorkTrackSet().parallelStream()
+                .filter(workTrack -> LocalDate.ofEpochDay(workTrack.getWorkDate()).isAfter(fromDate))
+                .filter(workTrack -> LocalDate.ofEpochDay(workTrack.getWorkDate()).isBefore(toDate))
+                .mapToInt(WorkTrack::getWorkTime)
+                .sum());
+
         return info;
     }
 
     private void checkElement(KanbanElement element) {
-        if(element.getStatus() == ElementStatus.UTILISE)
+        if (element.getStatus() == ElementStatus.UTILISE)
             throw new IncorrectStatusException();
-        if(element.getStatus() == ElementStatus.DELETED)
+        if (element.getStatus() == ElementStatus.DELETED)
             throw new NoSuchElementException();
     }
 }
