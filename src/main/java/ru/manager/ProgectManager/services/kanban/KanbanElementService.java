@@ -70,7 +70,6 @@ public class KanbanElementService {
             element.setName(request.getName());
             element.setTimeOfUpdate(getEpochSeconds());
             element.setSelectedDate(request.getDate());
-
             element.setLastRedactor(user);
             return Optional.of(elementRepository.save(element));
         }
@@ -102,6 +101,7 @@ public class KanbanElementService {
                     }
                     element.setSerialNumber(request.getToIndex());
                     element.setTimeOfUpdate(getEpochSeconds());
+                    element.setLastRedactor(user);
 
                     elementRepository.saveAll(allElements);
                 } else {
@@ -120,6 +120,7 @@ public class KanbanElementService {
                     element.setSerialNumber(request.getToIndex());
                     element.setTimeOfUpdate(getEpochSeconds());
                     element.setKanbanColumn(toColumn);
+                    element.setLastRedactor(user);
 
                     if (fromColumn.getDelayedDays() != 0) {
                         timeRemoverRepository.deleteById(element.getId());
@@ -151,6 +152,8 @@ public class KanbanElementService {
             timeRemover.setHard(true);
             timeRemover.setTimeToDelete(LocalDate.now().plusDays(6).toEpochDay());
             timeRemoverRepository.save(timeRemover);
+
+            element.setLastRedactor(user);
             utiliseElement(element);
             return Optional.of(element.getKanbanColumn());
         } else {

@@ -20,7 +20,10 @@ import ru.manager.ProgectManager.repositories.ProjectRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
 import ru.manager.ProgectManager.repositories.WorkTrackRepository;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -57,6 +60,8 @@ public class WorkTrackService {
             userRepository.save(user);
 
             element.getWorkTrackSet().add(workTrack);
+            element.setTimeOfUpdate(getEpochSeconds());
+            element.setLastRedactor(user);
             elementRepository.save(element);
             return true;
         } else {
@@ -69,6 +74,9 @@ public class WorkTrackService {
         WorkTrack workTrack = workTrackRepository.findById(trackId).orElseThrow();
         if (workTrack.getOwner().equals(user)) {
             checkElement(workTrack.getTask());
+            workTrack.getTask().setTimeOfUpdate(getEpochSeconds());
+            workTrack.getTask().setLastRedactor(user);
+
             user.getWorkTrackSet().remove(workTrack);
             userRepository.save(user);
             workTrack.getTask().getWorkTrackSet().remove(workTrack);
@@ -144,5 +152,9 @@ public class WorkTrackService {
             throw new IncorrectStatusException();
         if (element.getStatus() == ElementStatus.DELETED)
             throw new NoSuchElementException();
+    }
+
+    private long getEpochSeconds() {
+        return LocalDateTime.now().toEpochSecond(ZoneOffset.systemDefault().getRules().getOffset(Instant.now()));
     }
 }
