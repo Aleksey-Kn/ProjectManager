@@ -9,6 +9,7 @@ import ru.manager.ProgectManager.entitys.user.WorkTrack;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Getter
@@ -31,5 +32,18 @@ public class ElementWithWorkResponse {
                 .sorted(Comparator.comparing(WorkTrack::getWorkDate))
                 .map(WorkTrackShortResponse::new)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ElementWithWorkResponse that = (ElementWithWorkResponse) o;
+        return id == that.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

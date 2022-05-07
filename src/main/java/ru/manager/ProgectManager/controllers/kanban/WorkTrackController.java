@@ -130,7 +130,7 @@ public class WorkTrackController {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
-                Optional<AllWorkUserInfo> response = (request.getUserId() == -1
+                Optional<AllWorkUserInfo> response = (request.getUserId() == 0
                         ? workTrackService.findWorkTrackMyself(request.getFromDate(), request.getToDate(),
                         request.getProjectId(), provider.getLoginFromToken())
                         : workTrackService.findOtherWorkTrackAsAdmin(request.getFromDate(), request.getToDate(),

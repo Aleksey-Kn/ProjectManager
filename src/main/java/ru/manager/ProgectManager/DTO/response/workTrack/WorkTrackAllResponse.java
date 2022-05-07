@@ -9,6 +9,8 @@ import java.time.LocalDate;
 @Getter
 @Schema(description = "Данные об отработанном времени")
 public class WorkTrackAllResponse {
+    @Schema(description = "Идентификатор отработанного времени")
+    private final long id;
     @Schema(description = "Дата, в которую была совершена работа")
     private final String workDate;
     @Schema(description = "Количество времени, затраченного на задачу, в минутах")
@@ -19,6 +21,7 @@ public class WorkTrackAllResponse {
     private final long userId;
 
     public WorkTrackAllResponse(WorkTrack workTrack) {
+        id = workTrack.getId();
         workDate = LocalDate.ofEpochDay(workTrack.getWorkDate()).toString();
         workTime = workTrack.getWorkTime();
         comment = workTrack.getComment();

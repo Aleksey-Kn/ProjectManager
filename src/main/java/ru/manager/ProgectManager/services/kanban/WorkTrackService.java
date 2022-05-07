@@ -105,14 +105,14 @@ public class WorkTrackService {
     private AllWorkUserInfo findWorkTrack(LocalDate fromDate, LocalDate toDate, Project project, User user) {
         AllWorkUserInfo info = new AllWorkUserInfo();
 
-        info.setTasks(user.getWorkTrackSet().parallelStream()
+        info.setTasks(user.getWorkTrackSet().stream()
                 .map(WorkTrack::getTask)
                 .filter(kanbanElement -> kanbanElement.getKanbanColumn().getKanban().getProject().equals(project))
                 .map(element -> new ElementWithWorkResponse(element, user, fromDate, toDate))
                 .collect(Collectors.toSet()));
 
         Map<Long, Integer> dateTime = new HashMap<>();
-        user.getWorkTrackSet().parallelStream()
+        user.getWorkTrackSet().stream()
                 .filter(workTrack -> workTrack.getTask().getKanbanColumn().getKanban().getProject().equals(project))
                 .filter(workTrack -> LocalDate.ofEpochDay(workTrack.getWorkDate()).isAfter(fromDate))
                 .filter(workTrack -> LocalDate.ofEpochDay(workTrack.getWorkDate()).isBefore(toDate))
@@ -129,7 +129,7 @@ public class WorkTrackService {
                 .map(e -> new WorkTrackShortResponse(LocalDate.ofEpochDay(e.getKey()).toString(), e.getValue()))
                 .collect(Collectors.toList()));
 
-        info.setSummaryWorkInDiapason(user.getWorkTrackSet().parallelStream()
+        info.setSummaryWorkInDiapason(user.getWorkTrackSet().stream()
                 .filter(workTrack -> workTrack.getTask().getKanbanColumn().getKanban().getProject().equals(project))
                 .filter(workTrack -> LocalDate.ofEpochDay(workTrack.getWorkDate()).isAfter(fromDate))
                 .filter(workTrack -> LocalDate.ofEpochDay(workTrack.getWorkDate()).isBefore(toDate))
