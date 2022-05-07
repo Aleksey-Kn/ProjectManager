@@ -9,6 +9,7 @@ import java.time.LocalDate;
 
 @Getter
 @RequiredArgsConstructor
+@Schema(description = "Краткое описание отработанного времени")
 public class WorkTrackShortResponse {
     @Schema(description = "Дата, в которую была совершена работа")
     private final String workDate;

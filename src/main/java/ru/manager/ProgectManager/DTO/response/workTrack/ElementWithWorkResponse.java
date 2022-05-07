@@ -1,5 +1,6 @@
 package ru.manager.ProgectManager.DTO.response.workTrack;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
 import ru.manager.ProgectManager.entitys.user.User;
@@ -11,9 +12,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Getter
+@Schema(description = "Информация об элементе, с которым ассоциирована работа")
 public class ElementWithWorkResponse {
+    @Schema(description = "Идентификатор элемента")
     private final long id;
+    @Schema(description = "Название элемента")
     private final String name;
+    @Schema(description = "Список выполненных работ, ассоциированных с данным элементом")
     private final List<WorkTrackShortResponse> works;
 
     public ElementWithWorkResponse(KanbanElement kanbanElement, User user, LocalDate from, LocalDate to) {
