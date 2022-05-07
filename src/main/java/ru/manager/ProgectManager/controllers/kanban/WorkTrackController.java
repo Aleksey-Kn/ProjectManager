@@ -107,6 +107,23 @@ public class WorkTrackController {
         }
     }
 
+    @Operation(summary = "Получение отчёта о работе участника проекта или о своей работе в проекте")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Некорректные заначения полей запроса", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "У пользователя нет доступа к данному действию"),
+            @ApiResponse(responseCode = "404", description = "Указанного проекта или пользователя не существует",
+                    content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "200", description = "Отчёт о проделанной работе", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = AllWorkUserInfo.class))
+            })
+    })
     @GetMapping("/get")
     public ResponseEntity<?> findWorkTracks(@RequestBody @Valid WorkTrackRequest request, BindingResult bindingResult) {
         if(bindingResult.hasErrors()) {

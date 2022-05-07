@@ -94,8 +94,7 @@ public class WorkTrackService {
                                                                String adminLogin) {
         User admin = userRepository.findByUsername(adminLogin);
         Project project = projectRepository.findById(projectId).orElseThrow();
-        if(project.getConnectors().parallelStream()
-                .anyMatch(c -> c.getUser().equals(admin) && c.getRoleType() == TypeRoleProject.ADMIN)) {
+        if(project.getConnectors().parallelStream().anyMatch(c -> c.getUser().equals(admin))) {
             return Optional.of(findWorkTrack(LocalDate.parse(from), LocalDate.parse(to), project,
                     userRepository.findById(targetUserId).orElseThrow(IllegalArgumentException::new)));
         } else {
