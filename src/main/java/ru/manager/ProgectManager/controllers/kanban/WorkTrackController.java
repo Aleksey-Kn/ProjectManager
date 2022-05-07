@@ -12,8 +12,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import ru.manager.ProgectManager.DTO.request.WorkTrackRequest;
 import ru.manager.ProgectManager.DTO.request.user.CreateWorkTrackRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
+import ru.manager.ProgectManager.DTO.response.workTrack.AllWorkUserInfo;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.enums.Errors;
@@ -22,6 +24,7 @@ import ru.manager.ProgectManager.services.kanban.WorkTrackService;
 
 import javax.validation.Valid;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/users/kanban/element/work")
@@ -101,6 +104,30 @@ public class WorkTrackController {
         } catch (IncorrectStatusException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
                     HttpStatus.GONE);
+        }
+    }
+
+    @GetMapping("/get")
+    public ResponseEntity<?> findWorkTracks(@RequestBody @Valid WorkTrackRequest request, BindingResult bindingResult) {
+        if(bindingResult.hasErrors()) {
+            return entityConfigurator.createErrorResponse(bindingResult);
+        } else {
+            try {
+                Optional<AllWorkUserInfo> response = (request.getUserId() == -1
+                        ? workTrackService.findWorkTrackMyself(request.getFromDate(), request.getToDate(),
+                        request.getProjectId(), provider.getLoginFromToken())
+                        : workTrackService.findOtherWorkTrackAsAdmin(request.getFromDate(), request.getToDate(),
+                        request.getProjectId(), request.getUserId(), provider.getLoginFromToken()));
+                if (response.isPresent()) {
+                    return ResponseEntity.ok(response.get());
+                } else {
+                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+                }
+            } catch (NoSuchElementException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
+            } catch (IllegalArgumentException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER), HttpStatus.NOT_FOUND);
+            }
         }
     }
 }
