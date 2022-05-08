@@ -75,9 +75,12 @@ public class KanbanElementAttributesService {
         User user = userRepository.findByUsername(userLogin);
         KanbanElementComment comment = commentRepository.findById(request.getId()).orElseThrow();
         if (comment.getOwner().equals(user)) {
-            checkElement(comment.getKanbanElement());
-            comment.getKanbanElement().setTimeOfUpdate(getEpochSeconds());
-            comment.getKanbanElement().setLastRedactor(user);
+            KanbanElement element = comment.getKanbanElement();
+            checkElement(element);
+            element.setTimeOfUpdate(getEpochSeconds());
+            element.setLastRedactor(user);
+            elementRepository.save(element);
+
             comment.setText(request.getText());
             comment.setDateTime(getEpochSeconds());
             return Optional.of(commentRepository.save(comment));
@@ -129,10 +132,11 @@ public class KanbanElementAttributesService {
         KanbanAttachment attachment = attachmentRepository.findById(id).orElseThrow();
         Kanban kanban = attachment.getElement().getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
-            checkElement(attachment.getElement());
             KanbanElement element = attachment.getElement();
+            checkElement(element);
             element.setTimeOfUpdate(getEpochSeconds());
             element.setLastRedactor(user);
+
             element.getKanbanAttachments().remove(attachment);
             return Optional.of(elementRepository.save(element));
         } else {
@@ -221,9 +225,11 @@ public class KanbanElementAttributesService {
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = checkBox.getElement().getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
-            checkElement(checkBox.getElement());
-            checkBox.getElement().setTimeOfUpdate(getEpochSeconds());
-            checkBox.getElement().setLastRedactor(user);
+            KanbanElement element = checkBox.getElement();
+            checkElement(element);
+            element.setTimeOfUpdate(getEpochSeconds());
+            element.setLastRedactor(user);
+            elementRepository.save(element);
 
             checkBox.setCheck(!checkBox.isCheck());
             checkboxRepository.save(checkBox);
@@ -238,9 +244,11 @@ public class KanbanElementAttributesService {
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = checkBox.getElement().getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
-            checkElement(checkBox.getElement());
-            checkBox.getElement().setTimeOfUpdate(getEpochSeconds());
-            checkBox.getElement().setLastRedactor(user);
+            KanbanElement element = checkBox.getElement();
+            checkElement(element);
+            element.setTimeOfUpdate(getEpochSeconds());
+            element.setLastRedactor(user);
+            elementRepository.save(element);
 
             checkBox.setText(newText);
             checkboxRepository.save(checkBox);

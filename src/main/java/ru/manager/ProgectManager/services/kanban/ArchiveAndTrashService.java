@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -33,12 +34,21 @@ public class ArchiveAndTrashService {
         if (element.getStatus() != ElementStatus.UTILISE)
             throw new IncorrectStatusException();
 
-        element.setStatus(ElementStatus.DELETED);
+        if(element.getWorkTrackSet().isEmpty()) {
+            KanbanColumn column = element.getKanbanColumn();
+            column.getElements().remove(element);
+            elementRepository.delete(element);
+            columnRepository.save(column);
+        } else {
+            element.setStatus(ElementStatus.DELETED);
+        }
     }
 
     public boolean archive(long id, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(id).orElseThrow();
+        if (element.getStatus() == ElementStatus.DELETED)
+            throw new NoSuchElementException();
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (canEditResource(kanban, user)) {
             if (element.getStatus() == ElementStatus.ARCHIVED)
@@ -47,6 +57,7 @@ public class ArchiveAndTrashService {
             timeRemoverRepository.findById(id).ifPresent(timeRemoverRepository::delete);
 
             element.setTimeOfUpdate(getEpochSeconds());
+            element.setLastRedactor(user);
             element.setStatus(ElementStatus.ARCHIVED);
             KanbanColumn column = elementRepository.save(element).getKanbanColumn();
             column.getElements().stream()
@@ -62,6 +73,8 @@ public class ArchiveAndTrashService {
     public boolean reestablish(long id, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(id).orElseThrow();
+        if (element.getStatus() == ElementStatus.DELETED)
+            throw new NoSuchElementException();
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (canEditResource(kanban, user)) {
             if (element.getStatus() == ElementStatus.ALIVE)
@@ -70,6 +83,7 @@ public class ArchiveAndTrashService {
             timeRemoverRepository.findById(id).ifPresent(timeRemoverRepository::delete);
 
             element.setTimeOfUpdate(getEpochSeconds());
+            element.setLastRedactor(user);
             element.setStatus(ElementStatus.ALIVE);
             element.setSerialNumber(element.getKanbanColumn().getElements().stream()
                     .filter(e -> e.getStatus() == ElementStatus.ALIVE)
