@@ -17,6 +17,7 @@ import ru.manager.ProgectManager.DTO.request.user.AuthDto;
 import ru.manager.ProgectManager.DTO.request.user.DropPassRequest;
 import ru.manager.ProgectManager.DTO.request.user.RegisterUserDTO;
 import ru.manager.ProgectManager.DTO.request.user.ResetPassRequest;
+import ru.manager.ProgectManager.DTO.response.AccessTokenResponse;
 import ru.manager.ProgectManager.DTO.response.AuthResponse;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
@@ -84,9 +85,9 @@ public class AuthController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "400", description = "Необходимые данные отсутствуют в запросе",
                     content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class))
-            }),
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
             @ApiResponse(responseCode = "401", description = "Некорректный логин или пароль", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
@@ -154,12 +155,42 @@ public class AuthController {
         Optional<String> login = refreshTokenService.findLoginAndDropToken(tokenRequest.getRefresh());
         if (login.isPresent()) {
             User user = userService.findByUsername(login.get()).orElseThrow();
-            if(user.isAccountNonLocked()) {
+            if (user.isAccountNonLocked()) {
                 userService.updateLastVisitAndZone(user, tokenRequest.getZoneId());
                 AuthResponse authResponse = new AuthResponse();
                 authResponse.setRefresh(refreshTokenService.createToken(login.get()));
                 authResponse.setAccess(jwtProvider.generateToken(login.get()));
                 return ResponseEntity.ok(authResponse);
+            } else {
+                return new ResponseEntity<>(new ErrorResponse(Errors.ACCOUNT_IS_LOCKED), HttpStatus.FORBIDDEN);
+            }
+        } else {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    @Operation(summary = "Предоставление access токена по refresh токену",
+            description = "В отличие от refresh запроса refresh токен при этом не обновляется")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "401", description = "Некорректный refresh токен"),
+            @ApiResponse(responseCode = "403", description = "Аккаунт пользователя заблокирован", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "200", description = "Токен успешно обновлён", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = AccessTokenResponse.class))
+            })
+    })
+    @GetMapping("/access")
+    public ResponseEntity<?> getNewAccess(@RequestBody RefreshTokenRequest tokenRequest) {
+        Optional<String> login = refreshTokenService.findLogin(tokenRequest.getRefresh());
+        if (login.isPresent()) {
+            User user = userService.findByUsername(login.get()).orElseThrow();
+            if (user.isAccountNonLocked()) {
+                userService.updateLastVisitAndZone(user, tokenRequest.getZoneId());
+                AccessTokenResponse tokenResponse = new AccessTokenResponse(jwtProvider.generateToken(login.get()));
+                return ResponseEntity.ok(tokenResponse);
             } else {
                 return new ResponseEntity<>(new ErrorResponse(Errors.ACCOUNT_IS_LOCKED), HttpStatus.FORBIDDEN);
             }
@@ -179,12 +210,12 @@ public class AuthController {
     @GetMapping("/approve")
     public ResponseEntity<?> approve(@RequestParam String token) {
         Optional<String> login = userService.enabledUser(token);
-        if(login.isPresent()){
+        if (login.isPresent()) {
             AuthResponse authResponse = new AuthResponse();
             authResponse.setRefresh(refreshTokenService.createToken(login.get()));
             authResponse.setAccess(jwtProvider.generateToken(login.get()));
             return ResponseEntity.ok(authResponse);
-        } else{
+        } else {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
     }
@@ -205,10 +236,10 @@ public class AuthController {
     })
     @PostMapping("/drop")
     public ResponseEntity<?> dropPass(@RequestBody @Valid DropPassRequest request, BindingResult bindingResult) {
-        if(bindingResult.hasErrors()) {
+        if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
-            if(userService.attemptDropPass(request.getLoginOrEmail(), request.getUrl())) {
+            if (userService.attemptDropPass(request.getLoginOrEmail(), request.getUrl())) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER), HttpStatus.NOT_FOUND);
@@ -228,10 +259,10 @@ public class AuthController {
     })
     @PostMapping("/reset")
     public ResponseEntity<?> resetPass(@RequestBody @Valid ResetPassRequest request, BindingResult bindingResult) {
-        if(bindingResult.hasErrors()) {
+        if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
-            if(userService.resetPass(request.getToken(), request.getPassword())) {
+            if (userService.resetPass(request.getToken(), request.getPassword())) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);

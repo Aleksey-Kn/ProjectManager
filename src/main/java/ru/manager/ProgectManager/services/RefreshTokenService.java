@@ -14,7 +14,7 @@ import java.util.UUID;
 public class RefreshTokenService {
     private final RefreshTokenRepository refreshTokenRepository;
 
-    public String createToken(String login){
+    public String createToken(String login) {
         String token = UUID.randomUUID().toString();
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setToken(token);
@@ -24,15 +24,20 @@ public class RefreshTokenService {
         return token;
     }
 
-    public Optional<String> findLoginAndDropToken(String token){
+    public Optional<String> findLogin(String token) {
         Optional<RefreshToken> refreshToken = refreshTokenRepository.findById(token);
-        if(refreshToken.isPresent()){
-            if(LocalDate.ofEpochDay(refreshToken.get().getTimeToDie()).isAfter(LocalDate.now())) {
-                return Optional.of(refreshToken.get().getLogin());
-            } else{
-                refreshTokenRepository.delete(refreshToken.get());
-                return Optional.empty();
-            }
+        return refreshToken
+                .filter(value -> LocalDate.ofEpochDay(value.getTimeToDie()).isAfter(LocalDate.now()))
+                .map(RefreshToken::getLogin);
+    }
+
+    public Optional<String> findLoginAndDropToken(String token) {
+        Optional<RefreshToken> refreshToken = refreshTokenRepository.findById(token);
+        if (refreshToken.isPresent()) {
+            refreshTokenRepository.delete(refreshToken.get());
+            return (LocalDate.ofEpochDay(refreshToken.get().getTimeToDie()).isAfter(LocalDate.now())
+                    ? Optional.of(refreshToken.get().getLogin())
+                    : Optional.empty());
         } else {
             return Optional.empty();
         }
