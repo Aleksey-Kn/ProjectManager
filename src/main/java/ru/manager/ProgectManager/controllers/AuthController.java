@@ -171,12 +171,19 @@ public class AuthController {
     @Operation(summary = "Подтверждение почты пользователя")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "403", description = "Некорректный токен"),
-            @ApiResponse(responseCode = "200", description = "Адрес электронной почты подтверждён")
+            @ApiResponse(responseCode = "200", description = "Адрес электронной почты подтверждён", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = AuthResponse.class))
+            })
     })
     @GetMapping("/approve")
     public ResponseEntity<?> approve(@RequestParam String token) {
-        if(userService.enabledUser(token)){
-            return new ResponseEntity<>(HttpStatus.OK);
+        Optional<String> login = userService.enabledUser(token);
+        if(login.isPresent()){
+            AuthResponse authResponse = new AuthResponse();
+            authResponse.setRefresh(refreshTokenService.createToken(login.get()));
+            authResponse.setAccess(jwtProvider.generateToken(login.get()));
+            return ResponseEntity.ok(authResponse);
         } else{
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }

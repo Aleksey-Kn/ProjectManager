@@ -77,16 +77,15 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public boolean enabledUser(String token) {
+    public Optional<String> enabledUser(String token) {
         Optional<ApproveActionToken> approveEnabledUser = approveActionTokenRepository.findById(token);
         if (approveEnabledUser.isPresent() && approveEnabledUser.get().getActionType() == ActionType.APPROVE_ENABLE) {
             User user = approveEnabledUser.get().getUser();
             user.setEnabled(true);
-            userRepository.save(user);
             approveActionTokenRepository.delete(approveEnabledUser.get());
-            return true;
+            return Optional.of(userRepository.save(user).getUsername());
         } else {
-            return false;
+            return Optional.empty();
         }
     }
 
