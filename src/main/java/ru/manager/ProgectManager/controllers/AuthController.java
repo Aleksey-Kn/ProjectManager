@@ -145,27 +145,35 @@ public class AuthController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
+            @ApiResponse(responseCode = "400", description = "Рефреш токен не должен быть пустым полем", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
             @ApiResponse(responseCode = "200", description = "Токены успешно обновлены", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = AuthResponse.class))
             })
     })
     @PostMapping("/refresh")
-    public ResponseEntity<?> refresh(@RequestBody RefreshTokenRequest tokenRequest) {
-        Optional<String> login = refreshTokenService.findLoginAndDropToken(tokenRequest.getRefresh());
-        if (login.isPresent()) {
-            User user = userService.findByUsername(login.get()).orElseThrow();
-            if (user.isAccountNonLocked()) {
-                userService.updateLastVisitAndZone(user, tokenRequest.getZoneId());
-                AuthResponse authResponse = new AuthResponse();
-                authResponse.setRefresh(refreshTokenService.createToken(login.get()));
-                authResponse.setAccess(jwtProvider.generateToken(login.get()));
-                return ResponseEntity.ok(authResponse);
-            } else {
-                return new ResponseEntity<>(new ErrorResponse(Errors.ACCOUNT_IS_LOCKED), HttpStatus.FORBIDDEN);
-            }
+    public ResponseEntity<?> refresh(@RequestBody @Valid RefreshTokenRequest tokenRequest, BindingResult bindingResult) {
+        if(bindingResult.hasErrors()) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.FIELD_MUST_BE_NOT_NULL), HttpStatus.BAD_REQUEST);
         } else {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+            Optional<String> login = refreshTokenService.findLoginAndDropToken(tokenRequest.getRefresh());
+            if (login.isPresent()) {
+                User user = userService.findByUsername(login.get()).orElseThrow();
+                if (user.isAccountNonLocked()) {
+                    userService.updateLastVisitAndZone(user, tokenRequest.getZoneId());
+                    AuthResponse authResponse = new AuthResponse();
+                    authResponse.setRefresh(refreshTokenService.createToken(login.get()));
+                    authResponse.setAccess(jwtProvider.generateToken(login.get()));
+                    return ResponseEntity.ok(authResponse);
+                } else {
+                    return new ResponseEntity<>(new ErrorResponse(Errors.ACCOUNT_IS_LOCKED), HttpStatus.FORBIDDEN);
+                }
+            } else {
+                return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+            }
         }
     }
 
@@ -177,25 +185,34 @@ public class AuthController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
+            @ApiResponse(responseCode = "400", description = "Рефреш токен не должен быть пустым полем", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
             @ApiResponse(responseCode = "200", description = "Токен успешно обновлён", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = AccessTokenResponse.class))
             })
     })
-    @GetMapping("/access")
-    public ResponseEntity<?> getNewAccess(@RequestBody RefreshTokenRequest tokenRequest) {
-        Optional<String> login = refreshTokenService.findLogin(tokenRequest.getRefresh());
-        if (login.isPresent()) {
-            User user = userService.findByUsername(login.get()).orElseThrow();
-            if (user.isAccountNonLocked()) {
-                userService.updateLastVisitAndZone(user, tokenRequest.getZoneId());
-                AccessTokenResponse tokenResponse = new AccessTokenResponse(jwtProvider.generateToken(login.get()));
-                return ResponseEntity.ok(tokenResponse);
-            } else {
-                return new ResponseEntity<>(new ErrorResponse(Errors.ACCOUNT_IS_LOCKED), HttpStatus.FORBIDDEN);
-            }
+    @PostMapping("/access")
+    public ResponseEntity<?> getNewAccess(@RequestBody @Valid RefreshTokenRequest tokenRequest,
+                                          BindingResult bindingResult) {
+        if(bindingResult.hasErrors()) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.FIELD_MUST_BE_NOT_NULL), HttpStatus.BAD_REQUEST);
         } else {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+            Optional<String> login = refreshTokenService.findLogin(tokenRequest.getRefresh());
+            if (login.isPresent()) {
+                User user = userService.findByUsername(login.get()).orElseThrow();
+                if (user.isAccountNonLocked()) {
+                    userService.updateLastVisitAndZone(user, tokenRequest.getZoneId());
+                    AccessTokenResponse tokenResponse = new AccessTokenResponse(jwtProvider.generateToken(login.get()));
+                    return ResponseEntity.ok(tokenResponse);
+                } else {
+                    return new ResponseEntity<>(new ErrorResponse(Errors.ACCOUNT_IS_LOCKED), HttpStatus.FORBIDDEN);
+                }
+            } else {
+                return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+            }
         }
     }
 
