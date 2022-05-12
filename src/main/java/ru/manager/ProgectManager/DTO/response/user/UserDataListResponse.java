@@ -1,4 +1,4 @@
-package ru.manager.ProgectManager.DTO.response;
+package ru.manager.ProgectManager.DTO.response.user;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -12,10 +12,10 @@ import java.util.stream.Collectors;
 @Schema(description = "Полный список участников проекта")
 public class UserDataListResponse {
     @Schema(description = "Список участников проекта")
-    private final List<PublicUserDataResponse> participants;
+    private final List<PublicMainUserDataResponse> participants;
 
     public UserDataListResponse(Set<User> users, int zoneId){
-        participants = users.parallelStream().map(user -> new PublicUserDataResponse(user, zoneId))
+        participants = users.parallelStream().map(user -> new PublicMainUserDataResponse(user, zoneId))
                 .collect(Collectors.toList());
     }
 }

@@ -1,4 +1,4 @@
-package ru.manager.ProgectManager.DTO.response;
+package ru.manager.ProgectManager.DTO.response.user;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;

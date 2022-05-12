@@ -15,21 +15,26 @@ public class NoteService {
     private final UserRepository userRepository;
     private final NoteRepository noteRepository;
 
-    public void setNote(String noteText, long targetUserId, String ownerLogin) {
+    public boolean setNote(String noteText, long targetUserId, String ownerLogin) {
         User ownerNote = userRepository.findByUsername(ownerLogin);
-        ownerNote.getNotes().parallelStream()
-                .filter(note -> note.getUserId() == targetUserId)
-                .findAny()
-                .ifPresentOrElse(note -> {
-                    note.setText(noteText);
-                    noteRepository.save(note);
-                }, () -> {
-                    Note note = new Note();
-                    note.setUserId(targetUserId);
-                    note.setText(noteText);
-                    ownerNote.getNotes().add(noteRepository.save(note));
-                    userRepository.save(ownerNote);
-                });
+        if(ownerNote.getUserId() != targetUserId) {
+            ownerNote.getNotes().parallelStream()
+                    .filter(note -> note.getUserId() == targetUserId)
+                    .findAny()
+                    .ifPresentOrElse(note -> {
+                        note.setText(noteText);
+                        noteRepository.save(note);
+                    }, () -> {
+                        Note note = new Note();
+                        note.setUserId(targetUserId);
+                        note.setText(noteText);
+                        ownerNote.getNotes().add(noteRepository.save(note));
+                        userRepository.save(ownerNote);
+                    });
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public boolean deleteNote(long targetUserId, String ownerLogin) {
@@ -43,5 +48,11 @@ public class NoteService {
         } else {
             return false;
         }
+    }
+
+    public Note findNote(long targetUserId, String ownerLogin) {
+        return userRepository.findByUsername(ownerLogin).getNotes().parallelStream()
+                .filter(note -> note.getUserId() == targetUserId)
+                .findAny().orElse(null);
     }
 }

@@ -15,7 +15,11 @@ import ru.manager.ProgectManager.DTO.request.NameRequest;
 import ru.manager.ProgectManager.DTO.request.PhotoDTO;
 import ru.manager.ProgectManager.DTO.request.user.LocaleRequest;
 import ru.manager.ProgectManager.DTO.request.user.UpdatePassRequest;
-import ru.manager.ProgectManager.DTO.response.*;
+import ru.manager.ProgectManager.DTO.response.ErrorResponse;
+import ru.manager.ProgectManager.DTO.response.ListPointerResources;
+import ru.manager.ProgectManager.DTO.response.ProjectListResponse;
+import ru.manager.ProgectManager.DTO.response.user.PublicMainUserDataResponse;
+import ru.manager.ProgectManager.DTO.response.user.VisitMarkListResponse;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.components.authorization.JwtProvider;
@@ -52,7 +56,7 @@ public class UserController {
             @ApiResponse(responseCode = "200",
                     description = "Возвращение информации о профиле", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = PublicUserDataResponse.class))
+                            schema = @Schema(implementation = PublicMainUserDataResponse.class))
             })
     })
     @GetMapping("/user")
@@ -60,7 +64,7 @@ public class UserController {
         String login = jwtProvider.getLoginFromToken();
         Optional<User> targetUser = (id == -1 ? userService.findByUsername(login) : userService.findById(id));
         if (targetUser.isPresent()) {
-            return ResponseEntity.ok(new PublicUserDataResponse(targetUser.get(),
+            return ResponseEntity.ok(new PublicMainUserDataResponse(targetUser.get(),
                     userService.findZoneIdForThisUser(login)));
         } else {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER),

@@ -2,7 +2,7 @@ package ru.manager.ProgectManager.DTO.response.kanban;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
-import ru.manager.ProgectManager.DTO.response.PublicUserDataResponse;
+import ru.manager.ProgectManager.DTO.response.user.PublicMainUserDataResponse;
 import ru.manager.ProgectManager.DTO.response.workTrack.WorkTrackAllResponse;
 import ru.manager.ProgectManager.entitys.kanban.CheckBox;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
@@ -29,9 +29,9 @@ public class KanbanElementContentResponse {
     @Schema(description = "Теги элемента")
     private final Set<Tag> tags;
     @Schema(description = "Информация об аккаунте создателя ячейки")
-    private final PublicUserDataResponse creator;
+    private final PublicMainUserDataResponse creator;
     @Schema(description = "Информация об акаунте последнего редактора ячейки")
-    private final PublicUserDataResponse lastRedactor;
+    private final PublicMainUserDataResponse lastRedactor;
     @Schema(description = "Комментарии")
     private final List<KanbanElementCommentResponse> comments;
     @Schema(description = "Список вложенных файлов")
@@ -51,8 +51,8 @@ public class KanbanElementContentResponse {
         id = kanbanElement.getId();
         name = kanbanElement.getName();
         tags = kanbanElement.getTags();
-        creator = new PublicUserDataResponse(kanbanElement.getOwner(), zoneId);
-        lastRedactor = new PublicUserDataResponse(kanbanElement.getLastRedactor(), zoneId);
+        creator = new PublicMainUserDataResponse(kanbanElement.getOwner(), zoneId);
+        lastRedactor = new PublicMainUserDataResponse(kanbanElement.getLastRedactor(), zoneId);
         content = kanbanElement.getContent();
         selectedDate = kanbanElement.getSelectedDate();
         comments = (kanbanElement.getComments() == null? List.of():

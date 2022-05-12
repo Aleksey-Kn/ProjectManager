@@ -2,7 +2,7 @@ package ru.manager.ProgectManager.DTO.response.kanban;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
-import ru.manager.ProgectManager.DTO.response.PublicUserDataResponse;
+import ru.manager.ProgectManager.DTO.response.user.PublicMainUserDataResponse;
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
@@ -18,7 +18,7 @@ public class KanbanMainDataResponse {
     @Schema(description = "Название канбана")
     private final String name;
     @Schema(description = "Список пользователей, имеющих доступ к данной доске")
-    private final List<PublicUserDataResponse> participants;
+    private final List<PublicMainUserDataResponse> participants;
 
     public KanbanMainDataResponse(Kanban kanban, int zoneId){
         id = kanban.getId();
@@ -27,7 +27,7 @@ public class KanbanMainDataResponse {
                 .filter(c -> c.getRoleType() != TypeRoleProject.CUSTOM_ROLE || c.getCustomProjectRole()
                         .getCustomRoleWithKanbanConnectors().parallelStream().anyMatch(kc -> kc.getKanban().equals(kanban)))
                 .map(UserWithProjectConnector::getUser)
-                .map(user -> new PublicUserDataResponse(user, zoneId))
+                .map(user -> new PublicMainUserDataResponse(user, zoneId))
                 .limit(3)
                 .collect(Collectors.toList());
     }

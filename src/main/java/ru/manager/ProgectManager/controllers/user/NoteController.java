@@ -27,8 +27,11 @@ public class NoteController {
             return new ResponseEntity<>(new ErrorResponse(Errors.TEXT_MUST_BE_CONTAINS_VISIBLE_SYMBOL),
                     HttpStatus.BAD_REQUEST);
         } else {
-            noteService.setNote(noteRequest.getText(), noteRequest.getTargetUserId(), provider.getLoginFromToken());
-            return new ResponseEntity<>(HttpStatus.OK);
+            if(noteService.setNote(noteRequest.getText(), noteRequest.getTargetUserId(), provider.getLoginFromToken())) {
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.CONFLICT);
+            }
         }
     }
 

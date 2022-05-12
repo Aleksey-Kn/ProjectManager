@@ -2,6 +2,7 @@ package ru.manager.ProgectManager.DTO.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
+import ru.manager.ProgectManager.DTO.response.user.PublicMainUserDataResponse;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
 
@@ -18,7 +19,7 @@ public class ProjectResponse {
     @Schema(description = "Фотография профиля проекта", nullable = true)
     private final byte[] photo;
     @Schema(description = "Список участников проекта")
-    private final List<PublicUserDataResponse> participants;
+    private final List<PublicMainUserDataResponse> participants;
     @Schema(description = "Тип данных фотографии")
     private final String datatypePhoto;
     @Schema(description = "Описание проекта")
@@ -40,7 +41,7 @@ public class ProjectResponse {
         photo = project.getPhoto();
         participants = project.getConnectors().stream()
                 .map(UserWithProjectConnector::getUser)
-                .map(user -> new PublicUserDataResponse(user, zoneId))
+                .map(user -> new PublicMainUserDataResponse(user, zoneId))
                 .limit(3)
                 .collect(Collectors.toList());
         datatypePhoto = project.getDatatypePhoto();
