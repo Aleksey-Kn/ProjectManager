@@ -67,6 +67,9 @@ public class User implements UserDetails {
     @OneToMany(cascade = CascadeType.REMOVE)
     private Set<UsedAddress> usedAddresses;
 
+    @OneToMany(cascade = CascadeType.REMOVE)
+    private Set<Note> notes;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return userWithRoleConnectors;
