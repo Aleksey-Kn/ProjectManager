@@ -7,14 +7,16 @@ import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.repositories.NoteRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class NoteService {
     private final UserRepository userRepository;
     private final NoteRepository noteRepository;
 
-    public void setNote(String noteText, long targetUserId, String userLogin) {
-        User ownerNote = userRepository.findByUsername(userLogin);
+    public void setNote(String noteText, long targetUserId, String ownerLogin) {
+        User ownerNote = userRepository.findByUsername(ownerLogin);
         ownerNote.getNotes().parallelStream()
                 .filter(note -> note.getUserId() == targetUserId)
                 .findAny()
@@ -28,5 +30,18 @@ public class NoteService {
                     ownerNote.getNotes().add(noteRepository.save(note));
                     userRepository.save(ownerNote);
                 });
+    }
+
+    public boolean deleteNote(long targetUserId, String ownerLogin) {
+        User owner = userRepository.findByUsername(ownerLogin);
+        Optional<Note> note = noteRepository.findById(targetUserId);
+        if(note.isPresent()) {
+            owner.getNotes().remove(note.get());
+            userRepository.save(owner);
+            noteRepository.delete(note.get());
+            return true;
+        } else {
+            return false;
+        }
     }
 }
