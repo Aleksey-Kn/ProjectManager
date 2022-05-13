@@ -7,6 +7,7 @@ import ru.manager.ProgectManager.entitys.user.User;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.Optional;
 
 @Getter
 @Schema(description = "Полная информация о запрашиваемом пользователе, доступная для публичного доступа")
@@ -25,9 +26,9 @@ public class PublicAllDataResponse {
             nullable = true)
     private final String lastVisit;
     @Schema(description = "Заметка о данном пользователе, составленная текущим пользователем", nullable = true)
-    private final Note note;
+    private final String note;
 
-    public PublicAllDataResponse(User user, int zoneId, Note note){
+    public PublicAllDataResponse(User user, int zoneId, Optional<Note> optionalNote){
         email = user.getEmail();
         nickname = user.getNickname();
         id = user.getUserId();
@@ -35,6 +36,6 @@ public class PublicAllDataResponse {
         datatypePhoto = user.getContentTypePhoto();
         lastVisit = (user.getLastVisit() == 0? null: LocalDateTime
                 .ofEpochSecond(user.getLastVisit(), 0, ZoneOffset.ofHours(zoneId)).toString());
-        this.note = note;
+        this.note = optionalNote.map(Note::getText).orElse(null);
     }
 }

@@ -50,9 +50,9 @@ public class NoteService {
         }
     }
 
-    public Note findNote(long targetUserId, String ownerLogin) {
+    public Optional<Note> findNote(long targetUserId, String ownerLogin) {
         return userRepository.findByUsername(ownerLogin).getNotes().parallelStream()
                 .filter(note -> note.getUserId() == targetUserId)
-                .findAny().orElse(null);
+                .findAny();
     }
 }

@@ -1,6 +1,5 @@
 package ru.manager.ProgectManager.entitys.user;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,7 +12,6 @@ import javax.persistence.Id;
 @Setter
 public class Note {
     @Id
-    @JsonIgnore
     private long userId;
 
     @Column(nullable = false)
