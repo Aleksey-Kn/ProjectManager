@@ -7,6 +7,7 @@ import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.repositories.NoteRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
 
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Service
@@ -17,6 +18,8 @@ public class NoteService {
 
     public boolean setNote(String noteText, long targetUserId, String ownerLogin) {
         User ownerNote = userRepository.findByUsername(ownerLogin);
+        if (!userRepository.existsById(targetUserId))
+            throw new NoSuchElementException();
         if(ownerNote.getUserId() != targetUserId) {
             ownerNote.getNotes().parallelStream()
                     .filter(note -> note.getUserId() == targetUserId)
