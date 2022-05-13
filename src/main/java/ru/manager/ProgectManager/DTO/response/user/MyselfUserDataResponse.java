@@ -7,6 +7,8 @@ import ru.manager.ProgectManager.entitys.user.User;
 @Getter
 @Schema(description = "Информация о пользователя о самом себе")
 public class MyselfUserDataResponse {
+    @Schema(description = "Идентификатор пользователя")
+    private final long id;
     @Schema(description = "Логин пользователя")
     private final String login;
     @Schema(description = "Адрес электронной почты пользователя")
@@ -19,6 +21,7 @@ public class MyselfUserDataResponse {
     private final String datatypePhoto;
 
     public MyselfUserDataResponse(User user){
+        id = user.getUserId();
         email = user.getEmail();
         nickname = user.getNickname();
         login = user.getUsername();
