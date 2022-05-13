@@ -1,7 +1,7 @@
 package ru.manager.ProgectManager.DTO.request.user;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Getter;
+import lombok.Data;
 import org.springframework.validation.annotation.Validated;
 import ru.manager.ProgectManager.enums.Locale;
 
@@ -10,7 +10,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
-@Getter
+@Data
 @Validated
 @Schema(description = "Запрос на создание пользователя")
 public class RegisterUserDTO {
@@ -32,4 +32,8 @@ public class RegisterUserDTO {
     @NotNull(message = "FIELD_MUST_BE_NOT_NULL")
     @Schema(description = "Язык письма, отправляемого на почту пользователю")
     private Locale locale;
+    @NotNull(message = "INCORRECT_TIME_ZONE_FORMAT")
+    @Schema(description = "Часовой пояс текущего пользователя. Если это число, оно должно начинаться со знака",
+            example = "+7")
+    private String zoneId;
 }

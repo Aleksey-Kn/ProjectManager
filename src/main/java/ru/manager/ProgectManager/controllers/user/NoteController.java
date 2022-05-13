@@ -1,6 +1,8 @@
 package ru.manager.ProgectManager.controllers.user;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,10 +19,12 @@ import javax.validation.Valid;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users/user")
+@Tag(name = "Заметки о пользователях")
 public class NoteController {
     private final NoteService noteService;
     private final JwtProvider provider;
 
+    @Operation(summary = "Создание или изменение заметки")
     @PostMapping("/note")
     public ResponseEntity<?> postNote(@RequestBody @Valid NoteRequest noteRequest, BindingResult bindingResult) {
         if(bindingResult.hasErrors()) {
@@ -35,6 +39,7 @@ public class NoteController {
         }
     }
 
+    @Operation(summary = "Удаление заметки")
     @DeleteMapping("/note")
     public ResponseEntity<?> deleteNote(@RequestParam
                                             @Parameter(description = "Идентификатор пользователя, " +

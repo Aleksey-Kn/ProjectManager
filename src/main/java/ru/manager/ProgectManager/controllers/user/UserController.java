@@ -1,6 +1,7 @@
 package ru.manager.ProgectManager.controllers.user;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -18,7 +19,8 @@ import ru.manager.ProgectManager.DTO.request.user.UpdatePassRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.ListPointerResources;
 import ru.manager.ProgectManager.DTO.response.ProjectListResponse;
-import ru.manager.ProgectManager.DTO.response.user.PublicMainUserDataResponse;
+import ru.manager.ProgectManager.DTO.response.user.MyselfUserDataResponse;
+import ru.manager.ProgectManager.DTO.response.user.PublicAllDataResponse;
 import ru.manager.ProgectManager.DTO.response.user.VisitMarkListResponse;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.components.PhotoCompressor;
@@ -26,6 +28,7 @@ import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.Errors;
+import ru.manager.ProgectManager.services.NoteService;
 import ru.manager.ProgectManager.services.UserService;
 import ru.manager.ProgectManager.services.project.AccessProjectService;
 
@@ -45,9 +48,20 @@ public class UserController {
     private final PhotoCompressor compressor;
     private final AccessProjectService accessProjectService;
     private final ErrorResponseEntityConfigurator entityConfigurator;
+    private final NoteService noteService;
 
-    @Operation(summary = "Предоставление информации о пользователе",
-            description = "Позволяет предоставлять информацию как о своём аккаунте, так и о чужих")
+    @Operation(summary = "Предоставление информации о текущем пользователе")
+    @ApiResponse(responseCode = "200", description = "Возвращение информации о профиле", content = {
+            @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = MyselfUserDataResponse.class))
+    })
+    @GetMapping("/user/current")
+    public ResponseEntity<?> findMyselfAccountData() {
+        return ResponseEntity.ok(new MyselfUserDataResponse(userService.findByUsername(jwtProvider.getLoginFromToken())
+                .orElseThrow()));
+    }
+
+    @Operation(summary = "Предоставление информации об указанном пользователе")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "404", description = "Обращение к неуществующему пользователю", content = {
                     @Content(mediaType = "application/json",
@@ -56,19 +70,21 @@ public class UserController {
             @ApiResponse(responseCode = "200",
                     description = "Возвращение информации о профиле", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = PublicMainUserDataResponse.class))
+                            schema = @Schema(implementation = PublicAllDataResponse.class))
             })
     })
-    @GetMapping("/user")
-    public ResponseEntity<?> findAllData(@RequestParam(defaultValue = "-1") long id) {
-        String login = jwtProvider.getLoginFromToken();
-        Optional<User> targetUser = (id == -1 ? userService.findByUsername(login) : userService.findById(id));
+    @GetMapping("/user/other")
+    public ResponseEntity<?> findOtherAccountData(@RequestParam
+                                                  @Parameter(description = "Идентификатор искомого пользователя")
+                                                          long id) {
+        Optional<User> targetUser = userService.findById(id);
+        String nowLogin = jwtProvider.getLoginFromToken();
         if (targetUser.isPresent()) {
-            return ResponseEntity.ok(new PublicMainUserDataResponse(targetUser.get(),
-                    userService.findZoneIdForThisUser(login)));
+            return ResponseEntity.ok(new PublicAllDataResponse(targetUser.get(),
+                    userService.findZoneIdForThisUser(nowLogin),
+                    noteService.findNote(id, nowLogin)));
         } else {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER),
-                    HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER), HttpStatus.NOT_FOUND);
         }
     }
 

@@ -56,6 +56,7 @@ public class UserService {
             user.setAccountNonLocked(true);
             user.setLocale(registerUserDTO.getLocale());
             user.setLastVisit(0);
+            user.setZoneId(Integer.parseInt(registerUserDTO.getZoneId()));
             user = userRepository.save(user);
             try {
                 mailService.sendEmailApprove(user, registerUserDTO.getUrl(), registerUserDTO.getLocale());
