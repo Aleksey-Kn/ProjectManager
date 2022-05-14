@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mail.MailException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.accessProject.AccessProjectRequest;
@@ -196,8 +195,8 @@ public class AccessController {
             } catch (NoSuchResourceException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CUSTOM_ROLE),
                         HttpStatus.NOT_FOUND);
-            } catch (MailException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_MAIL), HttpStatus.NOT_FOUND);
+            } catch (IllegalArgumentException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER), HttpStatus.NOT_FOUND);
             }
         }
     }

@@ -9,6 +9,10 @@ import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.repositories.NotificationRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+
 @Service
 @RequiredArgsConstructor
 public class NotificationService {
@@ -16,21 +20,25 @@ public class NotificationService {
     private final UserRepository userRepository;
     private final LocalisedMessages localisedMessages;
 
-    public void addNotificationAboutAuthorisation(AuthDto authDto, User user) {
+    public void addNotificationAboutAuthorisation(AuthDto authDto, User forUser) {
         Notification notification = new Notification();
         notification.setNewNotification(true);
-        notification.setText(localisedMessages.buildTextAboutAuthorisation(user.getLocale(), authDto.getIp(),
+        notification.setCreateDatetime(LocalDateTime.now()
+                .toEpochSecond(ZoneOffset.systemDefault().getRules().getOffset(Instant.now())));
+        notification.setText(localisedMessages.buildTextAboutAuthorisation(forUser.getLocale(), authDto.getIp(),
                 authDto.getBrowser(), authDto.getCountry(), authDto.getCity(), authDto.getZoneId()));
-        user.getNotifications().add(notificationRepository.save(notification));
-        userRepository.save(user);
+        forUser.getNotifications().add(notificationRepository.save(notification));
+        userRepository.save(forUser);
     }
 
-    public void addNotificationAboutInvitation(String projectName, String url, String token, User user) {
+    public void addNotificationAboutDeleteFromProject(String projectName, User forUser) {
         Notification notification = new Notification();
         notification.setNewNotification(true);
-        notification.setText(localisedMessages.buildTextForInvitationToProject(user.getLocale(), projectName, url, token));
-        user.getNotifications().add(notificationRepository.save(notification));
-        userRepository.save(user);
+        notification.setCreateDatetime(LocalDateTime.now()
+                .toEpochSecond(ZoneOffset.systemDefault().getRules().getOffset(Instant.now())));
+        notification.setText(localisedMessages.buildTextAboutDeleteFromProject(forUser.getLocale(), projectName));
+        forUser.getNotifications().add(notificationRepository.save(notification));
+        userRepository.save(forUser);
     }
 
     public void readNotification(String userLogin) {
@@ -39,5 +47,10 @@ public class NotificationService {
             notification.setNewNotification(false);
             notificationRepository.save(notification);
         });
+    }
+
+    public boolean hasNewNotification(String userLogin) {
+        User user = userRepository.findByUsername(userLogin);
+        return user.getNotifications().parallelStream().anyMatch(Notification::isNewNotification);
     }
 }

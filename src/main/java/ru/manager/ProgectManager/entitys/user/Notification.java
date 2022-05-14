@@ -17,4 +17,5 @@ public class Notification {
 
     private String text;
     private boolean newNotification;
+    private long createDatetime;
 }

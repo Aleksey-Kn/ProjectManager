@@ -39,6 +39,7 @@ public class UserService {
     private MailService mailService;
     private ApproveActionTokenRepository approveActionTokenRepository;
     private UsedAddressRepository usedAddressRepository;
+    private NotificationService notificationService;
 
     public boolean saveUser(RegisterUserDTO registerUserDTO) {
         if (userRepository.findByUsername(registerUserDTO.getLogin()) == null) {
@@ -131,6 +132,8 @@ public class UserService {
             if(user.get().getUsedAddresses().stream().map(UsedAddress::getIp).noneMatch(ip -> ip.equals(authDto.getIp()))){
                 mailService.sendAboutAuthorisation(user.get(), authDto.getIp(), authDto.getBrowser(),
                         authDto.getCountry(), authDto.getCity(), authDto.getZoneId());
+                notificationService.addNotificationAboutAuthorisation(authDto, user.get());
+
                 UsedAddress usedAddress = new UsedAddress();
                 usedAddress.setIp(authDto.getIp());
                 user.get().getUsedAddresses().add(usedAddressRepository.save(usedAddress));
@@ -257,5 +260,10 @@ public class UserService {
     @Autowired
     public void setUsedAddressRepository(UsedAddressRepository usedAddressRepository) {
         this.usedAddressRepository = usedAddressRepository;
+    }
+
+    @Autowired
+    public void setNotificationService(NotificationService notificationService) {
+        this.notificationService = notificationService;
     }
 }

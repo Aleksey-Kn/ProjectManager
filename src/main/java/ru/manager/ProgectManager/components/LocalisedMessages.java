@@ -107,4 +107,11 @@ public class LocalisedMessages {
             case en -> "Your account has been unlocked and is available for use again.";
         };
     }
+
+    public String buildTextAboutDeleteFromProject(Locale locale, String projectName) {
+        return switch (locale) {
+            case ru -> "Вы были исключены из проекта ";
+            case en -> "You were excluded from the project ";
+        } + "'" + projectName + "'";
+    }
 }

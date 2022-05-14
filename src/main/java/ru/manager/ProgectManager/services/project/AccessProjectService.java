@@ -15,6 +15,7 @@ import ru.manager.ProgectManager.exception.IllegalActionException;
 import ru.manager.ProgectManager.exception.NoSuchResourceException;
 import ru.manager.ProgectManager.repositories.*;
 import ru.manager.ProgectManager.services.MailService;
+import ru.manager.ProgectManager.services.user.NotificationService;
 
 import java.time.LocalDate;
 import java.util.Optional;
@@ -36,6 +37,7 @@ public class AccessProjectService {
     private final CustomProjectRoleRepository customProjectRoleRepository;
     private final CustomRoleWithDocumentConnectorRepository documentConnectorRepository;
     private final MailService mailService;
+    private final NotificationService notificationService;
 
     public Optional<CustomProjectRole> createCustomRole(CreateCustomRoleRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
@@ -170,11 +172,13 @@ public class AccessProjectService {
     public boolean sendInvitationToMail(AccessProjectTroughMailRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(request.getProjectId()).orElseThrow();
-        if(isAdmin(project, user)) {
+        if (isAdmin(project, user)) {
             String token = UUID.randomUUID().toString();
             AccessProject accessProject = createAccessProject(token, project, request.getTypeRoleProject(),
                     request.getRoleId(), true, request.getLiveTimeInDays());
-            mailService.sendInvitationToProject(user, project.getName(), request.getUrl(), token);
+            mailService.sendInvitationToProject(userRepository
+                            .findByEmail(request.getEmail()).orElseThrow(IllegalArgumentException::new),
+                    project.getName(), request.getUrl(), token);
             accessProjectRepository.save(accessProject);
             return true;
         } else {
@@ -263,6 +267,7 @@ public class AccessProjectService {
         Project project = projectRepository.findById(projectId).orElseThrow();
         User user = userRepository.findById(userId).orElseThrow(NoSuchResourceException::new);
         if (isAdmin(project, admin) && !isAdmin(project, user)) {
+            notificationService.addNotificationAboutDeleteFromProject(project.getName(), user);
             user.getUserWithProjectConnectors().parallelStream()
                     .filter(c -> c.getProject().equals(project))
                     .forEach(c -> removeConnector(c, project));
