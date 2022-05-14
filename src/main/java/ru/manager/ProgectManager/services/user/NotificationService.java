@@ -22,6 +22,7 @@ public class NotificationService {
         notification.setText(localisedMessages.buildTextAboutAuthorisation(user.getLocale(), authDto.getIp(),
                 authDto.getBrowser(), authDto.getCountry(), authDto.getCity(), authDto.getZoneId()));
         user.getNotifications().add(notificationRepository.save(notification));
+        userRepository.save(user);
     }
 
     public void addNotificationAboutInvitation(String projectName, String url, String token, User user) {
@@ -29,6 +30,7 @@ public class NotificationService {
         notification.setNewNotification(true);
         notification.setText(localisedMessages.buildTextForInvitationToProject(user.getLocale(), projectName, url, token));
         user.getNotifications().add(notificationRepository.save(notification));
+        userRepository.save(user);
     }
 
     public void readNotification(String userLogin) {
