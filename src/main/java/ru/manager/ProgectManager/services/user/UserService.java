@@ -1,4 +1,4 @@
-package ru.manager.ProgectManager.services;
+package ru.manager.ProgectManager.services.user;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.MailException;
@@ -21,6 +21,7 @@ import ru.manager.ProgectManager.repositories.ApproveActionTokenRepository;
 import ru.manager.ProgectManager.repositories.RoleRepository;
 import ru.manager.ProgectManager.repositories.UsedAddressRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
+import ru.manager.ProgectManager.services.MailService;
 
 import javax.activation.MimetypesFileTypeMap;
 import java.io.IOException;

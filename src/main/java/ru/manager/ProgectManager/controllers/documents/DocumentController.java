@@ -23,8 +23,8 @@ import ru.manager.ProgectManager.DTO.response.documents.*;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.enums.Errors;
-import ru.manager.ProgectManager.services.UserService;
 import ru.manager.ProgectManager.services.documents.PageService;
+import ru.manager.ProgectManager.services.user.UserService;
 
 import javax.validation.Valid;
 import java.util.List;

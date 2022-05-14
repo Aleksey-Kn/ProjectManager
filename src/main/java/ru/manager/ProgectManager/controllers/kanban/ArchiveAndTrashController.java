@@ -17,8 +17,8 @@ import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.exception.IncorrectStatusException;
-import ru.manager.ProgectManager.services.UserService;
 import ru.manager.ProgectManager.services.kanban.ArchiveAndTrashService;
+import ru.manager.ProgectManager.services.user.UserService;
 
 import java.util.List;
 import java.util.NoSuchElementException;

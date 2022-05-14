@@ -25,8 +25,8 @@ import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.entitys.kanban.KanbanColumn;
 import ru.manager.ProgectManager.enums.Errors;
-import ru.manager.ProgectManager.services.UserService;
 import ru.manager.ProgectManager.services.kanban.KanbanColumnService;
+import ru.manager.ProgectManager.services.user.UserService;
 
 import javax.validation.Valid;
 import java.util.NoSuchElementException;

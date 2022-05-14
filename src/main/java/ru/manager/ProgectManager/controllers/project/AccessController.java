@@ -24,8 +24,8 @@ import ru.manager.ProgectManager.entitys.accessProject.AccessProject;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.exception.IllegalActionException;
 import ru.manager.ProgectManager.exception.NoSuchResourceException;
-import ru.manager.ProgectManager.services.UserService;
 import ru.manager.ProgectManager.services.project.AccessProjectService;
+import ru.manager.ProgectManager.services.user.UserService;
 
 import javax.validation.Valid;
 import java.util.NoSuchElementException;

@@ -26,7 +26,7 @@ import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.exception.EmailAlreadyUsedException;
 import ru.manager.ProgectManager.services.RefreshTokenService;
-import ru.manager.ProgectManager.services.UserService;
+import ru.manager.ProgectManager.services.user.UserService;
 
 import javax.validation.Valid;
 import java.time.DateTimeException;

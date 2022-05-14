@@ -20,7 +20,7 @@ import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.exception.IncorrectStatusException;
-import ru.manager.ProgectManager.services.kanban.WorkTrackService;
+import ru.manager.ProgectManager.services.user.WorkTrackService;
 
 import javax.validation.Valid;
 import java.util.NoSuchElementException;

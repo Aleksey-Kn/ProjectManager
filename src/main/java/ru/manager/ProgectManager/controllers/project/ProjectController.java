@@ -24,10 +24,10 @@ import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.enums.Errors;
-import ru.manager.ProgectManager.services.UserService;
 import ru.manager.ProgectManager.services.kanban.KanbanService;
 import ru.manager.ProgectManager.services.project.AccessProjectService;
 import ru.manager.ProgectManager.services.project.ProjectService;
+import ru.manager.ProgectManager.services.user.UserService;
 
 import javax.validation.Valid;
 import java.io.IOException;

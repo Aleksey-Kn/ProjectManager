@@ -12,7 +12,7 @@ import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.ResourceType;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.repositories.*;
-import ru.manager.ProgectManager.services.VisitMarkUpdater;
+import ru.manager.ProgectManager.services.user.VisitMarkUpdater;
 
 import java.util.Optional;
 import java.util.Set;
@@ -49,15 +49,13 @@ public class KanbanService {
         Project project = kanban.getProject();
         User user = userRepository.findByUsername(userLogin);
         if (canEditResource(project, user) && canEditKanban(kanban, user)) {
-            project.getAvailableRole().forEach(role -> {
-                role.getCustomRoleWithKanbanConnectors().stream()
-                        .filter(kanbanConnector -> kanbanConnector.getKanban().getId() == id)
-                        .forEach(kanbanConnector -> {
-                            role.getCustomRoleWithKanbanConnectors().remove(kanbanConnector);
-                            kanbanConnectorRepository.delete(kanbanConnector);
-                            customProjectRoleRepository.save(role);
-                        });
-            });
+            project.getAvailableRole().forEach(role -> role.getCustomRoleWithKanbanConnectors().stream()
+                    .filter(kanbanConnector -> kanbanConnector.getKanban().getId() == id)
+                    .forEach(kanbanConnector -> {
+                        role.getCustomRoleWithKanbanConnectors().remove(kanbanConnector);
+                        kanbanConnectorRepository.delete(kanbanConnector);
+                        customProjectRoleRepository.save(role);
+                    }));
             project.getKanbans().remove(kanban);
             projectRepository.save(project);
             return true;

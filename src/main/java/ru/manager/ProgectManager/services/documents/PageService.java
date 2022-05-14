@@ -17,7 +17,7 @@ import ru.manager.ProgectManager.entitys.user.VisitMark;
 import ru.manager.ProgectManager.enums.ResourceType;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.repositories.*;
-import ru.manager.ProgectManager.services.VisitMarkUpdater;
+import ru.manager.ProgectManager.services.user.VisitMarkUpdater;
 
 import java.time.Instant;
 import java.time.LocalDateTime;

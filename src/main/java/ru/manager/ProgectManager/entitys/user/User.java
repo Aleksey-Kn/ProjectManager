@@ -70,6 +70,9 @@ public class User implements UserDetails {
     @OneToMany(cascade = CascadeType.REMOVE)
     private Set<Note> notes;
 
+    @OneToMany(cascade = CascadeType.REMOVE)
+    private Set<Notification> notifications;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return userWithRoleConnectors;

@@ -1,4 +1,4 @@
-package ru.manager.ProgectManager.services.kanban;
+package ru.manager.ProgectManager.services.user;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
