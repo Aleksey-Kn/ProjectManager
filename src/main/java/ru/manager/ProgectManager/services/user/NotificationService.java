@@ -41,6 +41,17 @@ public class NotificationService {
         userRepository.save(forUser);
     }
 
+    public void addNotificationAboutInvitationToProject(String token, String projectName, String url, User forUser) {
+        Notification notification = new Notification();
+        notification.setNewNotification(true);
+        notification.setCreateDatetime(LocalDateTime.now()
+                .toEpochSecond(ZoneOffset.systemDefault().getRules().getOffset(Instant.now())));
+        notification.setText(localisedMessages
+                .buildTextForInvitationToProject(forUser.getLocale(), projectName, url, token));
+        forUser.getNotifications().add(notificationRepository.save(notification));
+        userRepository.save(forUser);
+    }
+
     public void readNotification(String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         user.getNotifications().forEach(notification -> {

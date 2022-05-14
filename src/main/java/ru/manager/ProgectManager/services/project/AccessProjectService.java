@@ -169,16 +169,17 @@ public class AccessProjectService {
         return Optional.empty();
     }
 
-    public boolean sendInvitationToMail(AccessProjectTroughMailRequest request, String userLogin) {
-        User user = userRepository.findByUsername(userLogin);
+    public boolean sendInvitationToMail(AccessProjectTroughMailRequest request, String adminLogin) {
+        User admin = userRepository.findByUsername(adminLogin);
         Project project = projectRepository.findById(request.getProjectId()).orElseThrow();
-        if (isAdmin(project, user)) {
+        if (isAdmin(project, admin)) {
             String token = UUID.randomUUID().toString();
             AccessProject accessProject = createAccessProject(token, project, request.getTypeRoleProject(),
                     request.getRoleId(), true, request.getLiveTimeInDays());
-            mailService.sendInvitationToProject(userRepository
-                            .findByEmail(request.getEmail()).orElseThrow(IllegalArgumentException::new),
-                    project.getName(), request.getUrl(), token);
+            User targetUser = userRepository.findByEmail(request.getEmail()).orElseThrow(IllegalArgumentException::new);
+            mailService.sendInvitationToProject(targetUser, project.getName(), request.getUrl(), token);
+            notificationService
+                    .addNotificationAboutInvitationToProject(token, project.getName(), request.getUrl(), targetUser);
             accessProjectRepository.save(accessProject);
             return true;
         } else {
