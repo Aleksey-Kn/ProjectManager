@@ -12,8 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import ru.manager.ProgectManager.DTO.request.NameRequest;
-import ru.manager.ProgectManager.DTO.request.PhotoDTO;
 import ru.manager.ProgectManager.DTO.request.user.LocaleRequest;
 import ru.manager.ProgectManager.DTO.request.user.UpdatePassRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
@@ -163,14 +163,13 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "Фотография успешно сжата и сохранена")
     })
     @PostMapping("/user/photo")
-    public ResponseEntity<?> setPhoto(@ModelAttribute PhotoDTO photoDTO) {
+    public ResponseEntity<?> setPhoto(@RequestParam("file") MultipartFile multipartFile) {
         try {
-            userService.setPhoto(jwtProvider.getLoginFromToken(), compressor.compress(photoDTO.getFile()),
-                    photoDTO.getFile().getOriginalFilename());
+            userService.setPhoto(jwtProvider.getLoginFromToken(), compressor.compress(multipartFile),
+                    multipartFile.getOriginalFilename());
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (IOException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.BAD_FILE),
-                    HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ErrorResponse(Errors.BAD_FILE), HttpStatus.BAD_REQUEST);
         }
     }
 

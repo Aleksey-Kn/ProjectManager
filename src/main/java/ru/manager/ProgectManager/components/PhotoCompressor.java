@@ -1,5 +1,6 @@
 package ru.manager.ProgectManager.components;
 
+import lombok.extern.java.Log;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -11,11 +12,12 @@ import javax.imageio.stream.ImageOutputStream;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
 @Component
+@Log
 public class PhotoCompressor {
     public byte[] compress(MultipartFile file) {
+        log.info("Input file have " + file.getSize() + " bytes");
         if(file.getOriginalFilename() == null) {
             return null;
         }
@@ -40,10 +42,14 @@ public class PhotoCompressor {
             param.setCompressionQuality(524_288f / file.getSize());  // Change the quality value you prefer
             writer.write(null, new IIOImage(image, null, null), param);
 
+            byte[] result = os.toByteArray();
+            log.info("Image compress to " + result.length + " byte.");
+
             os.close();
             ios.close();
             writer.dispose();
-            return os.toByteArray();
+
+            return result;
         } catch (IOException e){
             return null;
         }

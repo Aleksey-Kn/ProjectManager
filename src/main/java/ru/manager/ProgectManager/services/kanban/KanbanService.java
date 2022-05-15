@@ -30,7 +30,7 @@ public class KanbanService {
     private final VisitMarkUpdater visitMarkUpdater;
 
     public Optional<Kanban> createKanban(long projectId, String name, String userLogin) {
-        Project project = projectRepository.findById(projectId).get();
+        Project project = projectRepository.findById(projectId).orElseThrow();
         if (canEditResource(project, userRepository.findByUsername(userLogin))) {
             Kanban kanban = new Kanban();
             kanban.setProject(project);
@@ -45,7 +45,7 @@ public class KanbanService {
     }
 
     public boolean removeKanban(long id, String userLogin) {
-        Kanban kanban = kanbanRepository.findById(id).get();
+        Kanban kanban = kanbanRepository.findById(id).orElseThrow();
         Project project = kanban.getProject();
         User user = userRepository.findByUsername(userLogin);
         if (canEditResource(project, user) && canEditKanban(kanban, user)) {
@@ -64,7 +64,7 @@ public class KanbanService {
     }
 
     public Optional<Kanban> findKanban(long id, String userLogin) {
-        Kanban kanban = kanbanRepository.findById(id).get();
+        Kanban kanban = kanbanRepository.findById(id).orElseThrow();
         User user = userRepository.findByUsername(userLogin);
         if (canSeeKanban(kanban, user)) {
             visitMarkUpdater.updateVisitMarks(user, id, kanban.getName(), ResourceType.KANBAN);
@@ -75,7 +75,7 @@ public class KanbanService {
     }
 
     public Optional<Set<Kanban>> findAllKanban(long id, String userLogin) {
-        Project project = projectRepository.findById(id).get();
+        Project project = projectRepository.findById(id).orElseThrow();
         User user = userRepository.findByUsername(userLogin);
         Optional<UserWithProjectConnector> connector = user.getUserWithProjectConnectors().stream()
                 .filter(c -> c.getProject().equals(project))
@@ -93,9 +93,9 @@ public class KanbanService {
         }
     }
 
-
-    public Optional<Set<Kanban>> findKanbansByName(long id, String name, String userLogin) {
-        Project project = projectRepository.findById(id).get();
+    public Optional<Set<Kanban>> findKanbansByName(long id, String inputName, String userLogin) {
+        String name = inputName.toLowerCase();
+        Project project = projectRepository.findById(id).orElseThrow();
         User user = userRepository.findByUsername(userLogin);
         Optional<UserWithProjectConnector> connector = user.getUserWithProjectConnectors().stream()
                 .filter(c -> c.getProject().equals(project))
@@ -117,7 +117,7 @@ public class KanbanService {
     }
 
     public Optional<Tag> addTag(long id, TagRequest request, String userLogin) {
-        Kanban kanban = kanbanRepository.findById(id).get();
+        Kanban kanban = kanbanRepository.findById(id).orElseThrow();
         User user = userRepository.findByUsername(userLogin);
         if (canEditKanban(kanban, user)) {
             Tag tag = new Tag();
@@ -134,7 +134,7 @@ public class KanbanService {
     }
 
     public boolean removeTag(long id, String userLogin) {
-        Tag tag = tagRepository.findById(id).get();
+        Tag tag = tagRepository.findById(id).orElseThrow();
         Kanban kanban = tag.getKanban();
         User user = userRepository.findByUsername(userLogin);
         if (canEditKanban(kanban, user)) {
@@ -151,7 +151,7 @@ public class KanbanService {
     }
 
     public boolean editTag(long id, TagRequest request, String userLogin) {
-        Tag tag = tagRepository.findById(id).get();
+        Tag tag = tagRepository.findById(id).orElseThrow();
         Kanban kanban = tag.getKanban();
         User user = userRepository.findByUsername(userLogin);
         if (canEditKanban(kanban, user)) {
@@ -165,7 +165,7 @@ public class KanbanService {
     }
 
     public Optional<Set<Tag>> findAllAvailableTags(long kanbanId, String userLogin) {
-        Kanban kanban = kanbanRepository.findById(kanbanId).get();
+        Kanban kanban = kanbanRepository.findById(kanbanId).orElseThrow();
         User user = userRepository.findByUsername(userLogin);
         if (canSeeKanban(kanban, user)) {
             return Optional.of(kanban.getAvailableTags());

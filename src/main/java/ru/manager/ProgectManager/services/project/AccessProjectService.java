@@ -38,6 +38,7 @@ public class AccessProjectService {
     private final CustomRoleWithDocumentConnectorRepository documentConnectorRepository;
     private final MailService mailService;
     private final NotificationService notificationService;
+    private final ProjectService projectService;
 
     public Optional<CustomProjectRole> createCustomRole(CreateCustomRoleRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
@@ -249,14 +250,18 @@ public class AccessProjectService {
     public boolean leave(long projectId, String userLogin) {
         Optional<Project> project = projectRepository.findById(projectId);
         if (project.isPresent()) {
-            userRepository.findByUsername(userLogin).getUserWithProjectConnectors().parallelStream()
-                    .filter(c -> c.getProject().equals(project.get()))
-                    .findAny().ifPresent(connector -> {
-                        if (connector.getRoleType() != TypeRoleProject.ADMIN || project.get().getConnectors().stream()
-                                .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN).count() > 1) {
-                            removeConnector(connector, project.get());
-                        } else throw new IllegalActionException();
-                    });
+            if(project.get().getConnectors().size() == 1) {
+                projectService.deleteProject(projectId, userLogin);
+            } else {
+                userRepository.findByUsername(userLogin).getUserWithProjectConnectors().parallelStream()
+                        .filter(c -> c.getProject().equals(project.get()))
+                        .findAny().ifPresent(connector -> {
+                            if (connector.getRoleType() != TypeRoleProject.ADMIN || project.get().getConnectors().stream()
+                                    .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN).count() > 1) {
+                                removeConnector(connector, project.get());
+                            } else throw new IllegalActionException();
+                        });
+            }
             return true;
         } else {
             return false;

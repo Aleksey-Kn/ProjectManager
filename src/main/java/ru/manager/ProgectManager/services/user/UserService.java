@@ -181,14 +181,16 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    public List<Project> projectsByNameOfThisUser(String name, String userLogin) {
+    public List<Project> projectsByNameOfThisUser(String inputName, String userLogin) {
+        String name = inputName.toLowerCase();
         return userRepository.findByUsername(userLogin).getUserWithProjectConnectors().stream()
                 .map(UserWithProjectConnector::getProject)
                 .filter(p -> p.getName().toLowerCase(Locale.ROOT).contains(name))
                 .collect(Collectors.toList());
     }
 
-    public List<PointerResource> availableResourceByName(String name, String userLogin) {
+    public List<PointerResource> availableResourceByName(String inputName, String userLogin) {
+        String name = inputName.toLowerCase();
         Set<UserWithProjectConnector> connectors =
                 userRepository.findByUsername(userLogin).getUserWithProjectConnectors();
         List<PointerResource> result = connectors.stream()
