@@ -2,10 +2,12 @@ package ru.manager.ProgectManager.DTO.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
+import org.apache.tomcat.util.codec.binary.Base64;
 import ru.manager.ProgectManager.DTO.response.user.PublicMainUserDataResponse;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -17,11 +19,9 @@ public class ProjectResponse {
     @Schema(description = "Идентификатор проекта")
     private final long id;
     @Schema(description = "Фотография профиля проекта", nullable = true)
-    private final byte[] photo;
+    private final String photo;
     @Schema(description = "Список участников проекта")
     private final List<PublicMainUserDataResponse> participants;
-    @Schema(description = "Тип данных фотографии")
-    private final String datatypePhoto;
     @Schema(description = "Описание проекта")
     private final String description;
     @Schema(description = "Статус проекта")
@@ -38,13 +38,13 @@ public class ProjectResponse {
     public ProjectResponse(Project project, String userRoleName, int zoneId){
         name = project.getName();
         id = project.getId();
-        photo = project.getPhoto();
+        photo = (project.getPhoto() == null? null: "data:" + project.getDatatypePhoto() + ";base64," +
+                new String(Base64.encodeBase64(project.getPhoto()), StandardCharsets.UTF_8));
         participants = project.getConnectors().stream()
                 .map(UserWithProjectConnector::getUser)
                 .map(user -> new PublicMainUserDataResponse(user, zoneId))
                 .limit(3)
                 .collect(Collectors.toList());
-        datatypePhoto = project.getDatatypePhoto();
         description = project.getDescription();
         status = project.getStatus();
         statusColor = project.getStatusColor();
