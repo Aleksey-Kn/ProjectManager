@@ -43,12 +43,9 @@ public class User implements UserDetails {
     @Enumerated
     private Locale locale;
 
-    @Column(length = 524_288)
+    @Column(length = 76_800)
     @Lob
     private byte[] photo;
-
-    @Column
-    private String contentTypePhoto;
 
     @ManyToMany
     @JoinTable(name = "user_role", joinColumns = {@JoinColumn(name = "user_key")},

@@ -38,7 +38,7 @@ public class ProjectResponse {
     public ProjectResponse(Project project, String userRoleName, int zoneId){
         name = project.getName();
         id = project.getId();
-        photo = (project.getPhoto() == null? null: "data:" + project.getDatatypePhoto() + ";base64," +
+        photo = (project.getPhoto() == null? null: "data:image/jpg;base64," +
                 new String(Base64.encodeBase64(project.getPhoto()), StandardCharsets.UTF_8));
         participants = project.getConnectors().stream()
                 .map(UserWithProjectConnector::getUser)

@@ -35,7 +35,7 @@ public class PublicAllDataResponse {
         nickname = user.getNickname();
         id = user.getUserId();
         log.info("From DB got " + (user.getPhoto() == null? 0: user.getPhoto().length + " bytes"));
-        photo = (user.getPhoto() == null? null: "data:" + user.getContentTypePhoto() + ";base64," +
+        photo = (user.getPhoto() == null? null: "data:image/jpg;base64," +
                 new String(Base64.encodeBase64(user.getPhoto()), StandardCharsets.UTF_8));
         lastVisit = (user.getLastVisit() == 0? null: LocalDateTime
                 .ofEpochSecond(user.getLastVisit(), 0, ZoneOffset.ofHours(zoneId)).toString());

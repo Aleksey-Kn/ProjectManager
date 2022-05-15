@@ -1,6 +1,7 @@
 package ru.manager.ProgectManager.components;
 
 import lombok.extern.java.Log;
+import org.imgscalr.Scalr;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -9,6 +10,7 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -16,34 +18,38 @@ import java.io.IOException;
 @Component
 @Log
 public class PhotoCompressor {
-    public byte[] compress(MultipartFile file) {
-        log.info("Input file have " + file.getSize() + " bytes");
+    public byte[] compress(MultipartFile file, boolean large) {
         if(file.getOriginalFilename() == null) {
             return null;
         }
         try {
-            String filename = file.getOriginalFilename().substring(file.getOriginalFilename().indexOf('.') + 1);
-            if(file.getSize() < 524_288){
-                return file.getBytes();
+            BufferedImage image = Scalr.resize(ImageIO.read(file.getInputStream()), large? 600: 200);
+            if(image.getColorModel().hasAlpha()) {
+                BufferedImage tempImage = new BufferedImage(image.getWidth(), image.getHeight(),
+                        BufferedImage.TYPE_INT_BGR);
+                for(int y = 0; y < image.getHeight(); y++) {
+                    for(int x = 0; x < image.getWidth(); x++) {
+                        tempImage.setRGB(x, y, new Color(image.getRGB(x, y), false).getRGB());
+                    }
+                }
+                image = tempImage;
             }
-            BufferedImage image = ImageIO.read(file.getInputStream());
             ByteArrayOutputStream os = new ByteArrayOutputStream();
 
             ImageWriter writer = ImageIO
-                    .getImageWritersByFormatName(filename)
+                    .getImageWritersByFormatName("jpg")
                     .next();
 
             ImageOutputStream ios = ImageIO.createImageOutputStream(os);
             writer.setOutput(ios);
 
+            int inputSize = image.getHeight() * image.getWidth() * 4;
             ImageWriteParam param = writer.getDefaultWriteParam();
-
             param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-            param.setCompressionQuality(524_288f / file.getSize());  // Change the quality value you prefer
+            param.setCompressionQuality(inputSize < 204_800? 1: 204_800f / inputSize);  // Change the quality value you prefer
             writer.write(null, new IIOImage(image, null, null), param);
 
             byte[] result = os.toByteArray();
-            log.info("Image compress to " + result.length + " byte.");
 
             os.close();
             ios.close();
@@ -51,6 +57,7 @@ public class PhotoCompressor {
 
             return result;
         } catch (IOException e){
+            log.warning(e.getMessage());
             return null;
         }
     }

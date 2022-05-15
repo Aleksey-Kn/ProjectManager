@@ -29,7 +29,7 @@ public class MyselfUserDataResponse {
         nickname = user.getNickname();
         login = user.getUsername();
         log.info("From DB got " + (user.getPhoto() == null? 0: user.getPhoto().length + " bytes"));
-        photo = (user.getPhoto() == null? null: "data:" + user.getContentTypePhoto() + ";base64," +
+        photo = (user.getPhoto() == null? null: "data:image/jpg;base64," +
                 new String(Base64.encodeBase64(user.getPhoto()), StandardCharsets.UTF_8));
         log.info("Send " + (photo == null? 0: photo.length()) + " bytes");
     }

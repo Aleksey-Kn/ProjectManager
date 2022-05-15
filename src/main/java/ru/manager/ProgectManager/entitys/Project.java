@@ -23,12 +23,9 @@ public class Project {
     @Column(nullable = false)
     private String name;
 
-    @Column(length = 524_288)
+    @Column(length = 76_800)
     @Lob
     private byte[] photo;
-
-    @Column
-    private String datatypePhoto;
 
     @Column
     private String description;

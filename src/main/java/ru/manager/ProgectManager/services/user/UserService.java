@@ -23,7 +23,6 @@ import ru.manager.ProgectManager.repositories.UsedAddressRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
 import ru.manager.ProgectManager.services.MailService;
 
-import javax.activation.MimetypesFileTypeMap;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -166,11 +165,10 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public void setPhoto(String login, byte[] file, String filename) throws IOException {
+    public void setPhoto(String login, byte[] file) throws IOException {
         User user = userRepository.findByUsername(login);
         if (user != null) {
             user.setPhoto(file);
-            user.setContentTypePhoto(new MimetypesFileTypeMap().getContentType(filename));
             userRepository.save(user);
         }
     }

@@ -165,8 +165,7 @@ public class UserController {
     @PostMapping("/user/photo")
     public ResponseEntity<?> setPhoto(@RequestParam("file") MultipartFile multipartFile) {
         try {
-            userService.setPhoto(jwtProvider.getLoginFromToken(), compressor.compress(multipartFile),
-                    multipartFile.getOriginalFilename());
+            userService.setPhoto(jwtProvider.getLoginFromToken(), compressor.compress(multipartFile, false));
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (IOException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.BAD_FILE), HttpStatus.BAD_REQUEST);

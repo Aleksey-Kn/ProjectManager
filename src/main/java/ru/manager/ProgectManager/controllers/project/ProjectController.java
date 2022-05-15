@@ -147,8 +147,8 @@ public class ProjectController {
     @PostMapping("/project/photo")
     public ResponseEntity<?> setPhoto(@RequestParam long id, @ModelAttribute PhotoDTO photoDTO){
         try{
-            if(projectService.setPhoto(id, compressor.compress(photoDTO.getFile()), provider.getLoginFromToken(),
-                    photoDTO.getFile().getOriginalFilename())) {
+            if(projectService.setPhoto(id, compressor.compress(photoDTO.getFile(), true),
+                    provider.getLoginFromToken())) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else{
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);

@@ -11,7 +11,6 @@ import ru.manager.ProgectManager.repositories.ProjectRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
 import ru.manager.ProgectManager.repositories.UserWithProjectConnectorRepository;
 
-import javax.activation.MimetypesFileTypeMap;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -59,12 +58,11 @@ public class ProjectService {
         return project;
     }
 
-    public boolean setPhoto(long id, byte[] photo, String userLogin, String filename) throws IOException {
+    public boolean setPhoto(long id, byte[] photo, String userLogin) throws IOException {
         User admin = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(id).orElseThrow();
         if (isAdmin(project, admin)) {
             project.setPhoto(photo);
-            project.setDatatypePhoto(new MimetypesFileTypeMap().getContentType(filename));
             projectRepository.save(project);
             return true;
         }
