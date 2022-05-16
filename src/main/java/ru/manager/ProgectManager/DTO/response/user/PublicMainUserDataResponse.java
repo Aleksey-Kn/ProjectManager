@@ -2,7 +2,6 @@ package ru.manager.ProgectManager.DTO.response.user;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
-import lombok.extern.java.Log;
 import org.apache.tomcat.util.codec.binary.Base64;
 import ru.manager.ProgectManager.entitys.user.User;
 
@@ -12,7 +11,6 @@ import java.time.ZoneOffset;
 
 @Getter
 @Schema(description = "Краткая информация о пользователе, находящаяся в публичном доступе")
-@Log
 public class PublicMainUserDataResponse {
     @Schema(description = "Идентификатор пользователя")
     private final long id;
@@ -27,11 +25,9 @@ public class PublicMainUserDataResponse {
     public PublicMainUserDataResponse(User user, int zoneId){
         nickname = user.getNickname();
         id = user.getUserId();
-        log.info("From DB got " + (user.getPhoto() == null? 0: user.getPhoto().length + " bytes"));
         photo = (user.getPhoto() == null? null: "data:image/jpg;base64," +
                 new String(Base64.encodeBase64(user.getPhoto()), StandardCharsets.UTF_8));
         lastVisit = (user.getLastVisit() == 0? null: LocalDateTime
                 .ofEpochSecond(user.getLastVisit(), 0, ZoneOffset.ofHours(zoneId)).toString());
-        log.info("Send " + (photo == null? 0: photo.length()) + " bytes");
     }
 }
