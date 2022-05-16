@@ -43,7 +43,7 @@ public class PhotoCompressor {
             ImageOutputStream ios = ImageIO.createImageOutputStream(os);
             writer.setOutput(ios);
 
-            int inputSize = image.getHeight() * image.getWidth() * 4;
+            int inputSize = image.getHeight() * image.getWidth() * 3;
             ImageWriteParam param = writer.getDefaultWriteParam();
             param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
             param.setCompressionQuality(inputSize < 204_800? 1: 204_800f / inputSize);  // Change the quality value you prefer
