@@ -173,6 +173,10 @@ public class UserService {
         }
     }
 
+    public byte[] findPhoto(long id) {
+        return userRepository.findById(id).orElseThrow().getPhoto();
+    }
+
     public List<Project> allProjectOfThisUser(String login) {
         return userRepository.findByUsername(login).getUserWithProjectConnectors().stream()
                 .map(UserWithProjectConnector::getProject)

@@ -69,6 +69,10 @@ public class ProjectService {
         return false;
     }
 
+    public byte[] findPhoto(long id) {
+        return projectRepository.findById(id).orElseThrow().getPhoto();
+    }
+
     public boolean setData(long id, ProjectDataRequest request, String userLogin) {
         Project project = projectRepository.findById(id).orElseThrow();
         User admin = userRepository.findByUsername(userLogin);

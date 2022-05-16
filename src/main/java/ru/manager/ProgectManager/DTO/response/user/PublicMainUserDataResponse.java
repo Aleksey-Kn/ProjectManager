@@ -2,10 +2,8 @@ package ru.manager.ProgectManager.DTO.response.user;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
-import org.apache.tomcat.util.codec.binary.Base64;
 import ru.manager.ProgectManager.entitys.user.User;
 
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
@@ -25,8 +23,7 @@ public class PublicMainUserDataResponse {
     public PublicMainUserDataResponse(User user, int zoneId){
         nickname = user.getNickname();
         id = user.getUserId();
-        photo = (user.getPhoto() == null? null: "data:image/jpg;base64," +
-                new String(Base64.encodeBase64(user.getPhoto()), StandardCharsets.UTF_8));
+        photo = (user.getPhoto() == null? null: "https://api.veehark.xyz/photo/user?id=" + user.getUserId());
         lastVisit = (user.getLastVisit() == 0? null: LocalDateTime
                 .ofEpochSecond(user.getLastVisit(), 0, ZoneOffset.ofHours(zoneId)).toString());
     }

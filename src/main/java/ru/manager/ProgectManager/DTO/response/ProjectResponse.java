@@ -2,12 +2,10 @@ package ru.manager.ProgectManager.DTO.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
-import org.apache.tomcat.util.codec.binary.Base64;
 import ru.manager.ProgectManager.DTO.response.user.PublicMainUserDataResponse;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -38,8 +36,7 @@ public class ProjectResponse {
     public ProjectResponse(Project project, String userRoleName, int zoneId){
         name = project.getName();
         id = project.getId();
-        photo = (project.getPhoto() == null? null: "data:image/jpg;base64," +
-                new String(Base64.encodeBase64(project.getPhoto()), StandardCharsets.UTF_8));
+        photo = (project.getPhoto() == null? null: "https://api.veehark.xyz/photo/project?id=" + project.getId());
         participants = project.getConnectors().stream()
                 .map(UserWithProjectConnector::getUser)
                 .map(user -> new PublicMainUserDataResponse(user, zoneId))

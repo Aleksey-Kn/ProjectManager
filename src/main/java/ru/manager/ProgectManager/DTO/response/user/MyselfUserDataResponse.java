@@ -2,10 +2,7 @@ package ru.manager.ProgectManager.DTO.response.user;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
-import org.apache.tomcat.util.codec.binary.Base64;
 import ru.manager.ProgectManager.entitys.user.User;
-
-import java.nio.charset.StandardCharsets;
 
 @Getter
 @Schema(description = "Информация о пользователя о самом себе")
@@ -26,7 +23,6 @@ public class MyselfUserDataResponse {
         email = user.getEmail();
         nickname = user.getNickname();
         login = user.getUsername();
-        photo = (user.getPhoto() == null? null: "data:image/jpg;base64," +
-                new String(Base64.encodeBase64(user.getPhoto()), StandardCharsets.UTF_8));
+        photo = (user.getPhoto() == null? null: "https://api.veehark.xyz/photo/user?id=" + user.getUserId());
     }
 }
