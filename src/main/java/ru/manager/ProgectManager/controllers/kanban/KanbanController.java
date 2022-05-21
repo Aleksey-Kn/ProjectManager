@@ -18,6 +18,7 @@ import ru.manager.ProgectManager.DTO.request.kanban.TagRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanContentResponse;
+import ru.manager.ProgectManager.DTO.response.kanban.KanbanMembers;
 import ru.manager.ProgectManager.DTO.response.kanban.TagListResponse;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.components.authorization.JwtProvider;
@@ -145,6 +146,32 @@ public class KanbanController {
             } catch (NoSuchElementException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.NOT_FOUND);
             }
+        }
+    }
+
+    @Operation(summary = "Получение участников канбан-доски")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "404", description = "Указанного канбана не сущесвует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к указанному ресурсу"),
+            @ApiResponse(responseCode = "200", description = "Участники канбан-доски", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = KanbanMembers.class))
+            })
+    })
+    @GetMapping("/members")
+    public ResponseEntity<?> findMembers(@RequestParam @Parameter(description = "Идентификатор канбана") long id) {
+        try {
+            Optional<KanbanMembers> kanbanMembers = kanbanService.members(id, provider.getLoginFromToken());
+            if (kanbanMembers.isPresent()) {
+                return ResponseEntity.ok(kanbanMembers.get());
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.NOT_FOUND);
         }
     }
 

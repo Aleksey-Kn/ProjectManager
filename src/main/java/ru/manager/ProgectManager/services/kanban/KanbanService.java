@@ -3,6 +3,8 @@ package ru.manager.ProgectManager.services.kanban;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.request.kanban.TagRequest;
+import ru.manager.ProgectManager.DTO.response.kanban.KanbanMembers;
+import ru.manager.ProgectManager.DTO.response.user.PublicMainUserDataResponse;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
@@ -66,7 +68,7 @@ public class KanbanService {
     public boolean rename(long id, String name, String userLogin) {
         Kanban kanban = kanbanRepository.findById(id).orElseThrow();
         User user = userRepository.findByUsername(userLogin);
-        if(canEditKanban(kanban, user)) {
+        if (canEditKanban(kanban, user)) {
             kanban.setName(name);
             kanbanRepository.save(kanban);
             return true;
@@ -181,6 +183,28 @@ public class KanbanService {
         User user = userRepository.findByUsername(userLogin);
         if (canSeeKanban(kanban, user)) {
             return Optional.of(kanban.getAvailableTags());
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    public Optional<KanbanMembers> members(long id, String userLoin) {
+        User user = userRepository.findByUsername(userLoin);
+        Kanban kanban = kanbanRepository.findById(id).orElseThrow();
+        if (canSeeKanban(kanban, user)) {
+            KanbanMembers kanbanMembers = new KanbanMembers();
+            kanbanMembers.setBrowsingMembers(kanban.getProject().getConnectors().parallelStream()
+                    .map(UserWithProjectConnector::getUser)
+                    .filter(u -> canSeeKanban(kanban, u))
+                    .filter(u -> !canEditKanban(kanban, u))
+                    .map(u -> new PublicMainUserDataResponse(u, user.getZoneId()))
+                    .collect(Collectors.toList()));
+            kanbanMembers.setChangingMembers(kanban.getProject().getConnectors().parallelStream()
+                    .map(UserWithProjectConnector::getUser)
+                    .filter(u -> canEditKanban(kanban, u))
+                    .map(u -> new PublicMainUserDataResponse(u, user.getZoneId()))
+                    .collect(Collectors.toList()));
+            return Optional.of(kanbanMembers);
         } else {
             return Optional.empty();
         }
