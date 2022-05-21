@@ -63,6 +63,10 @@ public class KanbanService {
         }
     }
 
+    public byte[] findImage(long id) {
+        return kanbanRepository.findById(id).orElseThrow().getPhoto();
+    }
+
     public boolean removeKanban(long id, String userLogin) {
         Kanban kanban = kanbanRepository.findById(id).orElseThrow();
         Project project = kanban.getProject();

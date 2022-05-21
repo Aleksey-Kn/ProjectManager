@@ -20,6 +20,8 @@ public class KanbanContentResponse {
     private final boolean canEdit;
     @Schema(description = "Список колонок канбана")
     private final List<KanbanColumn> kanbanColumns;
+    @Schema(description = "Ссылка на изображение, прикрелённое к канбану", nullable = true)
+    private final String image;
 
     public KanbanContentResponse(Kanban kanban, int pageIndex, int count, boolean canEditKanban){
         kanbanColumns = kanban.getKanbanColumns().stream()
@@ -30,5 +32,6 @@ public class KanbanContentResponse {
         name = kanban.getName();
         id = kanban.getId();
         canEdit = canEditKanban;
+        image = (kanban.getPhoto() == null? null: "https://api.veehark.xyz/photo/kanban?id=" + kanban.getId());
     }
 }

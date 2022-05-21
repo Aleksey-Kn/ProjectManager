@@ -19,6 +19,8 @@ public class KanbanMainDataResponse {
     private final String name;
     @Schema(description = "Список пользователей, имеющих доступ к данной доске")
     private final List<PublicMainUserDataResponse> participants;
+    @Schema(description = "Ссылка на изображение, прикрелённое к канбану", nullable = true)
+    private final String image;
 
     public KanbanMainDataResponse(Kanban kanban, int zoneId){
         id = kanban.getId();
@@ -30,5 +32,6 @@ public class KanbanMainDataResponse {
                 .map(user -> new PublicMainUserDataResponse(user, zoneId))
                 .limit(3)
                 .collect(Collectors.toList());
+        image = (kanban.getPhoto() == null? null: "https://api.veehark.xyz/photo/kanban?id=" + kanban.getId());
     }
 }

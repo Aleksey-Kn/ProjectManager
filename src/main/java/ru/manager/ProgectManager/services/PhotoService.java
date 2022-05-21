@@ -8,7 +8,6 @@ import org.springframework.util.FileCopyUtils;
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @Service
@@ -20,8 +19,6 @@ public class PhotoService {
             response.setContentLength(photo.length);
             FileCopyUtils.copy(new ByteArrayInputStream(photo), response.getOutputStream());
             return new ResponseEntity<>(HttpStatus.OK);
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (IOException e) {
             return new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
         }
