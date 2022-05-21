@@ -78,6 +78,38 @@ public class KanbanController {
         }
     }
 
+    @Operation(summary = "Переименование канбана")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "404", description = "Указанного канбана не сущесвует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному действию"),
+            @ApiResponse(responseCode = "400", description = "Имя не должно быть пустым", content = {
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
+            @ApiResponse(responseCode = "200", description = "Канбана-доска успешно переименована")
+    })
+    @PutMapping("/rename")
+    public ResponseEntity<?> rename(@RequestParam @Parameter(description = "Идентификатор переименовываемого канбана") long id,
+                                    @RequestBody @Valid NameRequest nameRequest, BindingResult bindingResult) {
+        if(bindingResult.hasErrors()) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
+                    HttpStatus.BAD_REQUEST);
+        } else {
+            try{
+                if(kanbanService.rename(id, nameRequest.getName(), provider.getLoginFromToken())) {
+                    return new ResponseEntity<>(HttpStatus.OK);
+                } else {
+                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+                }
+            } catch (NoSuchElementException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.NOT_FOUND);
+            }
+        }
+    }
+
     @Operation(summary = "Получение канбан-доски",
             description = "Получение всего канбана, кроме контента элементов колонок")
     @ApiResponses(value = {

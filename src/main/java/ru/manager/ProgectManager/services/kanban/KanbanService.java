@@ -63,6 +63,18 @@ public class KanbanService {
         return false;
     }
 
+    public boolean rename(long id, String name, String userLogin) {
+        Kanban kanban = kanbanRepository.findById(id).orElseThrow();
+        User user = userRepository.findByUsername(userLogin);
+        if(canEditKanban(kanban, user)) {
+            kanban.setName(name);
+            kanbanRepository.save(kanban);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     public Optional<Kanban> findKanban(long id, String userLogin) {
         Kanban kanban = kanbanRepository.findById(id).orElseThrow();
         User user = userRepository.findByUsername(userLogin);
