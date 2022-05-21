@@ -2,9 +2,11 @@ package ru.manager.ProgectManager.services.kanban;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import ru.manager.ProgectManager.DTO.request.kanban.TagRequest;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanMembers;
 import ru.manager.ProgectManager.DTO.response.user.PublicMainUserDataResponse;
+import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
@@ -12,10 +14,12 @@ import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.entitys.kanban.Tag;
 import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.ResourceType;
+import ru.manager.ProgectManager.enums.Size;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.repositories.*;
 import ru.manager.ProgectManager.services.user.VisitMarkUpdater;
 
+import java.io.IOException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -30,6 +34,7 @@ public class KanbanService {
     private final KanbanConnectorRepository kanbanConnectorRepository;
     private final TagRepository tagRepository;
     private final VisitMarkUpdater visitMarkUpdater;
+    private final PhotoCompressor compressor;
 
     public Optional<Kanban> createKanban(long projectId, String name, String userLogin) {
         Project project = projectRepository.findById(projectId).orElseThrow();
@@ -44,6 +49,18 @@ public class KanbanService {
             return Optional.of(kanban);
         }
         return Optional.empty();
+    }
+
+    public boolean setImage(long kanbanId, MultipartFile image, String userLogin) throws IOException {
+        Kanban kanban = kanbanRepository.findById(kanbanId).orElseThrow();
+        User user = userRepository.findByUsername(userLogin);
+        if(canEditKanban(kanban, user)) {
+            kanban.setPhoto(compressor.compress(image, Size.LARGE));
+            kanbanRepository.save(kanban);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public boolean removeKanban(long id, String userLogin) {

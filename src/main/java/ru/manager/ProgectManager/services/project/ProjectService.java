@@ -2,10 +2,13 @@ package ru.manager.ProgectManager.services.project;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import ru.manager.ProgectManager.DTO.request.ProjectDataRequest;
+import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
 import ru.manager.ProgectManager.entitys.user.User;
+import ru.manager.ProgectManager.enums.Size;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.repositories.ProjectRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
@@ -21,6 +24,7 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final UserWithProjectConnectorRepository connectorRepository;
+    private final PhotoCompressor compressor;
 
     public Optional<Project> findProject(long id, String login) {
         User user = userRepository.findByUsername(login);
@@ -58,11 +62,11 @@ public class ProjectService {
         return project;
     }
 
-    public boolean setPhoto(long id, byte[] photo, String userLogin) throws IOException {
+    public boolean setPhoto(long id, MultipartFile photo, String userLogin) throws IOException {
         User admin = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(id).orElseThrow();
         if (isAdmin(project, admin)) {
-            project.setPhoto(photo);
+            project.setPhoto(compressor.compress(photo, Size.MIDDLE));
             projectRepository.save(project);
             return true;
         }

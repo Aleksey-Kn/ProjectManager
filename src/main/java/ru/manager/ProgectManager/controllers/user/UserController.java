@@ -23,7 +23,6 @@ import ru.manager.ProgectManager.DTO.response.user.MyselfUserDataResponse;
 import ru.manager.ProgectManager.DTO.response.user.PublicAllDataResponse;
 import ru.manager.ProgectManager.DTO.response.user.VisitMarkListResponse;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
-import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.user.User;
@@ -45,7 +44,6 @@ import java.util.Optional;
 public class UserController {
     private final UserService userService;
     private final JwtProvider jwtProvider;
-    private final PhotoCompressor compressor;
     private final AccessProjectService accessProjectService;
     private final ErrorResponseEntityConfigurator entityConfigurator;
     private final NoteService noteService;
@@ -165,7 +163,7 @@ public class UserController {
     @PostMapping("/user/photo")
     public ResponseEntity<?> setPhoto(@RequestParam("file") MultipartFile multipartFile) {
         try {
-            userService.setPhoto(jwtProvider.getLoginFromToken(), compressor.compress(multipartFile, false));
+            userService.setPhoto(jwtProvider.getLoginFromToken(), multipartFile);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (IOException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.BAD_FILE), HttpStatus.BAD_REQUEST);

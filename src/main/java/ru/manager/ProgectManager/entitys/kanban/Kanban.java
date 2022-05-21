@@ -19,6 +19,10 @@ public class Kanban {
 
     private String name;
 
+    @Column(length = 76_800)
+    @Lob
+    private byte[] photo;
+
     @JsonIgnore
     @OneToMany(mappedBy = "kanban", cascade = CascadeType.REMOVE)
     private Set<Tag> availableTags;

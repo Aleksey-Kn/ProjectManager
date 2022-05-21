@@ -4,10 +4,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.MailException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import ru.manager.ProgectManager.DTO.request.user.AuthDto;
 import ru.manager.ProgectManager.DTO.request.user.LocaleRequest;
 import ru.manager.ProgectManager.DTO.request.user.RegisterUserDTO;
 import ru.manager.ProgectManager.DTO.response.PointerResource;
+import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithDocumentConnector;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
@@ -15,6 +17,7 @@ import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
 import ru.manager.ProgectManager.entitys.user.*;
 import ru.manager.ProgectManager.enums.ActionType;
 import ru.manager.ProgectManager.enums.ResourceType;
+import ru.manager.ProgectManager.enums.Size;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.EmailAlreadyUsedException;
 import ru.manager.ProgectManager.repositories.ApproveActionTokenRepository;
@@ -39,6 +42,7 @@ public class UserService {
     private ApproveActionTokenRepository approveActionTokenRepository;
     private UsedAddressRepository usedAddressRepository;
     private NotificationService notificationService;
+    private PhotoCompressor compressor;
 
     public boolean saveUser(RegisterUserDTO registerUserDTO) {
         if (userRepository.findByUsername(registerUserDTO.getLogin()) == null) {
@@ -165,10 +169,10 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public void setPhoto(String login, byte[] file) throws IOException {
+    public void setPhoto(String login, MultipartFile multipartFile) throws IOException {
         User user = userRepository.findByUsername(login);
         if (user != null) {
-            user.setPhoto(file);
+            user.setPhoto(compressor.compress(multipartFile, Size.SMALL));
             userRepository.save(user);
         }
     }
@@ -269,5 +273,10 @@ public class UserService {
     @Autowired
     public void setNotificationService(NotificationService notificationService) {
         this.notificationService = notificationService;
+    }
+
+    @Autowired
+    public void setCompressor(PhotoCompressor compressor) {
+        this.compressor = compressor;
     }
 }

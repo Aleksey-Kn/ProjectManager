@@ -19,7 +19,6 @@ import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.DTO.response.ProjectResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanListResponse;
 import ru.manager.ProgectManager.DTO.response.user.UserDataListResponse;
-import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
@@ -42,7 +41,6 @@ import java.util.Set;
 public class ProjectController {
     private final ProjectService projectService;
     private final JwtProvider provider;
-    private final PhotoCompressor compressor;
     private final KanbanService kanbanService;
     private final AccessProjectService accessProjectService;
     private final UserService userService;
@@ -147,8 +145,7 @@ public class ProjectController {
     @PostMapping("/project/photo")
     public ResponseEntity<?> setPhoto(@RequestParam long id, @ModelAttribute PhotoDTO photoDTO){
         try{
-            if(projectService.setPhoto(id, compressor.compress(photoDTO.getFile(), true),
-                    provider.getLoginFromToken())) {
+            if(projectService.setPhoto(id, photoDTO.getFile(), provider.getLoginFromToken())) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else{
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);

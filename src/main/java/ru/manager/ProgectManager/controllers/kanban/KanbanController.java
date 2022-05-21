@@ -14,6 +14,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.GetResourceWithPagination;
 import ru.manager.ProgectManager.DTO.request.NameRequest;
+import ru.manager.ProgectManager.DTO.request.PhotoDTO;
 import ru.manager.ProgectManager.DTO.request.kanban.TagRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.IdResponse;
@@ -28,6 +29,7 @@ import ru.manager.ProgectManager.services.kanban.KanbanService;
 import ru.manager.ProgectManager.services.project.AccessProjectService;
 
 import javax.validation.Valid;
+import java.io.IOException;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
@@ -108,6 +110,35 @@ public class KanbanController {
             } catch (NoSuchElementException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.NOT_FOUND);
             }
+        }
+    }
+
+    @Operation(summary = "Установление или обновление картинки канбана")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "404", description = "Указанного канбана не сущесвует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "400", description = "Ошибка чтения файла", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному действию"),
+            @ApiResponse(responseCode = "200", description = "Картинка успешно установлена")
+    })
+    @PostMapping("/image")
+    public ResponseEntity<?> setImage(@RequestParam @Parameter(description = "Идентификатор канбана") long id,
+                                      @ModelAttribute PhotoDTO photoDTO) {
+        try{
+            if(kanbanService.setImage(id, photoDTO.getFile(), provider.getLoginFromToken())) {
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.NOT_FOUND);
+        } catch (IOException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.BAD_FILE), HttpStatus.BAD_REQUEST);
         }
     }
 
