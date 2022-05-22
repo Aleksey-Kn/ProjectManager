@@ -142,7 +142,7 @@ public class KanbanController {
     }
 
     @Operation(summary = "Получение канбан-доски",
-            description = "Получение всего канбана, кроме контента элементов колонок")
+            description = "Получение данных канбана и идентифиакторов его колонок")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "404", description = "Указанного канбана не сущесвует", content = {
                     @Content(mediaType = "application/json",
