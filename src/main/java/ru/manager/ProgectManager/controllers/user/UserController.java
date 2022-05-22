@@ -39,7 +39,7 @@ import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/users")
+@RequestMapping("/users/user")
 @Tag(name = "Управление аккаунтом пользователя")
 public class UserController {
     private final UserService userService;
@@ -53,7 +53,7 @@ public class UserController {
             @Content(mediaType = "application/json",
                     schema = @Schema(implementation = MyselfUserDataResponse.class))
     })
-    @GetMapping("/user/current")
+    @GetMapping("/current")
     public ResponseEntity<?> findMyselfAccountData() {
         return ResponseEntity.ok(new MyselfUserDataResponse(userService.findByUsername(jwtProvider.getLoginFromToken())
                 .orElseThrow()));
@@ -71,7 +71,7 @@ public class UserController {
                             schema = @Schema(implementation = PublicAllDataResponse.class))
             })
     })
-    @GetMapping("/user/other")
+    @GetMapping("/other")
     public ResponseEntity<?> findOtherAccountData(@RequestParam @Parameter(description = "Идентификатор искомого пользователя")
                                                           long id) {
         Optional<User> targetUser = userService.findById(id);
@@ -94,7 +94,7 @@ public class UserController {
                     }),
             @ApiResponse(responseCode = "200", description = "Имя пользователя успешно изменено")
     })
-    @PutMapping("/user")
+    @PutMapping()
     public ResponseEntity<?> rename(@RequestBody @Valid NameRequest request, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
@@ -119,7 +119,7 @@ public class UserController {
                                     schema = @Schema(implementation = ErrorResponse.class))
                     }),
     })
-    @PutMapping("/user/pass")
+    @PutMapping("/pass")
     public ResponseEntity<?> updatePass(@RequestBody @Valid UpdatePassRequest request, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
@@ -140,7 +140,7 @@ public class UserController {
             }),
             @ApiResponse(responseCode = "200", description = "Язык успешно изменён")
     })
-    @PutMapping("/user/locale")
+    @PutMapping("/locale")
     public ResponseEntity<?> updateLocale(@RequestBody @Valid LocaleRequest request, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.FIELD_MUST_BE_NOT_NULL), HttpStatus.BAD_REQUEST);
@@ -159,7 +159,7 @@ public class UserController {
                     }),
             @ApiResponse(responseCode = "200", description = "Фотография успешно сжата и сохранена")
     })
-    @PostMapping("/user/photo")
+    @PostMapping("/photo")
     public ResponseEntity<?> setPhoto(@RequestParam("file") MultipartFile multipartFile) {
         try {
             userService.setPhoto(jwtProvider.getLoginFromToken(), multipartFile);
@@ -174,7 +174,7 @@ public class UserController {
             @Content(mediaType = "application/json",
                     schema = @Schema(implementation = ProjectListResponse.class))
     })
-    @GetMapping("/user/projects")
+    @GetMapping("/projects")
     public ProjectListResponse getUserProjects() {
         String login = jwtProvider.getLoginFromToken();
         List<Project> projectList = userService.allProjectOfThisUser(login);
@@ -189,7 +189,7 @@ public class UserController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ProjectListResponse.class))
             })
-    @GetMapping("user/projects_by_name")
+    @GetMapping("/projects_by_name")
     public ProjectListResponse findProjectsByName(@RequestParam String name) {
         String login = jwtProvider.getLoginFromToken();
         List<Project> projects = userService.projectsByNameOfThisUser(name, login);
@@ -204,7 +204,7 @@ public class UserController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ListPointerResources.class))
             })
-    @GetMapping("/user/resources")
+    @GetMapping("/resources")
     public ListPointerResources findResourcesByName(@RequestParam String name) {
         return new ListPointerResources(userService.availableResourceByName(name, jwtProvider.getLoginFromToken()));
     }
@@ -215,7 +215,7 @@ public class UserController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = VisitMarkListResponse.class))
             })
-    @GetMapping("/user/lasts")
+    @GetMapping("/lasts")
     public VisitMarkListResponse findLastSee() {
         return new VisitMarkListResponse(userService.lastVisits(jwtProvider.getLoginFromToken()));
     }

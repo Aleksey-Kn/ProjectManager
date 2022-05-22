@@ -57,7 +57,7 @@ public class KanbanElementCommentController {
                             schema = @Schema(implementation = ErrorResponse.class))
             })
     })
-    @PostMapping("/add")
+    @PostMapping()
     public ResponseEntity<?> addComment(@RequestBody @Valid KanbanCommentRequest request, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
@@ -100,7 +100,7 @@ public class KanbanElementCommentController {
                             schema = @Schema(implementation = ErrorResponse.class))
             })
     })
-    @PutMapping("/put")
+    @PutMapping()
     public ResponseEntity<?> updateComment(@RequestBody @Valid KanbanCommentRequest request, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
@@ -135,7 +135,7 @@ public class KanbanElementCommentController {
                             schema = @Schema(implementation = ErrorResponse.class))
             })
     })
-    @DeleteMapping("/delete")
+    @DeleteMapping()
     public ResponseEntity<?> removeComment(@RequestParam long id) {
         try {
             Optional<KanbanElement> element = attributesService.deleteComment(id, provider.getLoginFromToken());

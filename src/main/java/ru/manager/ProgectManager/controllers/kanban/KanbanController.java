@@ -60,7 +60,7 @@ public class KanbanController {
                             schema = @Schema(implementation = IdResponse.class))
             })
     })
-    @PostMapping("/new")
+    @PostMapping()
     public ResponseEntity<?> createKanban(@RequestParam long projectId, @RequestBody @Valid NameRequest name,
                                           BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -154,7 +154,7 @@ public class KanbanController {
                             schema = @Schema(implementation = KanbanContentResponse.class))
             })
     })
-    @GetMapping("/get")
+    @GetMapping()
     public ResponseEntity<?> getKanban(@RequestParam @Parameter(description = "Идентификатор канбана") long id,
                                        @RequestParam int pageIndex, @RequestParam int rowCount) {
             try {
@@ -206,7 +206,7 @@ public class KanbanController {
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному ресурсу"),
             @ApiResponse(responseCode = "200", description = "Канбан доска успешно удалена")
     })
-    @DeleteMapping("/all_kanban")
+    @DeleteMapping()
     public ResponseEntity<?> removeKanban(@RequestParam long id) {
         try {
             if (kanbanService.removeKanban(id, provider.getLoginFromToken())) {

@@ -51,7 +51,7 @@ public class DocumentController {
                             schema = @Schema(implementation = ErrorResponse.class))
             })
     })
-    @PostMapping("/add")
+    @PostMapping()
     public ResponseEntity<?> addPage(@RequestBody @Valid CreatePageRequest request, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
@@ -184,7 +184,7 @@ public class DocumentController {
                             schema = @Schema(implementation = ErrorResponse.class))
             })
     })
-    @DeleteMapping("/delete")
+    @DeleteMapping()
     public ResponseEntity<?> delete(@RequestParam @Parameter(description = "Идентификатор страницы") long id) {
         try {
             if (pageService.deletePage(id, provider.getLoginFromToken())) {
@@ -209,7 +209,7 @@ public class DocumentController {
                             schema = @Schema(implementation = ErrorResponse.class))
             })
     })
-    @GetMapping("/get")
+    @GetMapping()
     public ResponseEntity<?> findById(@RequestParam @Parameter(description = "Идентификатор страницы") long id) {
         try {
             Optional<PageResponse> page = pageService.find(id, provider.getLoginFromToken());

@@ -57,7 +57,7 @@ public class KanbanColumnController {
                             schema = @Schema(implementation = IdResponse.class))
             })
     })
-    @PostMapping("/add")
+    @PostMapping()
     public ResponseEntity<?> addColumn(@RequestBody @Valid KanbanColumnRequest kanbanColumnRequest,
                                        BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -88,7 +88,7 @@ public class KanbanColumnController {
                             schema = @Schema(implementation = KanbanColumnResponse.class))
             })
     })
-    @GetMapping("/get")
+    @GetMapping()
     public ResponseEntity<?> findColumn(@RequestParam @Parameter(description = "Идентификатор колонки") long id,
                                         @RequestParam int pageIndex, @RequestParam int rowCount) {
         try {
@@ -118,7 +118,7 @@ public class KanbanColumnController {
             }),
             @ApiResponse(responseCode = "200", description = "Название упешно изменено")
     })
-    @PutMapping("/put")
+    @PutMapping()
     public ResponseEntity<?> renameColumn(@RequestParam long id, @RequestBody @Valid NameRequest name,
                                           BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -147,7 +147,7 @@ public class KanbanColumnController {
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному ресурсу"),
             @ApiResponse(responseCode = "200", description = "Колонка успешно удалена")
     })
-    @DeleteMapping("/delete")
+    @DeleteMapping()
     public ResponseEntity<?> removeColumn(@RequestParam long id) {
         try {
             String login = provider.getLoginFromToken();

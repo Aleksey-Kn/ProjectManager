@@ -63,7 +63,7 @@ public class KanbanElementController {
                             schema = @Schema(implementation = KanbanElementContentResponse.class))
             })
     })
-    @GetMapping("/get")
+    @GetMapping()
     public ResponseEntity<?> getContent(@RequestParam long elementId) {
         try {
             String login = provider.getLoginFromToken();
@@ -96,7 +96,7 @@ public class KanbanElementController {
                             schema = @Schema(implementation = IdResponse.class))
             })
     })
-    @PostMapping("/add")
+    @PostMapping()
     public ResponseEntity<?> addElement(@RequestBody @Valid CreateKanbanElementRequest request, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
@@ -164,7 +164,7 @@ public class KanbanElementController {
                             schema = @Schema(implementation = ErrorResponse.class))
             })
     })
-    @PutMapping("/put")
+    @PutMapping()
     public ResponseEntity<?> editElement(@RequestParam long id, @RequestBody @Valid UpdateKanbanElementRequest request,
                                          BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -201,7 +201,7 @@ public class KanbanElementController {
                             schema = @Schema(implementation = ErrorResponse.class))
             })
     })
-    @DeleteMapping("/delete")
+    @DeleteMapping()
     public ResponseEntity<?> removeElement(@RequestParam long id) {
         try {
             String login = provider.getLoginFromToken();

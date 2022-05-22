@@ -56,7 +56,7 @@ public class AccessController {
             }),
             @ApiResponse(responseCode = "200", description = "Подключение к проекту произошло успешно")
     })
-    @GetMapping("/get")
+    @GetMapping()
     public ResponseEntity<?> getAccess(@RequestParam String token) {
         try {
             if (accessProjectService.createAccessForUser(token, provider.getLoginFromToken())) {

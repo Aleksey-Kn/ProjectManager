@@ -54,7 +54,7 @@ public class KanbanElementAttachmentController {
                             schema = @Schema(implementation = ErrorResponse.class))
             })
     })
-    @PostMapping("/add")
+    @PostMapping()
     public ResponseEntity<?> addAttachment(@RequestParam long id, @ModelAttribute PhotoDTO photoDTO) {
         try {
             Optional<KanbanAttachment> attachment =
@@ -86,7 +86,7 @@ public class KanbanElementAttachmentController {
                             schema = @Schema(implementation = KanbanAttachment.class))
             })
     })
-    @GetMapping("/get")
+    @GetMapping()
     public ResponseEntity<?> getAttachment(@RequestParam long id) {
         try {
             Optional<KanbanAttachment> attachment = attributesService.getAttachment(id, provider.getLoginFromToken());
@@ -114,7 +114,7 @@ public class KanbanElementAttachmentController {
                             schema = @Schema(implementation = ErrorResponse.class))
             })
     })
-    @DeleteMapping("/delete")
+    @DeleteMapping()
     public ResponseEntity<?> deleteAttachment(@RequestParam long id) {
         try {
             Optional<KanbanElement> element = attributesService.deleteAttachment(id, provider.getLoginFromToken());

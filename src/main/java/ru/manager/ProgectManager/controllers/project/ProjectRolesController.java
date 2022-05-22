@@ -50,7 +50,7 @@ public class ProjectRolesController {
                             schema = @Schema(implementation = ErrorResponse.class))
             })
     })
-    @GetMapping("/get")
+    @GetMapping()
     public ResponseEntity<?> findAllCustomRole(@RequestParam @Parameter(description = "Идентификатор проекта") long id) {
         try {
             Optional<Set<CustomProjectRole>> roles = accessProjectService
@@ -83,7 +83,7 @@ public class ProjectRolesController {
                                     schema = @Schema(implementation = ErrorResponse.class))
                     })
     })
-    @PostMapping("/add")
+    @PostMapping()
     public ResponseEntity<?> addRole(@RequestBody @Valid CreateCustomRoleRequest request, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
@@ -115,7 +115,7 @@ public class ProjectRolesController {
                             schema = @Schema(implementation = ErrorResponse.class))
             })
     })
-    @DeleteMapping("/delete")
+    @DeleteMapping()
     public ResponseEntity<?> deleteRole(@RequestParam long projectId, @RequestParam long roleId) {
         try {
             if (accessProjectService.deleteCustomRole(projectId, roleId, provider.getLoginFromToken())) {
@@ -146,7 +146,7 @@ public class ProjectRolesController {
                                     schema = @Schema(implementation = ErrorResponse.class))
                     })
     })
-    @PutMapping("/edit")
+    @PutMapping()
     public ResponseEntity<?> editRole(@RequestBody @Valid CreateCustomRoleRequest request, BindingResult bindingResult,
                                       @RequestParam long roleId) {
         if (bindingResult.hasErrors()) {

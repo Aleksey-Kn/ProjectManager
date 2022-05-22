@@ -56,7 +56,7 @@ public class ElementCheckboxController {
                                     schema = @Schema(implementation = ErrorResponse.class))
                     })
     })
-    @PostMapping("/add")
+    @PostMapping()
     public ResponseEntity<?> addCheckbox(@RequestBody @Valid CheckboxRequest request, BindingResult bindingResult){
         if(bindingResult.hasErrors()){
             return new ResponseEntity<>(new ErrorResponse(Errors.TEXT_MUST_BE_CONTAINS_VISIBLE_SYMBOL),
@@ -93,7 +93,7 @@ public class ElementCheckboxController {
                                     schema = @Schema(implementation = ErrorResponse.class))
                     })
     })
-    @DeleteMapping("/delete")
+    @DeleteMapping()
     public ResponseEntity<?> removeCheckbox(@RequestParam @Parameter(description = "Идентификатор чекбокса") long id){
         try{
             if(attributesService.deleteCheckbox(id, provider.getLoginFromToken())){

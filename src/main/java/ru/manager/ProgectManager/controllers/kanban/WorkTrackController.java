@@ -53,7 +53,7 @@ public class WorkTrackController {
                     }),
             @ApiResponse(responseCode = "200", description = "Время работы успешно добавлено")
     })
-    @PostMapping("/add")
+    @PostMapping()
     public ResponseEntity<?> addWorkTrack(@RequestBody @Valid CreateWorkTrackRequest request,
                                           BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -89,7 +89,7 @@ public class WorkTrackController {
                     }),
             @ApiResponse(responseCode = "200", description = "Время работы успешно удалено")
     })
-    @DeleteMapping("/delete")
+    @DeleteMapping()
     public ResponseEntity<?> removeWorkTrack(@RequestParam @Parameter(description = "Идентификатор удаляемого времени работы")
                                                      long id) {
         try {
@@ -119,7 +119,7 @@ public class WorkTrackController {
                             schema = @Schema(implementation = AllWorkUserInfo.class))
             })
     })
-    @GetMapping("/get")
+    @GetMapping()
     public ResponseEntity<?> findWorkTracks(@RequestParam String fromDate, @RequestParam String toDate,
                                             @RequestParam long projectId, @RequestParam long userId) {
         try {
