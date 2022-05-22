@@ -13,14 +13,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.ContentRequest;
-import ru.manager.ProgectManager.DTO.request.GetResourceWithPagination;
 import ru.manager.ProgectManager.DTO.request.NameRequest;
 import ru.manager.ProgectManager.DTO.request.documents.CreatePageRequest;
 import ru.manager.ProgectManager.DTO.request.documents.TransportPageRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.DTO.response.documents.*;
-import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.documents.PageService;
@@ -39,7 +37,6 @@ import java.util.Set;
 public class DocumentController {
     private final PageService pageService;
     private final JwtProvider provider;
-    private final ErrorResponseEntityConfigurator entityConfigurator;
     private final UserService userService;
 
     @Operation(summary = "Добавление страницы документации")
@@ -232,10 +229,6 @@ public class DocumentController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = PageResponseList.class))
             }),
-            @ApiResponse(responseCode = "400", description = "Некорректные индексы пагинации", content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class))
-            }),
             @ApiResponse(responseCode = "403", description = "Недостаточно прав доступа для совершения данного действия"),
             @ApiResponse(responseCode = "404", description = "Указанного проекта не существует", content = {
                     @Content(mediaType = "application/json",
@@ -243,23 +236,17 @@ public class DocumentController {
             })
     })
     @GetMapping("/root")
-    public ResponseEntity<?> findRootPages(@RequestBody @Valid GetResourceWithPagination request,
-                                           BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            return entityConfigurator.createErrorResponse(bindingResult);
-        } else {
-            try {
-                Optional<List<PageResponse>> pageList = pageService.findAllRoot(request.getId(),
-                        provider.getLoginFromToken());
-                if (pageList.isPresent()) {
-                    return ResponseEntity.ok(new PageResponseList(pageList.get(), request.getPageIndex(),
-                            request.getCount()));
-                } else {
-                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-                }
-            } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
+    public ResponseEntity<?> findRootPages(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
+                                           @RequestParam int pageIndex, @RequestParam int rowCount) {
+        try {
+            Optional<List<PageResponse>> pageList = pageService.findAllRoot(id, provider.getLoginFromToken());
+            if (pageList.isPresent()) {
+                return ResponseEntity.ok(new PageResponseList(pageList.get(), pageIndex, rowCount));
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -269,10 +256,6 @@ public class DocumentController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = PageNameResponseList.class))
             }),
-            @ApiResponse(responseCode = "400", description = "Некорректные индексы пагинации", content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class))
-            }),
             @ApiResponse(responseCode = "403", description = "Недостаточно прав доступа для совершения данного действия"),
             @ApiResponse(responseCode = "404", description = "Указанного проекта не существует", content = {
                     @Content(mediaType = "application/json",
@@ -280,24 +263,19 @@ public class DocumentController {
             })
     })
     @GetMapping("/find")
-    public ResponseEntity<?> findByName(@RequestBody @Valid GetResourceWithPagination request,
-                                        BindingResult bindingResult,
+    public ResponseEntity<?> findByName(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
+                                        @RequestParam int pageIndex, @RequestParam int rowCount,
                                         @RequestParam String name) {
-        if (bindingResult.hasErrors()) {
-            return entityConfigurator.createErrorResponse(bindingResult);
-        } else {
-            try {
-                Optional<Set<PageNameResponse>> pageSet = pageService.findByName(request.getId(), name,
-                        provider.getLoginFromToken());
-                if (pageSet.isPresent()) {
-                    return ResponseEntity.ok(new PageNameResponseList(pageSet.get(), request.getPageIndex(),
-                            request.getCount()));
-                } else {
-                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-                }
-            } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
+        try {
+            Optional<Set<PageNameResponse>> pageSet = pageService.findByName(id, name,
+                    provider.getLoginFromToken());
+            if (pageSet.isPresent()) {
+                return ResponseEntity.ok(new PageNameResponseList(pageSet.get(), pageIndex, rowCount));
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -307,10 +285,6 @@ public class DocumentController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = PageNameAndUpdateDateResponseList.class))
             }),
-            @ApiResponse(responseCode = "400", description = "Некорректные индексы пагинации", content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class))
-            }),
             @ApiResponse(responseCode = "403", description = "Недостаточно прав доступа для совершения данного действия"),
             @ApiResponse(responseCode = "404", description = "Указанного проекта не существует", content = {
                     @Content(mediaType = "application/json",
@@ -318,25 +292,19 @@ public class DocumentController {
             })
     })
     @GetMapping("/all")
-    public ResponseEntity<?> findAllWithSort(@RequestBody @Valid GetResourceWithPagination request,
-                                             BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            return entityConfigurator.createErrorResponse(bindingResult);
-        } else {
-            try {
-                String login = provider.getLoginFromToken();
-                int zoneId = userService.findZoneIdForThisUser(login);
-                Optional<List<PageNameAndUpdateDateResponse>> pages = pageService.findAllWithSort(request.getId(),
-                        login, zoneId);
-                if (pages.isPresent()) {
-                    return ResponseEntity.ok(new PageNameAndUpdateDateResponseList(pages.get(), request.getPageIndex(),
-                            request.getCount()));
-                } else {
-                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-                }
-            } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
+    public ResponseEntity<?> findAllWithSort(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
+                                             @RequestParam int pageIndex, @RequestParam int rowCount) {
+        try {
+            String login = provider.getLoginFromToken();
+            int zoneId = userService.findZoneIdForThisUser(login);
+            Optional<List<PageNameAndUpdateDateResponse>> pages = pageService.findAllWithSort(id, login, zoneId);
+            if (pages.isPresent()) {
+                return ResponseEntity.ok(new PageNameAndUpdateDateResponseList(pages.get(), pageIndex, rowCount));
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -346,31 +314,21 @@ public class DocumentController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = PageNameAndUpdateDateResponseList.class))
             }),
-            @ApiResponse(responseCode = "400", description = "Некорректные индексы пагинации", content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class))
-            }),
             @ApiResponse(responseCode = "404", description = "Указанного проекта не существует", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             })
     })
     @GetMapping("/lasts")
-    public ResponseEntity<?> findLastSee(@RequestBody @Valid GetResourceWithPagination request,
-                                         BindingResult bindingResult) {
-        if(bindingResult.hasErrors()){
-            return entityConfigurator.createErrorResponse(bindingResult);
+    public ResponseEntity<?> findLastSee(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
+                                         @RequestParam int pageIndex, @RequestParam int rowCount) {
+        String login = provider.getLoginFromToken();
+        int zoneId = userService.findZoneIdForThisUser(login);
+        Optional<List<PageNameAndUpdateDateResponse>> responses = pageService.findLastSeeDocument(id, login, zoneId);
+        if (responses.isPresent()) {
+            return ResponseEntity.ok(new PageNameAndUpdateDateResponseList(responses.get(), pageIndex, rowCount));
         } else {
-            String login = provider.getLoginFromToken();
-            int zoneId = userService.findZoneIdForThisUser(login);
-            Optional<List<PageNameAndUpdateDateResponse>> responses = pageService.findLastSeeDocument(request.getId(),
-                    login, zoneId);
-            if (responses.isPresent()) {
-                return ResponseEntity.ok(new PageNameAndUpdateDateResponseList(responses.get(), request.getPageIndex(),
-                        request.getCount()));
-            } else {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
-            }
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
         }
     }
 

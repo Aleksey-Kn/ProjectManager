@@ -172,8 +172,7 @@ public class ProjectController {
             })
     })
     @GetMapping("/project/kanbans")
-    public ResponseEntity<?> allKanbanOfThisUser(@RequestParam @Parameter(description = "Идентификатор проекта")
-                                                              long id){
+    public ResponseEntity<?> allKanbanOfThisUser(@RequestParam @Parameter(description = "Идентификатор проекта") long id){
         try {
             String login = provider.getLoginFromToken();
             Optional<Set<Kanban>> kanbans = kanbanService.findAllKanban(id, login);

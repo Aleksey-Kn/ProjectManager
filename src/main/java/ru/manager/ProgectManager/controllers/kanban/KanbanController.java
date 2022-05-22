@@ -12,7 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-import ru.manager.ProgectManager.DTO.request.GetResourceWithPagination;
 import ru.manager.ProgectManager.DTO.request.NameRequest;
 import ru.manager.ProgectManager.DTO.request.PhotoDTO;
 import ru.manager.ProgectManager.DTO.request.kanban.TagRequest;
@@ -149,11 +148,6 @@ public class KanbanController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "400", description = "Указаны некорректные индекс или количество элементов",
-                    content = {
-                            @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ErrorResponse.class))
-                    }),
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к указанному ресурсу"),
             @ApiResponse(responseCode = "200", content = {
                     @Content(mediaType = "application/json",
@@ -161,23 +155,20 @@ public class KanbanController {
             })
     })
     @GetMapping("/get")
-    public ResponseEntity<?> getKanban(@RequestBody @Valid GetResourceWithPagination kanbanRequest, BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            return entityConfigurator.createErrorResponse(bindingResult);
-        } else {
+    public ResponseEntity<?> getKanban(@RequestParam @Parameter(description = "Идентификатор канбана") long id,
+                                       @RequestParam int pageIndex, @RequestParam int rowCount) {
             try {
                 String login = provider.getLoginFromToken();
-                Optional<Kanban> result = kanbanService.findKanban(kanbanRequest.getId(), login);
+                Optional<Kanban> result = kanbanService.findKanban(id, login);
                 if (result.isPresent()) {
-                    return ResponseEntity.ok(new KanbanContentResponse(result.get(), kanbanRequest.getPageIndex(),
-                            kanbanRequest.getCount(), accessProjectService.canEditKanban(kanbanRequest.getId(), login)));
+                    return ResponseEntity.ok(new KanbanContentResponse(result.get(), pageIndex, rowCount,
+                            accessProjectService.canEditKanban(id, login)));
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
             } catch (NoSuchElementException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.NOT_FOUND);
             }
-        }
     }
 
     @Operation(summary = "Получение участников канбан-доски")

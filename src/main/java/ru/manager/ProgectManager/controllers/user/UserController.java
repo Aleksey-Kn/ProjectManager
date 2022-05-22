@@ -72,8 +72,7 @@ public class UserController {
             })
     })
     @GetMapping("/user/other")
-    public ResponseEntity<?> findOtherAccountData(@RequestParam
-                                                  @Parameter(description = "Идентификатор искомого пользователя")
+    public ResponseEntity<?> findOtherAccountData(@RequestParam @Parameter(description = "Идентификатор искомого пользователя")
                                                           long id) {
         Optional<User> targetUser = userService.findById(id);
         String nowLogin = jwtProvider.getLoginFromToken();

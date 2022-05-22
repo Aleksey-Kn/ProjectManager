@@ -12,7 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-import ru.manager.ProgectManager.DTO.request.GetResourceWithPagination;
 import ru.manager.ProgectManager.DTO.request.NameRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.DelayRemoveRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.KanbanColumnRequest;
@@ -84,33 +83,25 @@ public class KanbanColumnController {
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному ресурсу"),
-            @ApiResponse(responseCode = "400", description = "Переменные для пагинации должны быть положительными",
-                    content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class))
-            }),
             @ApiResponse(responseCode = "200", description = "Запрашиваемая колонка", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = KanbanColumnResponse.class))
             })
     })
     @GetMapping("/get")
-    public ResponseEntity<?> findColumn(@RequestBody @Valid GetResourceWithPagination request, BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            return entityConfigurator.createErrorResponse(bindingResult);
-        } else {
-            try {
-                String login = provider.getLoginFromToken();
-                Optional<KanbanColumn> kanbanColumn = kanbanColumnService.findKanbanColumn(request.getId(), login);
-                if (kanbanColumn.isPresent()) {
-                    return ResponseEntity.ok(new KanbanColumnResponse(kanbanColumn.get(), request.getPageIndex(),
-                            request.getCount(), userService.findZoneIdForThisUser(login)));
-                } else {
-                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-                }
-            } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.NOT_FOUND);
+    public ResponseEntity<?> findColumn(@RequestParam @Parameter(description = "Идентификатор колонки") long id,
+                                        @RequestParam int pageIndex, @RequestParam int rowCount) {
+        try {
+            String login = provider.getLoginFromToken();
+            Optional<KanbanColumn> kanbanColumn = kanbanColumnService.findKanbanColumn(id, login);
+            if (kanbanColumn.isPresent()) {
+                return ResponseEntity.ok(new KanbanColumnResponse(kanbanColumn.get(), pageIndex, rowCount,
+                        userService.findZoneIdForThisUser(login)));
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.NOT_FOUND);
         }
     }
 

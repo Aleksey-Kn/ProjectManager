@@ -12,7 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-import ru.manager.ProgectManager.DTO.request.WorkTrackRequest;
 import ru.manager.ProgectManager.DTO.request.user.CreateWorkTrackRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.workTrack.AllWorkUserInfo;
@@ -109,42 +108,34 @@ public class WorkTrackController {
 
     @Operation(summary = "Получение отчёта о работе участника проекта или о своей работе в проекте")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "400", description = "Некорректные заначения полей запроса", content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class))
-            }),
             @ApiResponse(responseCode = "403", description = "У пользователя нет доступа к данному действию"),
             @ApiResponse(responseCode = "404", description = "Указанного проекта или пользователя не существует",
                     content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class))
-            }),
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
             @ApiResponse(responseCode = "200", description = "Отчёт о проделанной работе", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = AllWorkUserInfo.class))
             })
     })
     @GetMapping("/get")
-    public ResponseEntity<?> findWorkTracks(@RequestBody @Valid WorkTrackRequest request, BindingResult bindingResult) {
-        if(bindingResult.hasErrors()) {
-            return entityConfigurator.createErrorResponse(bindingResult);
-        } else {
-            try {
-                Optional<AllWorkUserInfo> response = (request.getUserId() == 0
-                        ? workTrackService.findWorkTrackMyself(request.getFromDate(), request.getToDate(),
-                        request.getProjectId(), provider.getLoginFromToken())
-                        : workTrackService.findOtherWorkTrackAsAdmin(request.getFromDate(), request.getToDate(),
-                        request.getProjectId(), request.getUserId(), provider.getLoginFromToken()));
-                if (response.isPresent()) {
-                    return ResponseEntity.ok(response.get());
-                } else {
-                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-                }
-            } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
-            } catch (IllegalArgumentException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER), HttpStatus.NOT_FOUND);
+    public ResponseEntity<?> findWorkTracks(@RequestParam String fromDate, @RequestParam String toDate,
+                                            @RequestParam long projectId, @RequestParam long userId) {
+        try {
+            Optional<AllWorkUserInfo> response = (userId == 0
+                    ? workTrackService.findWorkTrackMyself(fromDate, toDate, projectId, provider.getLoginFromToken())
+                    : workTrackService.findOtherWorkTrackAsAdmin(fromDate, toDate, projectId, userId,
+                    provider.getLoginFromToken()));
+            if (response.isPresent()) {
+                return ResponseEntity.ok(response.get());
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER), HttpStatus.NOT_FOUND);
         }
     }
 }

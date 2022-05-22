@@ -1,6 +1,7 @@
 package ru.manager.ProgectManager.controllers.kanban;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -12,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.kanban.CreateKanbanElementRequest;
-import ru.manager.ProgectManager.DTO.request.kanban.FindKanbanElements;
 import ru.manager.ProgectManager.DTO.request.kanban.TransportElementRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.UpdateKanbanElementRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
@@ -23,7 +23,9 @@ import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.entitys.kanban.KanbanColumn;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
+import ru.manager.ProgectManager.enums.ElementStatus;
 import ru.manager.ProgectManager.enums.Errors;
+import ru.manager.ProgectManager.enums.SearchElementType;
 import ru.manager.ProgectManager.exception.IncorrectStatusException;
 import ru.manager.ProgectManager.services.kanban.KanbanElementAttributesService;
 import ru.manager.ProgectManager.services.kanban.KanbanElementService;
@@ -120,33 +122,27 @@ public class KanbanElementController {
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к ресурсу"),
-            @ApiResponse(responseCode = "400", description = "Ошибка валидации", content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class))
-            }),
             @ApiResponse(responseCode = "200", description = "Список найденных элементов", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = KanbanElements.class))
             })
     })
     @GetMapping("/find")
-    public ResponseEntity<?> findElementsByName(@RequestBody @Valid FindKanbanElements request, BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            return entityConfigurator.createErrorResponse(bindingResult);
-        } else {
-            try {
-                String login = provider.getLoginFromToken();
-                Optional<Set<KanbanElement>> elements = kanbanElementService.findElements(request.getKanbanId(),
-                        request.getType(), request.getName(), request.getStatus(), login);
-                if (elements.isPresent()) {
-                    return ResponseEntity.ok(new KanbanElements(elements.get(), request.getPageIndex(),
-                            request.getCount(), userService.findZoneIdForThisUser(login)));
-                } else {
-                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-                }
-            } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.NOT_FOUND);
+    public ResponseEntity<?> findElementsByName(@RequestParam @Parameter(description = "Идентиикатор канбана") long id,
+                                                @RequestParam SearchElementType type,
+                                                @RequestParam ElementStatus status, @RequestParam String name,
+                                                @RequestParam int pageIndex, @RequestParam int rowCount) {
+        try {
+            String login = provider.getLoginFromToken();
+            Optional<Set<KanbanElement>> elements = kanbanElementService.findElements(id, type, name, status, login);
+            if (elements.isPresent()) {
+                return ResponseEntity.ok(new KanbanElements(elements.get(), pageIndex, rowCount,
+                        userService.findZoneIdForThisUser(login)));
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.NOT_FOUND);
         }
     }
 
