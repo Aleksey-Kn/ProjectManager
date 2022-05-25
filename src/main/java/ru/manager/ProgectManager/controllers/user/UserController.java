@@ -209,8 +209,8 @@ public class UserController {
         return new ListPointerResources(userService.availableResourceByName(name, jwtProvider.getLoginFromToken()));
     }
 
-    @Operation(summary = "Результат поиска ресурсов по имени")
-    @ApiResponse(responseCode = "200", description = "Список ресурсов, доступных пользователю, с фильтрацией по имени",
+    @Operation(summary = "Список последних посещённых ресурсов пользователем")
+    @ApiResponse(responseCode = "200", description = "Список ресурсов с сортировкой по времени поледнего посещения",
             content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = VisitMarkListResponse.class))
