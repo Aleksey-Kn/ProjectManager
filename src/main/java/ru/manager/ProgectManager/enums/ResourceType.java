@@ -4,7 +4,7 @@ import lombok.Getter;
 
 @Getter
 public enum ResourceType {
-    KANBAN("project-kanban-id"), DOCUMENT("project-doc-id");
+    KANBAN("project-kanban-id"), DOCUMENT("project-doc-id"), PROJECT("project");
 
     private final String stringValue;
 

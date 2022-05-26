@@ -17,6 +17,8 @@ public class PageResponse {
     private final short serialNumber;
     @Schema(description = "Уровень вложенности текущей страницы")
     private final int nestingLevel;
+    @Schema(description = "Наличие подстраниц")
+    private final boolean hasChildren;
 
     public PageResponse(Page page){
         id = page.getId();
@@ -24,6 +26,7 @@ public class PageResponse {
         published = page.isPublished();
         serialNumber = page.getSerialNumber();
         nestingLevel = findNestingLevel(0, page);
+        hasChildren = nestingLevel != 0;
     }
 
     private int findNestingLevel(int nowLevel, Page nowPage) {

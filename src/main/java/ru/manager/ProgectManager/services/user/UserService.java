@@ -16,7 +16,6 @@ import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConne
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
 import ru.manager.ProgectManager.entitys.user.*;
 import ru.manager.ProgectManager.enums.ActionType;
-import ru.manager.ProgectManager.enums.ResourceType;
 import ru.manager.ProgectManager.enums.Size;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.EmailAlreadyUsedException;
@@ -205,7 +204,7 @@ public class UserService {
                         .map(CustomRoleWithKanbanConnector::getKanban)
                         : connector.getProject().getKanbans().stream()))
                 .filter(kanban -> kanban.getName().toLowerCase().contains(name))
-                .map(k -> new PointerResource(k.getId(), k.getName(), ResourceType.KANBAN))
+                .map(PointerResource::new)
                 .collect(Collectors.toCollection(LinkedList::new));
         result.addAll(connectors.stream()
                 .flatMap(connector -> (connector.getRoleType() == TypeRoleProject.CUSTOM_ROLE
@@ -215,7 +214,7 @@ public class UserService {
                                 .anyMatch(root -> root.equals(page) || root.equals(page.getRoot())))
                         : connector.getProject().getPages().stream()))
                 .filter(section -> section.getName().toLowerCase().contains(name))
-                .map(s -> new PointerResource(s.getId(), s.getName(), ResourceType.DOCUMENT))
+                .map(PointerResource::new)
                 .collect(Collectors.toList()));
         return result;
     }
