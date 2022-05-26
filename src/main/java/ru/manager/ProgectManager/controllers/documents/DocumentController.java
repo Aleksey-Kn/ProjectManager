@@ -209,7 +209,7 @@ public class DocumentController {
                             schema = @Schema(implementation = ErrorResponse.class))
             })
     })
-    @GetMapping()
+    @GetMapping
     public ResponseEntity<?> findById(@RequestParam @Parameter(description = "Идентификатор страницы") long id) {
         try {
             Optional<PageResponse> page = pageService.find(id, provider.getLoginFromToken());
@@ -329,6 +329,32 @@ public class DocumentController {
             return ResponseEntity.ok(new PageNameAndUpdateDateResponseList(responses.get(), pageIndex, rowCount));
         } else {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Operation(summary = "Список подстраниц указанной страницы")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Список постраниц", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = PageResponseList.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному ресурсу"),
+            @ApiResponse(responseCode = "404", description = "Указанного проекта не существует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
+    })
+    @GetMapping("/children")
+    public ResponseEntity<?> findChildren(@RequestParam long id, @RequestParam int pageIndex, @RequestParam int rowCount) {
+        try {
+            Optional<List<PageResponse>> pages = pageService.findSubpages(id, provider.getLoginFromToken());
+            if(pages.isPresent()) {
+                return ResponseEntity.ok(new PageResponseList(pages.get(), pageIndex, rowCount));
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PAGE), HttpStatus.NOT_FOUND);
         }
     }
 

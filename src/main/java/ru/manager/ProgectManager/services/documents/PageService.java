@@ -40,7 +40,7 @@ public class PageService {
 
     public Optional<Long> createPage(CreatePageRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        Project project = projectRepository.findById(request.getProjectId()).get();
+        Project project = projectRepository.findById(request.getProjectId()).orElseThrow();
         if (canEditResource(project, user)) {
             Page page = new Page();
             page.setContent(request.getContent());
@@ -71,7 +71,7 @@ public class PageService {
 
     public boolean deletePage(long id, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        Page page = pageRepository.findById(id).get();
+        Page page = pageRepository.findById(id).orElseThrow();
         Project project = page.getProject();
         if (canEditResource(project, user) && canEditPage(page, user)
                 && (page.getOwner().equals(user)) || isPublishPipeline(page)) {
@@ -106,7 +106,7 @@ public class PageService {
 
     public boolean rename(long id, String name, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        Page page = pageRepository.findById(id).get();
+        Page page = pageRepository.findById(id).orElseThrow();
         if (canEditPage(page, user) && (page.getOwner().equals(user) || isPublishPipeline(page))) {
             page.setName(name);
             page.setUpdateTime(getEpochSeconds());
@@ -119,7 +119,7 @@ public class PageService {
 
     public boolean setContent(long id, String content, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        Page page = pageRepository.findById(id).get();
+        Page page = pageRepository.findById(id).orElseThrow();
         if (canEditPage(page, user) && (page.getOwner().equals(user)) || isPublishPipeline(page)) {
             page.setContent(content);
             page.setUpdateTime(getEpochSeconds());
@@ -132,7 +132,7 @@ public class PageService {
 
     public boolean publish(long id, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        Page page = pageRepository.findById(id).get();
+        Page page = pageRepository.findById(id).orElseThrow();
         if (page.getOwner().equals(user)) {
             page.setPublished(true);
             pageRepository.save(page);
@@ -144,10 +144,10 @@ public class PageService {
 
     public Optional<PageResponse> find(long id, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        Page page = pageRepository.findById(id).get();
+        Page page = pageRepository.findById(id).orElseThrow();
         if (canSeePage(page, user) && (page.getOwner().equals(user) || isPublishPipeline(page))) {
             visitMarkUpdater.updateVisitMarks(user, id, page.getName(), ResourceType.DOCUMENT);
-            return Optional.of(new PageResponse(page, user));
+            return Optional.of(new PageResponse(page));
         } else {
             return Optional.empty();
         }
@@ -155,7 +155,7 @@ public class PageService {
 
     public Optional<PageContentResponse> findContent(long id, String userLogin, int zoneId) {
         User user = userRepository.findByUsername(userLogin);
-        Page page = pageRepository.findById(id).get();
+        Page page = pageRepository.findById(id).orElseThrow();
         if (canSeePage(page, user) && (page.getOwner().equals(user) || isPublishPipeline(page))) {
             visitMarkUpdater.updateVisitMarks(user, id, page.getName(), ResourceType.DOCUMENT);
             return Optional.of(new PageContentResponse(page, zoneId));
@@ -166,7 +166,7 @@ public class PageService {
 
     public Optional<List<PageResponse>> findAllRoot(long projectId, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        Project project = projectRepository.findById(projectId).get();
+        Project project = projectRepository.findById(projectId).orElseThrow();
         Optional<UserWithProjectConnector> withProjectConnector = project.getConnectors().stream()
                 .filter(c -> c.getUser().equals(user)).findAny();
         if (withProjectConnector.isPresent()) {
@@ -176,14 +176,14 @@ public class PageService {
                         .map(CustomRoleWithDocumentConnector::getPage)
                         .filter(page -> page.getOwner().equals(user) || isPublishPipeline(page))
                         .sorted(Comparator.comparing(Page::getSerialNumber))
-                        .map(page -> new PageResponse(page, user))
+                        .map(PageResponse::new)
                         .collect(Collectors.toList()));
             } else {
                 return Optional.of(project.getPages().stream()
                         .filter(p -> p.getRoot() == null)
                         .filter(page -> page.getOwner().equals(user) || isPublishPipeline(page))
                         .sorted(Comparator.comparing(Page::getSerialNumber))
-                        .map(page -> new PageResponse(page, user))
+                        .map(PageResponse::new)
                         .collect(Collectors.toList()));
             }
         } else {
@@ -193,7 +193,7 @@ public class PageService {
 
     public Optional<Set<PageNameResponse>> findByName(long projectId, String name, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        Project project = projectRepository.findById(projectId).get();
+        Project project = projectRepository.findById(projectId).orElseThrow();
         Optional<UserWithProjectConnector> withProjectConnector = project.getConnectors().stream()
                 .filter(c -> c.getUser().equals(user)).findAny();
         if (withProjectConnector.isPresent()) {
@@ -221,7 +221,7 @@ public class PageService {
 
     public Optional<List<PageNameAndUpdateDateResponse>> findAllWithSort(long projectId, String userLogin, int timeZoneId) {
         User user = userRepository.findByUsername(userLogin);
-        Project project = projectRepository.findById(projectId).get();
+        Project project = projectRepository.findById(projectId).orElseThrow();
         Optional<UserWithProjectConnector> withProjectConnector = project.getConnectors().stream()
                 .filter(c -> c.getUser().equals(user)).findAny();
         if (withProjectConnector.isPresent()) {
@@ -261,9 +261,23 @@ public class PageService {
                 .collect(Collectors.toList()));
     }
 
+    public Optional<List<PageResponse>> findSubpages(long id, String userLogin) {
+        Page page = pageRepository.findById(id).orElseThrow();
+        User user = userRepository.findByUsername(userLogin);
+        if (canSeePage(page, user)) {
+            return Optional.of(page.getSubpages().stream()
+                    .filter(p -> p.isPublished() || user.equals(p.getOwner()))
+                    .sorted(Comparator.comparing(Page::getSerialNumber))
+                    .map(PageResponse::new)
+                    .collect(Collectors.toList()));
+        } else {
+            return Optional.empty();
+        }
+    }
+
     public boolean transport(TransportPageRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        Page transportedPage = pageRepository.findById(request.getId()).get();
+        Page transportedPage = pageRepository.findById(request.getId()).orElseThrow();
         if (canEditPage(transportedPage, user) &&
                 (transportedPage.getOwner().equals(user) || isPublishPipeline(transportedPage))) {
             Optional<Page> newParent = pageRepository.findById(request.getNewParentId());
