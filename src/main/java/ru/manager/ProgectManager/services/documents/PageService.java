@@ -4,9 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.request.documents.CreatePageRequest;
 import ru.manager.ProgectManager.DTO.request.documents.TransportPageRequest;
-import ru.manager.ProgectManager.DTO.response.documents.PageContentResponse;
 import ru.manager.ProgectManager.DTO.response.documents.PageNameAndUpdateDateResponse;
-import ru.manager.ProgectManager.DTO.response.documents.PageNameResponse;
 import ru.manager.ProgectManager.DTO.response.documents.PageResponse;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithDocumentConnector;
@@ -25,7 +23,6 @@ import java.time.ZoneOffset;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -95,6 +92,9 @@ public class PageService {
                         .filter(p -> p.getSerialNumber() > page.getSerialNumber())
                         .forEach(p -> p.setSerialNumber((short) (p.getSerialNumber() - 1)));
             }
+
+
+
             project.getPages().remove(page);
             projectRepository.save(project);
             pageRepository.delete(page);
@@ -142,23 +142,12 @@ public class PageService {
         }
     }
 
-    public Optional<PageResponse> find(long id, String userLogin) {
+    public Optional<Page> find(long id, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         Page page = pageRepository.findById(id).orElseThrow();
         if (canSeePage(page, user) && (page.getOwner().equals(user) || isPublishPipeline(page))) {
             visitMarkUpdater.updateVisitMarks(user, id, page.getName(), ResourceType.DOCUMENT);
-            return Optional.of(new PageResponse(page));
-        } else {
-            return Optional.empty();
-        }
-    }
-
-    public Optional<PageContentResponse> findContent(long id, String userLogin, int zoneId) {
-        User user = userRepository.findByUsername(userLogin);
-        Page page = pageRepository.findById(id).orElseThrow();
-        if (canSeePage(page, user) && (page.getOwner().equals(user) || isPublishPipeline(page))) {
-            visitMarkUpdater.updateVisitMarks(user, id, page.getName(), ResourceType.DOCUMENT);
-            return Optional.of(new PageContentResponse(page, zoneId));
+            return Optional.of(page);
         } else {
             return Optional.empty();
         }
@@ -191,7 +180,7 @@ public class PageService {
         }
     }
 
-    public Optional<Set<PageNameResponse>> findByName(long projectId, String name, String userLogin) {
+    public Optional<List<PageNameAndUpdateDateResponse>> findByName(long projectId, String name, String userLogin, int zoneId) {
         User user = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(projectId).orElseThrow();
         Optional<UserWithProjectConnector> withProjectConnector = project.getConnectors().stream()
@@ -205,14 +194,16 @@ public class PageService {
                                 .anyMatch(root -> root.equals(page) || root.equals(page.getRoot())))
                         .filter(page -> page.getOwner().equals(user) || isPublishPipeline(page))
                         .filter(p -> p.getName().toLowerCase().contains(name))
-                        .map(PageNameResponse::new)
-                        .collect(Collectors.toSet()));
+                        .sorted(Comparator.comparing(Page::getUpdateTime).reversed())
+                        .map(p -> new PageNameAndUpdateDateResponse(p, zoneId))
+                        .collect(Collectors.toList()));
             } else {
                 return Optional.of(project.getPages().parallelStream()
                         .filter(page -> page.getOwner().equals(user) || isPublishPipeline(page))
                         .filter(p -> p.getName().toLowerCase().contains(name))
-                        .map(PageNameResponse::new)
-                        .collect(Collectors.toSet()));
+                        .sorted(Comparator.comparing(Page::getUpdateTime).reversed())
+                        .map(p -> new PageNameAndUpdateDateResponse(p, zoneId))
+                        .collect(Collectors.toList()));
             }
         } else {
             return Optional.empty();

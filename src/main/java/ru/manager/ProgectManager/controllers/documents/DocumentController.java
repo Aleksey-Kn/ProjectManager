@@ -20,6 +20,7 @@ import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.DTO.response.documents.*;
 import ru.manager.ProgectManager.components.authorization.JwtProvider;
+import ru.manager.ProgectManager.entitys.documents.Page;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.documents.PageService;
 import ru.manager.ProgectManager.services.user.UserService;
@@ -28,7 +29,6 @@ import javax.validation.Valid;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.Set;
 
 @RestController
 @RequestMapping("/users/documents")
@@ -51,7 +51,7 @@ public class DocumentController {
                             schema = @Schema(implementation = ErrorResponse.class))
             })
     })
-    @PostMapping()
+    @PostMapping
     public ResponseEntity<?> addPage(@RequestBody @Valid CreatePageRequest request, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
@@ -140,10 +140,10 @@ public class DocumentController {
     public ResponseEntity<?> getContent(@RequestParam @Parameter(description = "Идентификатор страницы") long id) {
         try {
             String login = provider.getLoginFromToken();
-            int zoneId = userService.findZoneIdForThisUser(login);
-            Optional<PageContentResponse> response = pageService.findContent(id, login, zoneId);
+            Optional<Page> response = pageService.find(id, login);
             if (response.isPresent()) {
-                return ResponseEntity.ok(response.get());
+                return ResponseEntity.ok(new PageContentResponse(response.get(),
+                        userService.findZoneIdForThisUser(login)));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
@@ -184,7 +184,7 @@ public class DocumentController {
                             schema = @Schema(implementation = ErrorResponse.class))
             })
     })
-    @DeleteMapping()
+    @DeleteMapping
     public ResponseEntity<?> delete(@RequestParam @Parameter(description = "Идентификатор страницы") long id) {
         try {
             if (pageService.deletePage(id, provider.getLoginFromToken())) {
@@ -201,7 +201,7 @@ public class DocumentController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Запрашиваемая страница", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = PageResponse.class))
+                            schema = @Schema(implementation = PageNameResponse.class))
             }),
             @ApiResponse(responseCode = "403", description = "Недостаточно прав доступа для совершения данного действия"),
             @ApiResponse(responseCode = "404", description = "Указанной страницы не существует", content = {
@@ -212,9 +212,36 @@ public class DocumentController {
     @GetMapping
     public ResponseEntity<?> findById(@RequestParam @Parameter(description = "Идентификатор страницы") long id) {
         try {
-            Optional<PageResponse> page = pageService.find(id, provider.getLoginFromToken());
+            Optional<Page> page = pageService.find(id, provider.getLoginFromToken());
             if (page.isPresent()) {
-                return ResponseEntity.ok(page.get());
+                return ResponseEntity.ok(new PageNameResponse(page.get()));
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PAGE), HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Operation(summary = "Получение полной информации о странице документа по идентификатору")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Запрашиваемая страница", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = PageAllDataResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Недостаточно прав доступа для совершения данного действия"),
+            @ApiResponse(responseCode = "404", description = "Указанной страницы не существует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
+    })
+    @GetMapping("/data")
+    public ResponseEntity<?> findAllPageData(@RequestParam @Parameter(description = "Идентификатор страницы") long id) {
+        try {
+            String login = provider.getLoginFromToken();
+            Optional<Page> page = pageService.find(id, login);
+            if (page.isPresent()) {
+                return ResponseEntity.ok(new PageAllDataResponse(page.get(), userService.findZoneIdForThisUser(login)));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
@@ -254,7 +281,7 @@ public class DocumentController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Список найденных страниц документов", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = PageNameResponseList.class))
+                            schema = @Schema(implementation = PageNameAndUpdateDateResponseList.class))
             }),
             @ApiResponse(responseCode = "403", description = "Недостаточно прав доступа для совершения данного действия"),
             @ApiResponse(responseCode = "404", description = "Указанного проекта не существует", content = {
@@ -267,10 +294,11 @@ public class DocumentController {
                                         @RequestParam int pageIndex, @RequestParam int rowCount,
                                         @RequestParam String name) {
         try {
-            Optional<Set<PageNameResponse>> pageSet = pageService.findByName(id, name,
-                    provider.getLoginFromToken());
+            String login = provider.getLoginFromToken();
+            Optional<List<PageNameAndUpdateDateResponse>> pageSet = pageService.findByName(id, name, login,
+                    userService.findZoneIdForThisUser(login));
             if (pageSet.isPresent()) {
-                return ResponseEntity.ok(new PageNameResponseList(pageSet.get(), pageIndex, rowCount));
+                return ResponseEntity.ok(new PageNameAndUpdateDateResponseList(pageSet.get(), pageIndex, rowCount));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
