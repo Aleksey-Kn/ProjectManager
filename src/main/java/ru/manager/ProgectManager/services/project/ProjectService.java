@@ -101,6 +101,8 @@ public class ProjectService {
         User admin = userRepository.findByUsername(adminLogin);
         Project project = projectRepository.findById(id).orElseThrow();
         if (isAdmin(project, admin)) {
+            visitMarkUpdater.deleteVisitMark(project, project.getId(), ResourceType.PROJECT);
+
             List<UserWithProjectConnector> removable = new LinkedList<>(project.getConnectors());
             project.getConnectors().clear();
             removable.stream()
@@ -109,8 +111,6 @@ public class ProjectService {
                         u.getUserWithProjectConnectors().removeIf(c -> c.getProject().equals(project));
                         userRepository.save(u);
                     });
-
-            visitMarkUpdater.deleteVisitMark(project, project.getId(), ResourceType.PROJECT);
 
             connectorRepository.deleteAll(removable);
             projectRepository.delete(project);
