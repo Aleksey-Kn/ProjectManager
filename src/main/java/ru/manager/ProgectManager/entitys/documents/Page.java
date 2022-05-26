@@ -20,7 +20,9 @@ public class Page {
     @Column(nullable = false)
     private String name;
 
+    @Column(length = 5_242_880)
     private String content;
+
     private long updateTime;
     private boolean published;
     private short serialNumber;
