@@ -2,6 +2,8 @@ package ru.manager.ProgectManager.services.user;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import ru.manager.ProgectManager.entitys.Project;
+import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
 import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.entitys.user.VisitMark;
 import ru.manager.ProgectManager.enums.ResourceType;
@@ -39,5 +41,17 @@ public class VisitMarkUpdater {
             user.getVisitMarks().add(visitMarkRepository.save(newMark));
             userRepository.save(user);
         }
+    }
+
+    public void deleteVisitMark(Project project, long id, ResourceType resourceType) {
+        project.getConnectors().parallelStream()
+                .map(UserWithProjectConnector::getUser)
+                .forEach(u -> u.getVisitMarks().stream()
+                        .filter(v -> v.getResourceType() == resourceType && v.getResourceId() == id)
+                        .findAny()
+                        .ifPresent(visitMark -> {
+                            u.getVisitMarks().remove(visitMark);
+                            visitMarkRepository.delete(visitMark);
+                        }));
     }
 }

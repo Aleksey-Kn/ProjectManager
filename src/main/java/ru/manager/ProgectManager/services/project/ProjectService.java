@@ -8,11 +8,13 @@ import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
 import ru.manager.ProgectManager.entitys.user.User;
+import ru.manager.ProgectManager.enums.ResourceType;
 import ru.manager.ProgectManager.enums.Size;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.repositories.ProjectRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
 import ru.manager.ProgectManager.repositories.UserWithProjectConnectorRepository;
+import ru.manager.ProgectManager.services.user.VisitMarkUpdater;
 
 import java.io.IOException;
 import java.util.*;
@@ -25,11 +27,13 @@ public class ProjectService {
     private final UserRepository userRepository;
     private final UserWithProjectConnectorRepository connectorRepository;
     private final PhotoCompressor compressor;
+    private final VisitMarkUpdater visitMarkUpdater;
 
     public Optional<Project> findProject(long id, String login) {
         User user = userRepository.findByUsername(login);
         Project project = projectRepository.findById(id).orElseThrow();
         if (project.getConnectors().stream().anyMatch(c -> c.getUser().equals(user))) {
+            visitMarkUpdater.updateVisitMarks(user, project.getId(), project.getName(), ResourceType.PROJECT);
             return Optional.of(project);
         }
         return Optional.empty();
@@ -105,6 +109,9 @@ public class ProjectService {
                         u.getUserWithProjectConnectors().removeIf(c -> c.getProject().equals(project));
                         userRepository.save(u);
                     });
+
+            visitMarkUpdater.deleteVisitMark(project, project.getId(), ResourceType.PROJECT);
+
             connectorRepository.deleteAll(removable);
             projectRepository.delete(project);
             return true;

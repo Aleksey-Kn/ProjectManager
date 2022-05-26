@@ -79,6 +79,9 @@ public class KanbanService {
                         kanbanConnectorRepository.delete(kanbanConnector);
                         customProjectRoleRepository.save(role);
                     }));
+
+            visitMarkUpdater.deleteVisitMark(project, kanban.getId(), ResourceType.KANBAN);
+
             project.getKanbans().remove(kanban);
             projectRepository.save(project);
             return true;

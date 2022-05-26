@@ -93,7 +93,7 @@ public class PageService {
                         .forEach(p -> p.setSerialNumber((short) (p.getSerialNumber() - 1)));
             }
 
-
+            visitMarkUpdater.deleteVisitMark(project, page.getId(), ResourceType.KANBAN);
 
             project.getPages().remove(page);
             projectRepository.save(project);
