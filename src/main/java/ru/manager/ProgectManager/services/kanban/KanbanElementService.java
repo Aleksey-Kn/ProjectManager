@@ -38,7 +38,7 @@ public class KanbanElementService {
         if (canEditKanban(kanban, user)) {
             KanbanElement element = new KanbanElement();
             element.setContent(request.getContent());
-            element.setName(request.getName());
+            element.setName(request.getName().trim());
             element.setOwner(user);
             element.setLastRedactor(user);
             element.setKanbanColumn(column);
@@ -67,7 +67,7 @@ public class KanbanElementService {
         if (canEditKanban(kanban, user)) {
             checkElement(element);
             element.setContent(request.getContent());
-            element.setName(request.getName());
+            element.setName(request.getName().trim());
             element.setTimeOfUpdate(getEpochSeconds());
             element.setSelectedDate(request.getDate());
             element.setLastRedactor(user);
@@ -194,10 +194,11 @@ public class KanbanElementService {
         return Optional.empty();
     }
 
-    public Optional<Set<KanbanElement>> findElements(long kanbanId, SearchElementType type, String name,
+    public Optional<Set<KanbanElement>> findElements(long kanbanId, SearchElementType type, String inputName,
                                                      ElementStatus from, String userLogin){
         Kanban kanban = kanbanRepository.findById(kanbanId).orElseThrow();
         User user = userRepository.findByUsername(userLogin);
+        String name = inputName.trim().toLowerCase();
         if(canSeeKanban(kanban, user)){
             if(type == SearchElementType.NAME){
                 return Optional.of(findByName(kanban, name, from));

@@ -20,8 +20,11 @@ public class VisitMark {
 
     @Column(nullable = false)
     private String resourceName;
-    private byte serialNumber;
+    private int serialNumber;
     private long resourceId;
+    private String description;
+    private long projectId;
+    private String projectName;
 
     @Override
     public boolean equals(Object o) {

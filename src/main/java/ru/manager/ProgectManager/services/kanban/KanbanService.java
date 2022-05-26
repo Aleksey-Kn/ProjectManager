@@ -41,7 +41,7 @@ public class KanbanService {
         if (canEditResource(project, userRepository.findByUsername(userLogin))) {
             Kanban kanban = new Kanban();
             kanban.setProject(project);
-            kanban.setName(name);
+            kanban.setName(name.trim());
             project.getKanbans().add(kanban);
 
             kanban = kanbanRepository.save(kanban);
@@ -93,7 +93,7 @@ public class KanbanService {
         Kanban kanban = kanbanRepository.findById(id).orElseThrow();
         User user = userRepository.findByUsername(userLogin);
         if (canEditKanban(kanban, user)) {
-            kanban.setName(name);
+            kanban.setName(name.trim());
             kanbanRepository.save(kanban);
             return true;
         } else {
@@ -105,7 +105,7 @@ public class KanbanService {
         Kanban kanban = kanbanRepository.findById(id).orElseThrow();
         User user = userRepository.findByUsername(userLogin);
         if (canSeeKanban(kanban, user)) {
-            visitMarkUpdater.updateVisitMarks(user, id, kanban.getName(), ResourceType.KANBAN);
+            visitMarkUpdater.updateVisitMarks(user, kanban);
             return Optional.of(kanban);
         } else {
             return Optional.empty();
@@ -132,7 +132,7 @@ public class KanbanService {
     }
 
     public Optional<Set<Kanban>> findKanbansByName(long id, String inputName, String userLogin) {
-        String name = inputName.toLowerCase();
+        String name = inputName.trim().toLowerCase();
         Project project = projectRepository.findById(id).orElseThrow();
         User user = userRepository.findByUsername(userLogin);
         Optional<UserWithProjectConnector> connector = user.getUserWithProjectConnectors().stream()

@@ -41,7 +41,7 @@ public class PageService {
         if (canEditResource(project, user)) {
             Page page = new Page();
             page.setContent(request.getContent());
-            page.setName(request.getName());
+            page.setName(request.getName().trim());
             page.setProject(project);
             page.setUpdateTime(getEpochSeconds());
             page.setPublished(false);
@@ -108,7 +108,7 @@ public class PageService {
         User user = userRepository.findByUsername(userLogin);
         Page page = pageRepository.findById(id).orElseThrow();
         if (canEditPage(page, user) && (page.getOwner().equals(user) || isPublishPipeline(page))) {
-            page.setName(name);
+            page.setName(name.trim());
             page.setUpdateTime(getEpochSeconds());
             pageRepository.save(page);
             return true;
@@ -146,7 +146,7 @@ public class PageService {
         User user = userRepository.findByUsername(userLogin);
         Page page = pageRepository.findById(id).orElseThrow();
         if (canSeePage(page, user) && (page.getOwner().equals(user) || isPublishPipeline(page))) {
-            visitMarkUpdater.updateVisitMarks(user, id, page.getName(), ResourceType.DOCUMENT);
+            visitMarkUpdater.updateVisitMarks(user, page);
             return Optional.of(page);
         } else {
             return Optional.empty();
@@ -180,7 +180,8 @@ public class PageService {
         }
     }
 
-    public Optional<List<PageNameAndUpdateDateResponse>> findByName(long projectId, String name, String userLogin, int zoneId) {
+    public Optional<List<PageNameAndUpdateDateResponse>> findByName(long projectId, String inputName, String userLogin, int zoneId) {
+        String name = inputName.trim().toLowerCase();
         User user = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(projectId).orElseThrow();
         Optional<UserWithProjectConnector> withProjectConnector = project.getConnectors().stream()

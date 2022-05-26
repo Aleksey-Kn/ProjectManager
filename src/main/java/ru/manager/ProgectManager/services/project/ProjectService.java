@@ -33,7 +33,7 @@ public class ProjectService {
         User user = userRepository.findByUsername(login);
         Project project = projectRepository.findById(id).orElseThrow();
         if (project.getConnectors().stream().anyMatch(c -> c.getUser().equals(user))) {
-            visitMarkUpdater.updateVisitMarks(user, project.getId(), project.getName(), ResourceType.PROJECT);
+            visitMarkUpdater.updateVisitMarks(user, project);
             return Optional.of(project);
         }
         return Optional.empty();
@@ -43,7 +43,7 @@ public class ProjectService {
         User owner = userRepository.findByUsername(userLogin);
 
         Project project = new Project();
-        project.setName(request.getName());
+        project.setName(request.getName().trim());
         project.setStatus(request.getStatus());
         project.setStatusColor(request.getStatusColor());
         project.setDescription(request.getDescription());
@@ -85,7 +85,7 @@ public class ProjectService {
         Project project = projectRepository.findById(id).orElseThrow();
         User admin = userRepository.findByUsername(userLogin);
         if (isAdmin(project, admin)) {
-            project.setName(request.getName());
+            project.setName(request.getName().trim());
             project.setStatus(request.getStatus());
             project.setStatusColor(request.getStatusColor());
             project.setDescription(request.getDescription());

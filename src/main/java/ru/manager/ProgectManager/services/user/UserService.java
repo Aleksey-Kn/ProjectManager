@@ -51,7 +51,7 @@ public class UserService {
 
             Role role = roleRepository.findByName("ROLE_USER");
             User user = new User();
-            user.setUsername(registerUserDTO.getLogin());
+            user.setUsername(registerUserDTO.getLogin().trim());
             user.setPassword(passwordEncoder.encode(registerUserDTO.getPassword()));
             user.setEmail(registerUserDTO.getEmail());
             user.setNickname(registerUserDTO.getNickname());
@@ -75,7 +75,7 @@ public class UserService {
         }
     }
 
-    public void updateLastVisitAndZone(User user, int zoneId){
+    public void updateLastVisitAndZone(User user, int zoneId) {
         user.setLastVisit(LocalDateTime.now()
                 .toEpochSecond(ZoneOffset.systemDefault().getRules().getOffset(Instant.now())));
         user.setZoneId(zoneId);
@@ -96,7 +96,7 @@ public class UserService {
 
     public boolean attemptDropPass(String loginOrEmail, String url) {
         Optional<User> user = findLoginOrEmail(loginOrEmail);
-        if(user.isPresent()) {
+        if (user.isPresent()) {
             mailService.sendResetPass(user.get(), url);
             return true;
         } else {
@@ -106,7 +106,7 @@ public class UserService {
 
     public boolean resetPass(String token, String newPassword) {
         Optional<ApproveActionToken> approveActionToken = approveActionTokenRepository.findById(token);
-        if(approveActionToken.isPresent() && approveActionToken.get().getActionType() == ActionType.RESET_PASS) {
+        if (approveActionToken.isPresent() && approveActionToken.get().getActionType() == ActionType.RESET_PASS) {
             User user = approveActionToken.get().getUser();
             user.setPassword(passwordEncoder.encode(newPassword));
             userRepository.save(user);
@@ -131,7 +131,7 @@ public class UserService {
             user.get().setZoneId(Integer.parseInt(authDto.getZoneId()));
             user.get().setLastVisit(LocalDateTime.now()
                     .toEpochSecond(ZoneOffset.systemDefault().getRules().getOffset(Instant.now())));
-            if(user.get().getUsedAddresses().stream().map(UsedAddress::getIp).noneMatch(ip -> ip.equals(authDto.getIp()))){
+            if (user.get().getUsedAddresses().stream().map(UsedAddress::getIp).noneMatch(ip -> ip.equals(authDto.getIp()))) {
                 mailService.sendAboutAuthorisation(user.get(), authDto.getIp(), authDto.getBrowser(),
                         authDto.getCountry(), authDto.getCity(), authDto.getZoneId());
                 notificationService.addNotificationAboutAuthorisation(authDto, user.get());
@@ -147,13 +147,13 @@ public class UserService {
 
     public void renameUser(String login, String newName) {
         User user = userRepository.findByUsername(login);
-        user.setNickname(newName);
+        user.setNickname(newName.trim());
         userRepository.save(user);
     }
 
     public boolean updatePass(String oldPass, String newPass, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        if(passwordEncoder.matches(oldPass, user.getPassword())) {
+        if (passwordEncoder.matches(oldPass, user.getPassword())) {
             user.setPassword(passwordEncoder.encode(newPass));
             userRepository.save(user);
             return true;
@@ -195,8 +195,8 @@ public class UserService {
     }
 
     public List<PointerResource> availableResourceByName(String inputName, String userLogin) {
-        String name = inputName.toLowerCase();
-        Set<UserWithProjectConnector> connectors =
+        String name = inputName.trim().toLowerCase();
+        Set<UserWithProjectConnector> connectors = // получение подключений текущего пользователя
                 userRepository.findByUsername(userLogin).getUserWithProjectConnectors();
         List<PointerResource> result = connectors.stream()
                 .flatMap(connector -> (connector.getRoleType() == TypeRoleProject.CUSTOM_ROLE
@@ -216,6 +216,11 @@ public class UserService {
                 .filter(section -> section.getName().toLowerCase().contains(name))
                 .map(PointerResource::new)
                 .collect(Collectors.toList()));
+        result.addAll(connectors.stream()
+                .map(UserWithProjectConnector::getProject)
+                .filter(section -> section.getName().toLowerCase().contains(name))
+                .map(PointerResource::new)
+                .collect(Collectors.toList()));
         return result;
     }
 
@@ -226,7 +231,7 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    public int findZoneIdForThisUser(String userLogin){
+    public int findZoneIdForThisUser(String userLogin) {
         return userRepository.findByUsername(userLogin).getZoneId();
     }
 

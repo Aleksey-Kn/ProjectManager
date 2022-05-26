@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.request.kanban.KanbanColumnRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.SortColumnRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.TransportColumnRequest;
-import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.entitys.kanban.KanbanColumn;
@@ -33,7 +32,7 @@ public class KanbanColumnService {
 
     public Optional<KanbanColumn> findKanbanColumn(long id, String userLogin){
         User user = userRepository.findByUsername(userLogin);
-        KanbanColumn column = columnRepository.findById(id).get();
+        KanbanColumn column = columnRepository.findById(id).orElseThrow();
         Kanban kanban = column.getKanban();
         if(kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
                 && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
@@ -47,7 +46,7 @@ public class KanbanColumnService {
 
     public boolean transportColumn(TransportColumnRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        KanbanColumn column = columnRepository.findById(request.getId()).get();
+        KanbanColumn column = columnRepository.findById(request.getId()).orElseThrow();
         Kanban kanban = column.getKanban();
         int from = column.getSerialNumber();
         if (canEditKanban(kanban, user)) {
@@ -75,10 +74,10 @@ public class KanbanColumnService {
 
     public Optional<KanbanColumn> renameColumn(long id, String name, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        KanbanColumn kanbanColumn = columnRepository.findById(id).get();
+        KanbanColumn kanbanColumn = columnRepository.findById(id).orElseThrow();
         Kanban kanban = kanbanColumn.getKanban();
         if (canEditKanban(kanban, user)) {
-            kanbanColumn.setName(name);
+            kanbanColumn.setName(name.trim());
             return Optional.of(columnRepository.save(kanbanColumn));
         }
         return Optional.empty();
@@ -86,7 +85,7 @@ public class KanbanColumnService {
 
     public boolean deleteColumn(long id, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        KanbanColumn column = columnRepository.findById(id).get();
+        KanbanColumn column = columnRepository.findById(id).orElseThrow();
         Kanban kanban = column.getKanban();
         if (canEditKanban(kanban, user)) {
             kanban.getKanbanColumns().stream()
@@ -102,11 +101,10 @@ public class KanbanColumnService {
 
     public Optional<KanbanColumn> addColumn(KanbanColumnRequest request, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        Kanban kanban = kanbanRepository.findById(request.getKanbanId()).get();
-        Project project = kanban.getProject();
+        Kanban kanban = kanbanRepository.findById(request.getKanbanId()).orElseThrow();
         if (canEditKanban(kanban, user)) {
             KanbanColumn kanbanColumn = new KanbanColumn();
-            kanbanColumn.setName(request.getName());
+            kanbanColumn.setName(request.getName().trim());
             kanbanColumn.setKanban(kanban);
             kanbanColumn.setDelayedDays(0);
             kanban.getKanbanColumns().stream()
@@ -124,7 +122,7 @@ public class KanbanColumnService {
 
     public Optional<KanbanColumn> sortColumn(SortColumnRequest sortColumnRequest, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        KanbanColumn column = columnRepository.findById(sortColumnRequest.getId()).get();
+        KanbanColumn column = columnRepository.findById(sortColumnRequest.getId()).orElseThrow();
         Kanban kanban = column.getKanban();
         if (canEditKanban(kanban, user)) {
             Comparator<KanbanElement> comparator;
@@ -150,13 +148,13 @@ public class KanbanColumnService {
     }
 
     public boolean setDelayDeleter(long id, int delay, String userLogin) {
-        KanbanColumn column = columnRepository.findById(id).get();
+        KanbanColumn column = columnRepository.findById(id).orElseThrow();
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = column.getKanban();
         if (canEditKanban(kanban, user)) {
             column.setDelayedDays(delay);
             column.getElements().stream().map(KanbanElement::getId).forEach(identity -> {
-                TimeRemover timeRemover = timeRemoverRepository.findById(identity).get();
+                TimeRemover timeRemover = timeRemoverRepository.findById(identity).orElseThrow();
                 timeRemover.setTimeToDelete(LocalDate.now().plusDays(delay).toEpochDay());
                 timeRemoverRepository.save(timeRemover);
             });
@@ -167,7 +165,7 @@ public class KanbanColumnService {
     }
 
     public boolean removeDelayDeleter(long id, String userLogin) {
-        KanbanColumn column = columnRepository.findById(id).get();
+        KanbanColumn column = columnRepository.findById(id).orElseThrow();
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = column.getKanban();
         if (canEditKanban(kanban, user)) {

@@ -1,31 +1,27 @@
 package ru.manager.ProgectManager.DTO.response;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.documents.Page;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.enums.ResourceType;
 
+@Schema(description = "Результат поиска ресрусов по имени")
 public class PointerResource {
     @Getter
-    private static class ProjectInfo{
-        long id;
-        String name;
-
-        ProjectInfo(Project project) {
-            id = project.getId();
-            name = project.getName();
-        }
-    }
-
-    @Getter
+    @Schema(description = "Идентификатор ресурса")
     private final long id;
     @Getter
+    @Schema(description = "Название ресурса")
     private final String name;
+    @Schema(description = "Тип ресурса")
     private final ResourceType resourceType;
     @Getter
+    @Schema(description = "Данные проекта, если ресурс - не проект", nullable = true)
     private ProjectInfo project;
     @Getter
+    @Schema(description = "Описание проекта, если ресурс - проект", nullable = true)
     private String description;
 
     public PointerResource(Page page) {
