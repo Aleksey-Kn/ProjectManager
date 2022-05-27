@@ -232,8 +232,13 @@ public class ProjectController {
     public ResponseEntity<?> allParticipants(@RequestParam @Parameter(description = "Идентификатор проекта")
                                                          long id){
         try{
-            return ResponseEntity.ok(new UserDataListResponse(projectService.findAllParticipants(id),
-                    userService.findZoneIdForThisUser(provider.getLoginFromToken())));
+            Optional<UserDataListResponse> response = projectService
+                    .findAllParticipants(id, provider.getLoginFromToken());
+            if(response.isPresent()) {
+                return ResponseEntity.ok(response.get());
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
         } catch (NoSuchElementException e){
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
         }

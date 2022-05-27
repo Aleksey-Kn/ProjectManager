@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import ru.manager.ProgectManager.DTO.request.ProjectDataRequest;
+import ru.manager.ProgectManager.DTO.response.user.UserDataListResponse;
+import ru.manager.ProgectManager.DTO.response.user.UserDataWithProjectRoleResponse;
 import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
@@ -17,7 +19,10 @@ import ru.manager.ProgectManager.repositories.UserWithProjectConnectorRepository
 import ru.manager.ProgectManager.services.user.VisitMarkUpdater;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -120,14 +125,25 @@ public class ProjectService {
         return false;
     }
 
-    public Set<User> findAllParticipants(long id){
-        return projectRepository.findById(id).orElseThrow().getConnectors().stream()
-                .map(UserWithProjectConnector::getUser)
-                .collect(Collectors.toSet());
+    public Optional<UserDataListResponse> findAllParticipants(long id, String userLogin) {
+        User user = userRepository.findByUsername(userLogin);
+        Project project = projectRepository.findById(id).orElseThrow();
+        if (project.getConnectors().stream().map(UserWithProjectConnector::getUser).anyMatch(u -> u.equals(user))) {
+            int zoneId = user.getZoneId();
+            return Optional.of(new UserDataListResponse(project.getConnectors().stream()
+                    .map(connector -> new UserDataWithProjectRoleResponse(connector.getUser(),
+                            (connector.getRoleType() == TypeRoleProject.CUSTOM_ROLE
+                                    ? connector.getCustomProjectRole().getName()
+                                    : connector.getRoleType().name()),
+                            zoneId))
+                    .collect(Collectors.toList())));
+        } else {
+            return Optional.empty();
+        }
     }
 
-    private boolean isAdmin(Project project, User admin){
-       return project.getConnectors().stream()
+    private boolean isAdmin(Project project, User admin) {
+        return project.getConnectors().stream()
                 .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
                 .anyMatch(c -> c.getUser().equals(admin));
     }
