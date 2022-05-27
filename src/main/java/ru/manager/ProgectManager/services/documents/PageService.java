@@ -111,6 +111,7 @@ public class PageService {
             page.setName(name.trim());
             page.setUpdateTime(getEpochSeconds());
             pageRepository.save(page);
+            visitMarkUpdater.redactVisitMark(page);
             return true;
         } else {
             return false;

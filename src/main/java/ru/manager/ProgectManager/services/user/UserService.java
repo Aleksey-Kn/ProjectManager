@@ -19,6 +19,8 @@ import ru.manager.ProgectManager.enums.ActionType;
 import ru.manager.ProgectManager.enums.Size;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.EmailAlreadyUsedException;
+import ru.manager.ProgectManager.exception.IllegalActionException;
+import ru.manager.ProgectManager.exception.IncorrectStatusException;
 import ru.manager.ProgectManager.repositories.ApproveActionTokenRepository;
 import ru.manager.ProgectManager.repositories.RoleRepository;
 import ru.manager.ProgectManager.repositories.UsedAddressRepository;
@@ -128,6 +130,11 @@ public class UserService {
     public Optional<User> login(AuthDto authDto) {
         Optional<User> user = findLoginOrEmail(authDto.getLogin());
         if (user.isPresent() && passwordEncoder.matches(authDto.getPassword(), user.get().getPassword())) {
+            if(!user.get().isEnabled())
+                throw new IllegalActionException();
+            if(!user.get().isAccountNonLocked())
+                throw new IncorrectStatusException();
+
             user.get().setZoneId(Integer.parseInt(authDto.getZoneId()));
             user.get().setLastVisit(LocalDateTime.now()
                     .toEpochSecond(ZoneOffset.systemDefault().getRules().getOffset(Instant.now())));

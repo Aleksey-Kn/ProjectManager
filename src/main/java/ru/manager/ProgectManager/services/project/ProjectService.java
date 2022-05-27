@@ -92,6 +92,7 @@ public class ProjectService {
             project.setStartDate(request.getStartDate());
             project.setDeadline(request.getDeadline());
             projectRepository.save(project);
+            visitMarkUpdater.redactVisitMark(project);
             return true;
         }
         return false;

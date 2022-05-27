@@ -95,6 +95,7 @@ public class KanbanService {
         if (canEditKanban(kanban, user)) {
             kanban.setName(name.trim());
             kanbanRepository.save(kanban);
+            visitMarkUpdater.redactVisitMark(kanban);
             return true;
         } else {
             return false;

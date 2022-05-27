@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import ru.manager.ProgectManager.DTO.response.ProjectInfo;
 import ru.manager.ProgectManager.entitys.user.VisitMark;
+import ru.manager.ProgectManager.enums.ResourceType;
 
 @Getter
 @Schema(description = "Информация о посещённом ресурсе")
@@ -23,7 +24,7 @@ public class VisitMarkResponse {
         id = visitMark.getResourceId();
         name = visitMark.getResourceName();
         type = visitMark.getResourceType().getStringValue();
-        if(visitMark.getDescription() == null) {
+        if(visitMark.getResourceType() != ResourceType.PROJECT) {
             description = null;
             project = new ProjectInfo(visitMark.getProjectId(), visitMark.getProjectName());
         } else {

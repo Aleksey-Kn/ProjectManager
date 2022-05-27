@@ -25,6 +25,8 @@ import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.exception.EmailAlreadyUsedException;
+import ru.manager.ProgectManager.exception.IllegalActionException;
+import ru.manager.ProgectManager.exception.IncorrectStatusException;
 import ru.manager.ProgectManager.services.RefreshTokenService;
 import ru.manager.ProgectManager.services.user.UserService;
 
@@ -113,27 +115,21 @@ public class AuthController {
             } else {
                 Optional<User> userEntity = userService.login(request);
                 if (userEntity.isPresent()) {
-                    if (userEntity.get().isEnabled()) {
-                        if (userEntity.get().isAccountNonLocked()) {
-                            AuthResponse authResponse = new AuthResponse();
-                            authResponse.setAccess(jwtProvider.generateToken(userEntity.get().getUsername()));
-                            authResponse.setRefresh(refreshTokenService.createToken(userEntity.get().getUsername()));
-                            return ResponseEntity.ok(authResponse);
-                        } else {
-                            return new ResponseEntity<>(new ErrorResponse(Errors.ACCOUNT_IS_LOCKED), HttpStatus.FORBIDDEN);
-                        }
-                    } else {
-                        return new ResponseEntity<>(new ErrorResponse(Errors.ACCOUNT_IS_NOT_ENABLED),
-                                HttpStatus.UNAUTHORIZED);
-                    }
+                    AuthResponse authResponse = new AuthResponse();
+                    authResponse.setAccess(jwtProvider.generateToken(userEntity.get().getUsername()));
+                    authResponse.setRefresh(refreshTokenService.createToken(userEntity.get().getUsername()));
+                    return ResponseEntity.ok(authResponse);
                 } else {
                     return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_LOGIN_OR_PASSWORD),
                             HttpStatus.UNAUTHORIZED);
                 }
             }
         } catch (DateTimeException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_TIME_ZONE_FORMAT),
-                    HttpStatus.NOT_ACCEPTABLE);
+            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_TIME_ZONE_FORMAT), HttpStatus.NOT_ACCEPTABLE);
+        } catch (IllegalActionException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.ACCOUNT_IS_NOT_ENABLED), HttpStatus.UNAUTHORIZED);
+        } catch (IncorrectStatusException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.ACCOUNT_IS_LOCKED), HttpStatus.FORBIDDEN);
         }
     }
 
@@ -156,7 +152,7 @@ public class AuthController {
     })
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(@RequestBody @Valid RefreshTokenRequest tokenRequest, BindingResult bindingResult) {
-        if(bindingResult.hasErrors()) {
+        if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.FIELD_MUST_BE_NOT_NULL), HttpStatus.BAD_REQUEST);
         } else {
             Optional<String> login = refreshTokenService.findLoginAndDropToken(tokenRequest.getRefresh());
@@ -197,7 +193,7 @@ public class AuthController {
     @PostMapping("/access")
     public ResponseEntity<?> getNewAccess(@RequestBody @Valid RefreshTokenRequest tokenRequest,
                                           BindingResult bindingResult) {
-        if(bindingResult.hasErrors()) {
+        if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.FIELD_MUST_BE_NOT_NULL), HttpStatus.BAD_REQUEST);
         } else {
             Optional<String> login = refreshTokenService.findLogin(tokenRequest.getRefresh());

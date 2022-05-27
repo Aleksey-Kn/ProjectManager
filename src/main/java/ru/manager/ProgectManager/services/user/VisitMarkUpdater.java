@@ -64,11 +64,49 @@ public class VisitMarkUpdater {
         }
     }
 
+    public void redactVisitMark(Project project) {
+        project.getConnectors().stream()
+                .map(UserWithProjectConnector::getUser)
+                .flatMap(user -> user.getVisitMarks().stream())
+                .filter(visitMark -> visitMark.getResourceType() == ResourceType.PROJECT)
+                .filter(visitMark -> visitMark.getResourceId() == project.getId())
+                .forEach(visitMark -> {
+                    visitMark.setDescription(project.getDescription());
+                    visitMark.setResourceName(project.getName());
+                    visitMarkRepository.save(visitMark);
+                });
+    }
+
+    public void redactVisitMark(Kanban kanban){
+        kanban.getProject().getConnectors().stream()
+                .map(UserWithProjectConnector::getUser)
+                .flatMap(user -> user.getVisitMarks().stream())
+                .filter(visitMark -> visitMark.getResourceType() == ResourceType.KANBAN)
+                .filter(visitMark -> visitMark.getResourceId() == kanban.getId())
+                .forEach(visitMark -> {
+                    visitMark.setResourceName(kanban.getName());
+                    visitMarkRepository.save(visitMark);
+                });
+    }
+
+    public void redactVisitMark(Page page) {
+        page.getProject().getConnectors().stream()
+                .map(UserWithProjectConnector::getUser)
+                .flatMap(user -> user.getVisitMarks().stream())
+                .filter(visitMark -> visitMark.getResourceType() == ResourceType.DOCUMENT)
+                .filter(visitMark -> visitMark.getResourceId() == page.getId())
+                .forEach(visitMark -> {
+                    visitMark.setResourceName(page.getName());
+                    visitMarkRepository.save(visitMark);
+                });
+    }
+
     public void deleteVisitMark(Project project, long id, ResourceType resourceType) {
         project.getConnectors().parallelStream()
                 .map(UserWithProjectConnector::getUser)
                 .forEach(u -> u.getVisitMarks().stream()
-                        .filter(v -> v.getResourceType() == resourceType && v.getResourceId() == id)
+                        .filter(visitMark -> visitMark.getResourceType() == resourceType)
+                        .filter(visitMark -> visitMark.getResourceId() == id)
                         .findAny()
                         .ifPresent(visitMark -> {
                             u.getVisitMarks().remove(visitMark);
