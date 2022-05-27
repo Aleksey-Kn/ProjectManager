@@ -187,10 +187,10 @@ public class UserService {
     }
 
     public List<Project> projectsByNameOfThisUser(String inputName, String userLogin) {
-        String name = inputName.toLowerCase();
+        String name = inputName.trim().toLowerCase();
         return userRepository.findByUsername(userLogin).getUserWithProjectConnectors().stream()
                 .map(UserWithProjectConnector::getProject)
-                .filter(p -> p.getName().toLowerCase(Locale.ROOT).contains(name))
+                .filter(p -> p.getName().toLowerCase().contains(name))
                 .collect(Collectors.toList());
     }
 
