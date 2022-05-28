@@ -21,7 +21,7 @@ import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.entitys.accessProject.CustomProjectRole;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.exception.NoSuchResourceException;
-import ru.manager.ProgectManager.services.project.AccessProjectService;
+import ru.manager.ProgectManager.services.project.ProjectRoleService;
 
 import javax.validation.Valid;
 import java.util.NoSuchElementException;
@@ -34,7 +34,7 @@ import java.util.Set;
 @Tag(name = "Манипулирование ролями внутри проекта",
         description = "Позволяет изменять уровни доступа участников к ресурсам проекта")
 public class ProjectRolesController {
-    private final AccessProjectService accessProjectService;
+    private final ProjectRoleService projectRoleService;
     private final JwtProvider provider;
 
     @Operation(summary = "Получение всех кастомных ролей проекта")
@@ -53,7 +53,7 @@ public class ProjectRolesController {
     @GetMapping()
     public ResponseEntity<?> findAllCustomRole(@RequestParam @Parameter(description = "Идентификатор проекта") long id) {
         try {
-            Optional<Set<CustomProjectRole>> roles = accessProjectService
+            Optional<Set<CustomProjectRole>> roles = projectRoleService
                     .findAllCustomProjectRole(id, provider.getLoginFromToken());
             if (roles.isPresent()) {
                 return ResponseEntity.ok(new CustomProjectRoleResponseList(roles.get()));
@@ -91,7 +91,7 @@ public class ProjectRolesController {
         } else {
             try {
                 Optional<CustomProjectRole> customProjectRole =
-                        accessProjectService.createCustomRole(request, provider.getLoginFromToken());
+                        projectRoleService.createCustomRole(request, provider.getLoginFromToken());
                 if (customProjectRole.isPresent()) {
                     return new ResponseEntity<>(new IdResponse(customProjectRole.get().getId()), HttpStatus.OK);
                 } else {
@@ -118,7 +118,7 @@ public class ProjectRolesController {
     @DeleteMapping()
     public ResponseEntity<?> deleteRole(@RequestParam long projectId, @RequestParam long roleId) {
         try {
-            if (accessProjectService.deleteCustomRole(projectId, roleId, provider.getLoginFromToken())) {
+            if (projectRoleService.deleteCustomRole(projectId, roleId, provider.getLoginFromToken())) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -146,7 +146,7 @@ public class ProjectRolesController {
                                     schema = @Schema(implementation = ErrorResponse.class))
                     })
     })
-    @PutMapping()
+    @PutMapping
     public ResponseEntity<?> editRole(@RequestBody @Valid CreateCustomRoleRequest request, BindingResult bindingResult,
                                       @RequestParam long roleId) {
         if (bindingResult.hasErrors()) {
@@ -154,7 +154,7 @@ public class ProjectRolesController {
                     HttpStatus.BAD_REQUEST);
         } else {
             try {
-                if (accessProjectService.changeRole(roleId, request, provider.getLoginFromToken())) {
+                if (projectRoleService.changeRole(roleId, request, provider.getLoginFromToken())) {
                     return new ResponseEntity<>(HttpStatus.OK);
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -193,7 +193,7 @@ public class ProjectRolesController {
                     HttpStatus.BAD_REQUEST);
         } else {
             try {
-                if (accessProjectService.editUserRole(request, provider.getLoginFromToken())) {
+                if (projectRoleService.editUserRole(request, provider.getLoginFromToken())) {
                     return new ResponseEntity<>(HttpStatus.OK);
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
