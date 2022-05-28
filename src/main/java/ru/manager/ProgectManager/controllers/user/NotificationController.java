@@ -10,8 +10,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.manager.ProgectManager.DTO.response.user.HasNewResponse;
-import ru.manager.ProgectManager.DTO.response.user.NotificationsResponse;
+import ru.manager.ProgectManager.DTO.response.user.notification.NotificationsResponseList;
 import ru.manager.ProgectManager.components.authorization.JwtProvider;
+import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.services.user.NotificationService;
 import ru.manager.ProgectManager.services.user.UserService;
 
@@ -37,14 +38,15 @@ public class NotificationController {
     @Operation(summary = "Получение уведомлений", description = "Полученные уведомления помечаются как прочитанные")
     @ApiResponse(responseCode = "200", description = "Уведомления текущего пользователя", content = {
             @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = NotificationsResponse.class))
+                    schema = @Schema(implementation = NotificationsResponseList.class))
     })
     @GetMapping("/read")
-    public NotificationsResponse findAllNotifications() {
+    public NotificationsResponseList findAllNotifications() {
         String login = provider.getLoginFromToken();
-        NotificationsResponse notificationsResponse = new NotificationsResponse(userService
-                .findByUsername(login).orElseThrow().getNotifications());
+        User user = userService.findByUsername(login).orElseThrow();
+        NotificationsResponseList notificationsResponseList =
+                new NotificationsResponseList(user.getNotifications(), user.getZoneId());
         notificationService.readNotification(login);
-        return notificationsResponse;
+        return notificationsResponseList;
     }
 }

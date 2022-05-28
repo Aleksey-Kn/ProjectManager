@@ -1,4 +1,4 @@
-package ru.manager.ProgectManager.DTO.response.user;
+package ru.manager.ProgectManager.DTO.response.user.notification;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -11,24 +11,23 @@ import java.util.stream.Collectors;
 
 @Getter
 @Schema(description = "Ответ об уведомлениях пользователя")
-public class NotificationsResponse {
+public class NotificationsResponseList {
     @Schema(description = "Непрочитанные уведомления")
-    private final List<String> unreadNotifications;
+    private final List<NotificationResponse> unreadNotifications;
     @Schema(description = "Прочитанные уведомления")
-    private final List<String> readNotifications;
+    private final List<NotificationResponse> readNotifications;
 
-    public NotificationsResponse(Set<Notification> notifications) {
+    public NotificationsResponseList(Set<Notification> notifications, int zoneId) {
         unreadNotifications = notifications.stream()
                 .filter(Notification::isNewNotification)
                 .sorted(Comparator.comparing(Notification::getCreateDatetime).reversed())
-                .map(Notification::getText)
+                .map(notification -> new NotificationResponse(notification, zoneId))
                 .collect(Collectors.toList());
 
         readNotifications = notifications.stream()
                 .filter(notification -> !notification.isNewNotification())
                 .sorted(Comparator.comparing(Notification::getCreateDatetime).reversed())
-                .map(Notification::getText)
+                .map(notification -> new NotificationResponse(notification, zoneId))
                 .collect(Collectors.toList());
-
     }
 }
