@@ -35,7 +35,26 @@ public class ProjectRoleService {
         Project project = projectRepository.findById(request.getProjectId()).orElseThrow();
         if (isAdmin(project, user)) {
             CustomProjectRole customProjectRole = new CustomProjectRole();
-            setCustomProjectRoleData(project, customProjectRole, request);
+            customProjectRole.setName(request.getName());
+            customProjectRole.setCanEditResources(request.isCanEditResource());
+            customProjectRole.setCustomRoleWithKanbanConnectors(request.getKanbanConnectorRequests().stream().map(kr -> {
+                CustomRoleWithKanbanConnector customRoleWithKanbanConnector = new CustomRoleWithKanbanConnector();
+                customRoleWithKanbanConnector.setCanEdit(kr.isCanEdit());
+                customRoleWithKanbanConnector.setKanban(project.getKanbans().parallelStream()
+                        .filter(k -> k.getId() == kr.getId())
+                        .findAny().orElseThrow(() -> new NoSuchResourceException("Kanban: " + kr.getId())));
+                return kanbanConnectorRepository.save(customRoleWithKanbanConnector);
+            }).collect(Collectors.toSet()));
+            customProjectRole.setCustomRoleWithDocumentConnectors(request.getDocumentConnectorRequest().stream().map(dr -> {
+                CustomRoleWithDocumentConnector customRoleWithDocumentConnector = new CustomRoleWithDocumentConnector();
+                customRoleWithDocumentConnector.setCanEdit(dr.isCanEdit());
+                customRoleWithDocumentConnector.setId(dr.getId());
+                customRoleWithDocumentConnector.setPage(project.getPages().parallelStream()
+                        .filter(p -> p.getRoot() == null)
+                        .filter(p -> p.getId() == dr.getId())
+                        .findAny().orElseThrow(() -> new NoSuchResourceException("Page: " + dr.getId())));
+                return documentConnectorRepository.save(customRoleWithDocumentConnector);
+            }).collect(Collectors.toSet()));
             customProjectRole = customProjectRoleRepository.save(customProjectRole);
             project.getAvailableRole().add(customProjectRole);
             projectRepository.save(project);
@@ -54,13 +73,11 @@ public class ProjectRoleService {
         }
     }
 
-    public boolean deleteCustomRole(long projectId, long roleId, String userLogin) {
+    public boolean deleteCustomRole(long roleId, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        Project project = projectRepository.findById(projectId).orElseThrow();
+        CustomProjectRole role = customProjectRoleRepository.findById(roleId).orElseThrow();
+        Project project = role.getProject();
         if (isAdmin(project, user)) {
-            CustomProjectRole role = project.getAvailableRole().stream()
-                    .filter(r -> r.getId() == roleId)
-                    .findAny().orElseThrow(IllegalArgumentException::new);
             project.getConnectors().parallelStream()
                     .filter(c -> c.getRoleType() == TypeRoleProject.CUSTOM_ROLE)
                     .filter(c -> c.getCustomProjectRole().equals(role))
@@ -80,43 +97,16 @@ public class ProjectRoleService {
         }
     }
 
-    public boolean changeRole(long roleId, CreateCustomRoleRequest newCustomRole, String userLogin) {
+    public boolean rename(long id, String name, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
-        Project project = projectRepository.findById(newCustomRole.getProjectId()).orElseThrow();
-        if (isAdmin(project, user)) {
-            CustomProjectRole customProjectRole = project.getAvailableRole().stream()
-                    .filter(r -> r.getId() == roleId)
-                    .findAny().orElseThrow(IllegalArgumentException::new);
-            customProjectRole.getCustomRoleWithKanbanConnectors().clear();
-            setCustomProjectRoleData(project, customProjectRole, newCustomRole);
+        CustomProjectRole customProjectRole = customProjectRoleRepository.findById(id).orElseThrow();
+        if(isAdmin(customProjectRole.getProject(), user)) {
+            customProjectRole.setName(name);
             customProjectRoleRepository.save(customProjectRole);
             return true;
         } else {
             return false;
         }
-    }
-
-    private void setCustomProjectRoleData(Project project, CustomProjectRole customProjectRole, CreateCustomRoleRequest request) {
-        customProjectRole.setName(request.getName());
-        customProjectRole.setCanEditResources(request.isCanEditResource());
-        customProjectRole.setCustomRoleWithKanbanConnectors(request.getKanbanConnectorRequests().stream().map(kr -> {
-            CustomRoleWithKanbanConnector customRoleWithKanbanConnector = new CustomRoleWithKanbanConnector();
-            customRoleWithKanbanConnector.setCanEdit(kr.isCanEdit());
-            customRoleWithKanbanConnector.setKanban(project.getKanbans().parallelStream()
-                    .filter(k -> k.getId() == kr.getId())
-                    .findAny().orElseThrow(() -> new NoSuchResourceException("Kanban: " + kr.getId())));
-            return kanbanConnectorRepository.save(customRoleWithKanbanConnector);
-        }).collect(Collectors.toSet()));
-        customProjectRole.setCustomRoleWithDocumentConnectors(request.getDocumentConnectorRequest().stream().map(dr -> {
-            CustomRoleWithDocumentConnector customRoleWithDocumentConnector = new CustomRoleWithDocumentConnector();
-            customRoleWithDocumentConnector.setCanEdit(dr.isCanEdit());
-            customRoleWithDocumentConnector.setId(dr.getId());
-            customRoleWithDocumentConnector.setPage(project.getPages().parallelStream()
-                    .filter(p -> p.getRoot() == null)
-                    .filter(p -> p.getId() == dr.getId())
-                    .findAny().orElseThrow(() -> new NoSuchResourceException("Page: " + dr.getId())));
-            return documentConnectorRepository.save(customRoleWithDocumentConnector);
-        }).collect(Collectors.toSet()));
     }
 
     public boolean editUserRole(EditUserRoleRequest request, String adminLogin) {

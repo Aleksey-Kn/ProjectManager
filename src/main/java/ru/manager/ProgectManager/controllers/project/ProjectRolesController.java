@@ -110,63 +110,21 @@ public class ProjectRolesController {
             @ApiResponse(responseCode = "200", description = "Роль успешно удалена"),
             @ApiResponse(responseCode = "403",
                     description = "Пользователь не имеет достаточных прав доступа для совершения даннного действия"),
-            @ApiResponse(responseCode = "404", description = "Указанного проекта или роли не существует", content = {
+            @ApiResponse(responseCode = "404", description = "Указанного роли не существует", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             })
     })
     @DeleteMapping()
-    public ResponseEntity<?> deleteRole(@RequestParam long projectId, @RequestParam long roleId) {
+    public ResponseEntity<?> deleteRole(@RequestParam long roleId) {
         try {
-            if (projectRoleService.deleteCustomRole(projectId, roleId, provider.getLoginFromToken())) {
+            if (projectRoleService.deleteCustomRole(roleId, provider.getLoginFromToken())) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
         } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
-        } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CUSTOM_ROLE), HttpStatus.NOT_FOUND);
-        }
-    }
-
-    @Operation(summary = "Редактирование существующей роли")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Роль успешно изменена"),
-            @ApiResponse(responseCode = "403",
-                    description = "Пользователь не имеет достаточных прав доступа для совершения даннного действия"),
-            @ApiResponse(responseCode = "404", description = "Указанного проекта, канбана или роли не существует",
-                    content = {
-                            @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ErrorResponse.class))
-                    }),
-            @ApiResponse(responseCode = "400", description = "Название роли должно содержать видимые символы",
-                    content = {
-                            @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ErrorResponse.class))
-                    })
-    })
-    @PutMapping
-    public ResponseEntity<?> editRole(@RequestBody @Valid CreateCustomRoleRequest request, BindingResult bindingResult,
-                                      @RequestParam long roleId) {
-        if (bindingResult.hasErrors()) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
-                    HttpStatus.BAD_REQUEST);
-        } else {
-            try {
-                if (projectRoleService.changeRole(roleId, request, provider.getLoginFromToken())) {
-                    return new ResponseEntity<>(HttpStatus.OK);
-                } else {
-                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-                }
-            } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
-            } catch (NoSuchResourceException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.NOT_FOUND);
-            } catch (IllegalArgumentException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CUSTOM_ROLE),
-                        HttpStatus.NOT_FOUND);
-            }
         }
     }
 

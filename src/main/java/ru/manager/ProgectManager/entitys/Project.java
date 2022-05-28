@@ -43,7 +43,7 @@ public class Project {
     private String deadline;
 
     @JsonIgnore
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<CustomProjectRole> availableRole;
 
     @JsonIgnore

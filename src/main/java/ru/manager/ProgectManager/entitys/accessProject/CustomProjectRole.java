@@ -3,6 +3,7 @@ package ru.manager.ProgectManager.entitys.accessProject;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.Hibernate;
+import ru.manager.ProgectManager.entitys.Project;
 
 import javax.persistence.*;
 import java.util.Objects;
@@ -27,6 +28,10 @@ public class CustomProjectRole {
 
     @OneToMany(cascade = CascadeType.REMOVE)
     private Set<CustomRoleWithDocumentConnector> customRoleWithDocumentConnectors;
+
+    @ManyToOne
+    @JoinColumn(name = "project_id")
+    private Project project;
 
     @Override
     public boolean equals(Object o) {
