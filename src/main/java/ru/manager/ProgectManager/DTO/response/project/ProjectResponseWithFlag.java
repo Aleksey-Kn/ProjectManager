@@ -1,4 +1,4 @@
-package ru.manager.ProgectManager.DTO.response;
+package ru.manager.ProgectManager.DTO.response.project;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -10,8 +10,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Getter
-@Schema(description = "Возвращаемая информация о проекте")
-public class ProjectResponse {
+@Schema(description = "Сущность проекта c показателем возможности создания и удаления ресурсов текущим пользователем")
+public class ProjectResponseWithFlag {
+    @Schema(description = "Возможность создавать и удалять ресурсы в данном проекте")
+    private final boolean canCreateOrDelete;
     @Schema(description = "Название проекта")
     private final String name;
     @Schema(description = "Идентификатор проекта")
@@ -33,7 +35,7 @@ public class ProjectResponse {
     @Schema(description = "Название роли этого пользователя в проекте")
     private final String roleName;
 
-    public ProjectResponse(Project project, String userRoleName, int zoneId){
+    public ProjectResponseWithFlag(Project project, String userRoleName, int zoneId, boolean canRedact) {
         name = project.getName();
         id = project.getId();
         photo = (project.getPhoto() == null? null: "https://api.veehark.xyz/photo/project?id=" + project.getId());
@@ -48,5 +50,6 @@ public class ProjectResponse {
         startDate = project.getStartDate();
         deadline = project.getDeadline();
         roleName = userRoleName;
+        canCreateOrDelete = canRedact;
     }
 }

@@ -1,4 +1,4 @@
-package ru.manager.ProgectManager.DTO.response;
+package ru.manager.ProgectManager.DTO.response.project;
 
 import lombok.Getter;
 import ru.manager.ProgectManager.entitys.Project;

@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.request.accessProject.AccessProjectTroughMailRequest;
 import ru.manager.ProgectManager.DTO.request.accessProject.CreateCustomRoleRequest;
 import ru.manager.ProgectManager.DTO.request.accessProject.EditUserRoleRequest;
-import ru.manager.ProgectManager.DTO.response.ProjectResponse;
+import ru.manager.ProgectManager.DTO.response.project.ProjectResponse;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.accessProject.*;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;

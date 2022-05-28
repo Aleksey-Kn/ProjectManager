@@ -1,4 +1,4 @@
-package ru.manager.ProgectManager.DTO.response;
+package ru.manager.ProgectManager.DTO.response.project;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -14,7 +14,7 @@ public class ProjectInfo{
     @Schema(description = "Название проекта")
     private final String name;
 
-    ProjectInfo(Project project) {
+    public ProjectInfo(Project project) {
         id = project.getId();
         name = project.getName();
     }

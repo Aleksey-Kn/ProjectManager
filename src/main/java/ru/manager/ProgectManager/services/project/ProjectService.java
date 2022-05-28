@@ -142,6 +142,16 @@ public class ProjectService {
         }
     }
 
+    public boolean canCreateOrDeleteResources(Project project, String userLogin) {
+        return project.getConnectors().parallelStream()
+                .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN
+                        || (c.getRoleType() == TypeRoleProject.CUSTOM_ROLE
+                        && c.getCustomProjectRole().isCanEditResources()))
+                .map(UserWithProjectConnector::getUser)
+                .map(User::getUsername)
+                .anyMatch(login -> login.equals(userLogin));
+    }
+
     private boolean isAdmin(Project project, User admin) {
         return project.getConnectors().stream()
                 .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)

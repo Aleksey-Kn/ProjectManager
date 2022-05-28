@@ -2,7 +2,7 @@ package ru.manager.ProgectManager.DTO.response.user;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
-import ru.manager.ProgectManager.DTO.response.ProjectInfo;
+import ru.manager.ProgectManager.DTO.response.project.ProjectInfo;
 import ru.manager.ProgectManager.entitys.user.VisitMark;
 import ru.manager.ProgectManager.enums.ResourceType;
 

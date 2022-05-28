@@ -16,8 +16,8 @@ import ru.manager.ProgectManager.DTO.request.PhotoDTO;
 import ru.manager.ProgectManager.DTO.request.ProjectDataRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.IdResponse;
-import ru.manager.ProgectManager.DTO.response.ProjectResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanListResponse;
+import ru.manager.ProgectManager.DTO.response.project.ProjectResponseWithFlag;
 import ru.manager.ProgectManager.DTO.response.user.UserDataListResponse;
 import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.entitys.Project;
@@ -76,7 +76,7 @@ public class ProjectController {
             @ApiResponse(responseCode = "403", description = "Пользователь не является участником проекта"),
             @ApiResponse(responseCode = "200", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ProjectResponse.class))
+                            schema = @Schema(implementation = ProjectResponseWithFlag.class))
             })
     })
     @GetMapping("/project")
@@ -85,9 +85,10 @@ public class ProjectController {
             String login = provider.getLoginFromToken();
             Optional<Project> project = projectService.findProject(id, login);
             if (project.isPresent()) {
-                return ResponseEntity.ok(new ProjectResponse(project.get(),
+                return ResponseEntity.ok(new ProjectResponseWithFlag(project.get(),
                         accessProjectService.findUserRoleName(login, project.get().getId()),
-                        userService.findZoneIdForThisUser(login)));
+                        userService.findZoneIdForThisUser(login),
+                        projectService.canCreateOrDeleteResources(project.get(), login)));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }

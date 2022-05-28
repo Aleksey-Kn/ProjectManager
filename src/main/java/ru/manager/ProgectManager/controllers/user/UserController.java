@@ -18,7 +18,7 @@ import ru.manager.ProgectManager.DTO.request.user.LocaleRequest;
 import ru.manager.ProgectManager.DTO.request.user.UpdatePassRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.ListPointerResources;
-import ru.manager.ProgectManager.DTO.response.ProjectListResponse;
+import ru.manager.ProgectManager.DTO.response.project.ProjectListResponse;
 import ru.manager.ProgectManager.DTO.response.user.MyselfUserDataResponse;
 import ru.manager.ProgectManager.DTO.response.user.PublicAllDataResponse;
 import ru.manager.ProgectManager.DTO.response.user.VisitMarkListResponse;
