@@ -2,8 +2,10 @@ package ru.manager.ProgectManager.DTO.request.accessProject;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class PutConnectForResourceInRole {
     private long roleId;
-    private CustomRoleWithResourceConnectorRequest resourceConnector;
+    private List<CustomRoleWithResourceConnectorRequest> resourceConnector;
 }

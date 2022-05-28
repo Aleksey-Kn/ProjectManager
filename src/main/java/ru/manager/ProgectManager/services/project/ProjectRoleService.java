@@ -2,13 +2,15 @@ package ru.manager.ProgectManager.services.project;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.manager.ProgectManager.DTO.request.accessProject.CreateCustomRoleRequest;
-import ru.manager.ProgectManager.DTO.request.accessProject.EditUserRoleRequest;
+import org.springframework.transaction.annotation.Transactional;
+import ru.manager.ProgectManager.DTO.request.accessProject.*;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.accessProject.CustomProjectRole;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithDocumentConnector;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
+import ru.manager.ProgectManager.entitys.documents.Page;
+import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.NoSuchResourceException;
@@ -16,6 +18,7 @@ import ru.manager.ProgectManager.repositories.*;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -100,9 +103,138 @@ public class ProjectRoleService {
     public boolean rename(long id, String name, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         CustomProjectRole customProjectRole = customProjectRoleRepository.findById(id).orElseThrow();
-        if(isAdmin(customProjectRole.getProject(), user)) {
+        if (isAdmin(customProjectRole.getProject(), user)) {
             customProjectRole.setName(name);
             customProjectRoleRepository.save(customProjectRole);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean putCanEditResource(long id, boolean canEdit, String userLogin) {
+        User user = userRepository.findByUsername(userLogin);
+        CustomProjectRole customProjectRole = customProjectRoleRepository.findById(id).orElseThrow();
+        if (isAdmin(customProjectRole.getProject(), user)) {
+            customProjectRole.setCanEditResources(canEdit);
+            customProjectRoleRepository.save(customProjectRole);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Transactional
+    public boolean putKanbanConnections(PutConnectForResourceInRole request, String userLogin) {
+        CustomProjectRole customProjectRole = customProjectRoleRepository.findById(request.getRoleId()).orElseThrow();
+        User user = userRepository.findByUsername(userLogin);
+        Project project = customProjectRole.getProject();
+        if (isAdmin(project, user)) {
+            // наличие данного соединения в роли
+            Predicate<CustomRoleWithResourceConnectorRequest> containConnectorWithThisId = rc -> customProjectRole
+                    .getCustomRoleWithKanbanConnectors()
+                    .stream()
+                    .map(CustomRoleWithKanbanConnector::getKanban)
+                    .mapToLong(Kanban::getId)
+                    .anyMatch(identity -> identity == rc.getId());
+            request.getResourceConnector().stream()
+                    .filter(containConnectorWithThisId)
+                    .forEach(rc -> customProjectRole.getCustomRoleWithKanbanConnectors().stream()
+                            .filter(c -> c.getKanban().getId() == rc.getId())
+                            .forEach(c -> {
+                                c.setCanEdit(rc.isCanEdit());
+                                kanbanConnectorRepository.save(c);
+                            })); // коннекторы, присутствующие в роли
+            request.getResourceConnector().stream()
+                    .filter(Predicate.not(containConnectorWithThisId))
+                    .forEach(rc -> {
+                        CustomRoleWithKanbanConnector connector = new CustomRoleWithKanbanConnector();
+                        connector.setKanban(project.getKanbans().parallelStream()
+                                .filter(k -> k.getId() == rc.getId())
+                                .findAny()
+                                .orElseThrow(NoSuchResourceException::new));
+                        connector.setCanEdit(rc.isCanEdit());
+                        customProjectRole.getCustomRoleWithKanbanConnectors()
+                                .add(kanbanConnectorRepository.save(connector));
+                    });// коннекторы, ранее не присутствовавшие в роли
+            customProjectRoleRepository.save(customProjectRole);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Transactional
+    public boolean putPageConnections(PutConnectForResourceInRole request, String userLogin) {
+        CustomProjectRole customProjectRole = customProjectRoleRepository.findById(request.getRoleId()).orElseThrow();
+        User user = userRepository.findByUsername(userLogin);
+        Project project = customProjectRole.getProject();
+        if (isAdmin(project, user)) {
+            // наличие данного соединения в роли
+            Predicate<CustomRoleWithResourceConnectorRequest> containConnectorWithThisId = rc -> customProjectRole
+                    .getCustomRoleWithDocumentConnectors()
+                    .stream()
+                    .map(CustomRoleWithDocumentConnector::getPage)
+                    .mapToLong(Page::getId)
+                    .anyMatch(identity -> identity == rc.getId());
+            request.getResourceConnector().stream()
+                    .filter(containConnectorWithThisId)
+                    .forEach(rc -> customProjectRole.getCustomRoleWithDocumentConnectors().stream()
+                            .filter(c -> c.getPage().getId() == rc.getId())
+                            .forEach(c -> {
+                                c.setCanEdit(rc.isCanEdit());
+                                documentConnectorRepository.save(c);
+                            })); // коннекторы, присутствующие в роли
+            request.getResourceConnector().stream()
+                    .filter(Predicate.not(containConnectorWithThisId))
+                    .forEach(rc -> {
+                        CustomRoleWithDocumentConnector connector = new CustomRoleWithDocumentConnector();
+                        connector.setPage(project.getPages().parallelStream()
+                                .filter(page -> page.getRoot() == null) // только корневые страницы
+                                .filter(p -> p.getId() == rc.getId())
+                                .findAny()
+                                .orElseThrow(NoSuchResourceException::new));
+                        connector.setCanEdit(rc.isCanEdit());
+                        customProjectRole.getCustomRoleWithDocumentConnectors()
+                                .add(documentConnectorRepository.save(connector));
+                    });// коннекторы, ранее не присутствовавшие в роли
+            customProjectRoleRepository.save(customProjectRole);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean deleteKanbanConnectors(DeleteConnectForResourceFromRole request, String userLogin) {
+        CustomProjectRole customProjectRole = customProjectRoleRepository.findById(request.getRoleId()).orElseThrow();
+        User user = userRepository.findByUsername(userLogin);
+        Project project = customProjectRole.getProject();
+        if (isAdmin(project, user)) {
+            request.getResourceId().forEach(id -> customProjectRole.getCustomRoleWithKanbanConnectors().stream()
+                    .filter(connector -> connector.getKanban().getId() == id)
+                    .findAny()
+                    .ifPresent(kanbanConnector -> {
+                        customProjectRole.getCustomRoleWithKanbanConnectors().remove(kanbanConnector);
+                        kanbanConnectorRepository.delete(kanbanConnector);
+                    }));
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean deletePageConnectors(DeleteConnectForResourceFromRole request, String userLogin) {
+        CustomProjectRole customProjectRole = customProjectRoleRepository.findById(request.getRoleId()).orElseThrow();
+        User user = userRepository.findByUsername(userLogin);
+        Project project = customProjectRole.getProject();
+        if (isAdmin(project, user)) {
+            request.getResourceId().forEach(id -> customProjectRole.getCustomRoleWithDocumentConnectors().stream()
+                    .filter(connector -> connector.getPage().getId() == id)
+                    .findAny()
+                    .ifPresent(pageConnector -> {
+                        customProjectRole.getCustomRoleWithDocumentConnectors().remove(pageConnector);
+                        documentConnectorRepository.delete(pageConnector);
+                    }));
             return true;
         } else {
             return false;
