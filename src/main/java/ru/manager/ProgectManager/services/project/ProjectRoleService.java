@@ -243,19 +243,17 @@ public class ProjectRoleService {
 
     public boolean editUserRole(EditUserRoleRequest request, String adminLogin) {
         User admin = userRepository.findByUsername(adminLogin);
-        Project project = projectRepository.findById(request.getProjectId()).orElseThrow();
+        CustomProjectRole role = customProjectRoleRepository.findById(request.getRoleId()).orElseThrow();
+        Project project = role.getProject();
         if (isAdmin(project, admin)) {
-            User targetUser = userRepository.findById(request.getUserId())
-                    .orElseThrow(() -> new NoSuchResourceException("User: " + request.getUserId()));
+            User targetUser = userRepository.findById(request.getUserId()).orElseThrow(NoSuchResourceException::new);
             UserWithProjectConnector connector = targetUser.getUserWithProjectConnectors().stream()
                     .filter(c -> c.getProject().equals(project))
                     .findAny()
                     .orElseThrow(() -> new NoSuchResourceException("Project connect with user: " + request.getUserId()));
             connector.setRoleType(request.getTypeRoleProject());
             if (request.getTypeRoleProject() == TypeRoleProject.CUSTOM_ROLE) {
-                connector.setCustomProjectRole(project.getAvailableRole().stream()
-                        .filter(r -> r.getId() == request.getCustomRoleId())
-                        .findAny().orElseThrow(IllegalArgumentException::new));
+                connector.setCustomProjectRole(role);
             } else {
                 connector.setCustomProjectRole(null);
             }

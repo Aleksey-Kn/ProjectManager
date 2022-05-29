@@ -133,7 +133,7 @@ public class ProjectRolesController {
             @ApiResponse(responseCode = "200", description = "Указанная роль успешно применена к участнику"),
             @ApiResponse(responseCode = "403",
                     description = "Пользователь не имеет достаточных прав доступа для совершения даннного действия"),
-            @ApiResponse(responseCode = "404", description = "Указанного проекта, участника или роли не существует",
+            @ApiResponse(responseCode = "404", description = "Указанного участника или роли не существует",
                     content = {
                             @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ErrorResponse.class))
@@ -157,12 +157,10 @@ public class ProjectRolesController {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
                 }
             } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
-            } catch (NoSuchResourceException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER), HttpStatus.NOT_FOUND);
-            } catch (IllegalArgumentException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CUSTOM_ROLE),
                         HttpStatus.NOT_FOUND);
+            } catch (NoSuchResourceException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER), HttpStatus.NOT_FOUND);
             }
         }
     }
