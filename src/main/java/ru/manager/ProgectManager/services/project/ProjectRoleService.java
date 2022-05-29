@@ -37,8 +37,11 @@ public class ProjectRoleService {
         User user = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(request.getProjectId()).orElseThrow();
         if (isAdmin(project, user)) {
+            if(containsRoleNameInProject(project, request.getName()))
+                throw new IllegalArgumentException();
+
             CustomProjectRole customProjectRole = new CustomProjectRole();
-            customProjectRole.setName(request.getName());
+            customProjectRole.setName(request.getName().trim());
             customProjectRole.setCanEditResources(request.isCanEditResource());
             customProjectRole.setCustomRoleWithKanbanConnectors(request.getKanbanConnectorRequests().stream().map(kr -> {
                 CustomRoleWithKanbanConnector customRoleWithKanbanConnector = new CustomRoleWithKanbanConnector();
@@ -103,7 +106,10 @@ public class ProjectRoleService {
     public boolean rename(long id, String name, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         CustomProjectRole customProjectRole = customProjectRoleRepository.findById(id).orElseThrow();
-        if (isAdmin(customProjectRole.getProject(), user)) {
+        Project project = customProjectRole.getProject();
+        if (isAdmin(project, user)) {
+            if(containsRoleNameInProject(project, name))
+                throw new IllegalArgumentException();
             customProjectRole.setName(name);
             customProjectRoleRepository.save(customProjectRole);
             return true;
@@ -267,5 +273,11 @@ public class ProjectRoleService {
         return user.getUserWithProjectConnectors().stream()
                 .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
                 .anyMatch(c -> c.getProject().equals(project));
+    }
+
+    private boolean containsRoleNameInProject(Project project, String newName) {
+        return project.getAvailableRole().parallelStream()
+                .map(CustomProjectRole::getName)
+                .anyMatch(name -> name.equals(newName));
     }
 }
