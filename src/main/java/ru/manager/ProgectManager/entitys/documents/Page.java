@@ -43,7 +43,7 @@ public class Page {
     private Set<Page> subpages;
 
     @ManyToOne
-    @JoinColumn(name = "kanban_id")
+    @JoinColumn(name = "project_id")
     private Project project;
 
     @Override
