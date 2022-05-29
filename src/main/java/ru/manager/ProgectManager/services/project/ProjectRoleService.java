@@ -41,6 +41,7 @@ public class ProjectRoleService {
                 throw new IllegalArgumentException();
 
             CustomProjectRole customProjectRole = new CustomProjectRole();
+            customProjectRole.setProject(project);
             customProjectRole.setName(request.getName().trim());
             customProjectRole.setCanEditResources(request.isCanEditResource());
             customProjectRole.setCustomRoleWithKanbanConnectors(request.getKanbanConnectorRequests().stream().map(kr -> {
@@ -61,10 +62,7 @@ public class ProjectRoleService {
                         .findAny().orElseThrow(() -> new NoSuchResourceException("Page: " + dr.getId())));
                 return documentConnectorRepository.save(customRoleWithDocumentConnector);
             }).collect(Collectors.toSet()));
-            customProjectRole = customProjectRoleRepository.save(customProjectRole);
-            project.getAvailableRole().add(customProjectRole);
-            projectRepository.save(project);
-            return Optional.of(customProjectRole);
+            return Optional.of(customProjectRoleRepository.save(customProjectRole));
         }
         return Optional.empty();
     }
@@ -94,9 +92,8 @@ public class ProjectRoleService {
             StreamSupport.stream(accessProjectRepository.findAll().spliterator(), true)
                     .filter(accessProject -> accessProject.getTypeRoleProject() == TypeRoleProject.CUSTOM_ROLE)
                     .filter(accessProject -> accessProject.getProjectRole().equals(role))
-                    .forEach(accessProjectRepository::delete);
-            project.getAvailableRole().remove(role);
-            projectRepository.save(project);
+                    .forEach(accessProjectRepository::delete); // удаление пригласительных ссылок, которые выдавали данную роль
+            customProjectRoleRepository.delete(role);
             return true;
         } else {
             return false;
