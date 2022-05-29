@@ -10,6 +10,7 @@ import ru.manager.ProgectManager.entitys.kanban.KanbanElementComment;
 import ru.manager.ProgectManager.entitys.kanban.Tag;
 import ru.manager.ProgectManager.entitys.user.WorkTrack;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Comparator;
@@ -54,7 +55,7 @@ public class KanbanElementContentResponse {
         creator = new PublicMainUserDataResponse(kanbanElement.getOwner(), zoneId);
         lastRedactor = new PublicMainUserDataResponse(kanbanElement.getLastRedactor(), zoneId);
         content = kanbanElement.getContent();
-        selectedDate = kanbanElement.getSelectedDate();
+        selectedDate = LocalDate.ofEpochDay(kanbanElement.getSelectedDate()).toString();
         comments = (kanbanElement.getComments() == null? List.of():
                 kanbanElement.getComments().stream()
                 .sorted(Comparator.comparing(KanbanElementComment::getId))

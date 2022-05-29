@@ -37,7 +37,8 @@ public enum Errors {
     INDEX_MUST_BE_MORE_0(2006),
     COUNT_MUST_BE_MORE_1(2007),
     TEXT_MUST_BE_CONTAINS_VISIBLE_SYMBOL(2008),
-    FIELD_MUST_BE_NOT_NULL(2009);
+    FIELD_MUST_BE_NOT_NULL(2009),
+    WRONG_DATE_FORMAT(2010);
 
     Errors(int value){
         numValue = value;

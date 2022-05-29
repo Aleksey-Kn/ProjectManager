@@ -45,7 +45,7 @@ public class KanbanElementService {
             element.setStatus(ElementStatus.ALIVE);
             element.setTimeOfCreate(getEpochSeconds());
             element.setTimeOfUpdate(getEpochSeconds());
-            element.setSelectedDate(request.getDate());
+            element.setSelectedDate(LocalDate.parse(request.getDate()).toEpochDay());
 
             createSoftRemover(column, element);
 
@@ -69,7 +69,7 @@ public class KanbanElementService {
             element.setContent(request.getContent());
             element.setName(request.getName().trim());
             element.setTimeOfUpdate(getEpochSeconds());
-            element.setSelectedDate(request.getDate());
+            element.setSelectedDate(LocalDate.parse(request.getDate()).toEpochDay());
             element.setLastRedactor(user);
             return Optional.of(elementRepository.save(element));
         }

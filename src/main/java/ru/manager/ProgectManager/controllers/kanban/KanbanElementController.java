@@ -32,6 +32,7 @@ import ru.manager.ProgectManager.services.kanban.KanbanElementService;
 import ru.manager.ProgectManager.services.user.UserService;
 
 import javax.validation.Valid;
+import java.time.format.DateTimeParseException;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
@@ -94,6 +95,10 @@ public class KanbanElementController {
             @ApiResponse(responseCode = "200", description = "Добавленный элемент", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = IdResponse.class))
+            }),
+            @ApiResponse(responseCode = "406", description = "Неприемлемый формат даты", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
             })
     })
     @PostMapping()
@@ -111,6 +116,8 @@ public class KanbanElementController {
                 }
             } catch (NoSuchElementException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.NOT_FOUND);
+            } catch (DateTimeParseException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.WRONG_DATE_FORMAT), HttpStatus.NOT_ACCEPTABLE);
             }
         }
     }
@@ -162,9 +169,13 @@ public class KanbanElementController {
                     description = "Операция недоступна, поскольку элемент перемещён в корзину", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "406", description = "Неприемлемый формат даты", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
             })
     })
-    @PutMapping()
+    @PutMapping
     public ResponseEntity<?> editElement(@RequestParam long id, @RequestBody @Valid UpdateKanbanElementRequest request,
                                          BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -183,6 +194,8 @@ public class KanbanElementController {
             } catch (IncorrectStatusException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
                         HttpStatus.GONE);
+            } catch (DateTimeParseException e) {
+                return new ResponseEntity<>(new ErrorResponse(Errors.WRONG_DATE_FORMAT), HttpStatus.NOT_ACCEPTABLE);
             }
         }
     }

@@ -46,7 +46,7 @@ public class KanbanElement {
     private ElementStatus status;
 
     @Column
-    private String selectedDate;
+    private long selectedDate;
 
     @ManyToOne
     @JoinColumn(name = "kanban_column_id")

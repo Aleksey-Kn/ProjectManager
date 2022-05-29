@@ -6,6 +6,7 @@ import ru.manager.ProgectManager.DTO.response.user.PublicMainUserDataResponse;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
 import ru.manager.ProgectManager.entitys.kanban.Tag;
 
+import java.time.LocalDate;
 import java.util.Set;
 
 @Getter
@@ -35,7 +36,7 @@ public class KanbanElementMainDataResponse {
         serialNumber = kanbanElement.getSerialNumber();
         name = kanbanElement.getName();
         tags = kanbanElement.getTags();
-        selectedDate = kanbanElement.getSelectedDate();
+        selectedDate = LocalDate.ofEpochDay(kanbanElement.getSelectedDate()).toString();
         creator = new PublicMainUserDataResponse(kanbanElement.getOwner(), zoneId);
         lastRedactor = new PublicMainUserDataResponse(kanbanElement.getLastRedactor(), zoneId);
         commentCount = (kanbanElement.getComments() == null? 0: kanbanElement.getComments().size());

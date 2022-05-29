@@ -17,13 +17,19 @@ public class CustomProjectRoleResponse {
     @Schema(description = "Имеет ли право участник с данной ролью создавать и удалять ресурсы проекта")
     private final boolean canEditResource;
     @Schema(description = "Список доступных для данной роли канбан-досок с указанием уровня доступа")
-    private final List<CustomRoleWithKanbanConnectorResponse> kanbanConnectorRequests;
+    private final List<CustomRoleWithKanbanConnectorResponse> kanbanConnectorResponses;
+    @Schema(description = "Список доступных для данной роли страниц документов с указанием уровня доступа")
+    private final List<CustomRoleWithPageConnectorResponse> pageConnectorResponses;
 
     public CustomProjectRoleResponse(CustomProjectRole role){
         id = role.getId();
         name = role.getName();
         canEditResource = role.isCanEditResources();
-        kanbanConnectorRequests = role.getCustomRoleWithKanbanConnectors().stream().map(CustomRoleWithKanbanConnectorResponse::new)
+        kanbanConnectorResponses = role.getCustomRoleWithKanbanConnectors().stream()
+                .map(CustomRoleWithKanbanConnectorResponse::new)
+                .collect(Collectors.toList());
+        pageConnectorResponses = role.getCustomRoleWithDocumentConnectors().parallelStream()
+                .map(CustomRoleWithPageConnectorResponse::new)
                 .collect(Collectors.toList());
     }
 }
