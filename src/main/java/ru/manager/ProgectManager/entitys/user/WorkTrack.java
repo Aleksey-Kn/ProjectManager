@@ -21,11 +21,11 @@ public class WorkTrack {
     @Column(nullable = false)
     private String comment;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     @JoinColumn(name = "owner_id")
     private User owner;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     @JoinColumn(name = "task_id")
     private KanbanElement task;
 

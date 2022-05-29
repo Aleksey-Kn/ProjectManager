@@ -16,7 +16,7 @@ public class Note {
     @GeneratedValue
     private long id;
 
-    @Column
+    @Column(nullable = false)
     private long userId;
 
     @Column(nullable = false)

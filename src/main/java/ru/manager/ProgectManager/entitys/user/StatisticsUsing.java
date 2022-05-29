@@ -22,7 +22,7 @@ public class StatisticsUsing {
     @Column(nullable = false, unique = true)
     private String type;
 
-    @Column
+    @Column(nullable = false)
     private int count;
 
     @Override
