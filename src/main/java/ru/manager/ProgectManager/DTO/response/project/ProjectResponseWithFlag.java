@@ -2,12 +2,7 @@ package ru.manager.ProgectManager.DTO.response.project;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
-import ru.manager.ProgectManager.DTO.response.user.PublicMainUserDataResponse;
 import ru.manager.ProgectManager.entitys.Project;
-import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Getter
 @Schema(description = "Сущность проекта c показателем возможности создания и удаления ресурсов текущим пользователем")
@@ -20,8 +15,6 @@ public class ProjectResponseWithFlag {
     private final long id;
     @Schema(description = "Фотография профиля проекта", nullable = true)
     private final String photo;
-    @Schema(description = "Список участников проекта")
-    private final List<PublicMainUserDataResponse> participants;
     @Schema(description = "Описание проекта")
     private final String description;
     @Schema(description = "Статус проекта")
@@ -35,15 +28,10 @@ public class ProjectResponseWithFlag {
     @Schema(description = "Название роли этого пользователя в проекте")
     private final String roleName;
 
-    public ProjectResponseWithFlag(Project project, String userRoleName, int zoneId, boolean canRedact) {
+    public ProjectResponseWithFlag(Project project, String userRoleName, boolean canRedact) {
         name = project.getName();
         id = project.getId();
         photo = (project.getPhoto() == null? null: "https://api.veehark.xyz/photo/project?id=" + project.getId());
-        participants = project.getConnectors().stream()
-                .map(UserWithProjectConnector::getUser)
-                .map(user -> new PublicMainUserDataResponse(user, zoneId))
-                .limit(3)
-                .collect(Collectors.toList());
         description = project.getDescription();
         status = project.getStatus();
         statusColor = project.getStatusColor();

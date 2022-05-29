@@ -87,7 +87,6 @@ public class ProjectController {
             if (project.isPresent()) {
                 return ResponseEntity.ok(new ProjectResponseWithFlag(project.get(),
                         accessProjectService.findUserRoleName(login, project.get().getId()),
-                        userService.findZoneIdForThisUser(login),
                         projectService.canCreateOrDeleteResources(project.get(), login)));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
