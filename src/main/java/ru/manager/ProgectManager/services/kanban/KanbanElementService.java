@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.request.kanban.CreateKanbanElementRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.TransportElementRequest;
-import ru.manager.ProgectManager.DTO.request.kanban.UpdateKanbanElementRequest;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
 import ru.manager.ProgectManager.entitys.kanban.*;
 import ru.manager.ProgectManager.entitys.user.User;
@@ -58,20 +57,52 @@ public class KanbanElementService {
         return Optional.empty();
     }
 
-    public Optional<KanbanElement> setElement(long id, UpdateKanbanElementRequest request, String userLogin) {
+    public boolean rename(long id, String name, String userLogin) {
         KanbanElement element = elementRepository.findById(id).orElseThrow();
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
             checkElement(element);
-            element.setContent(request.getContent());
-            element.setName(request.getName().trim());
+            element.setName(name.trim());
             element.setTimeOfUpdate(getEpochSeconds());
-            element.setSelectedDate(request.getDate() == null? 0: LocalDate.parse(request.getDate()).toEpochDay());
             element.setLastRedactor(user);
-            return Optional.of(elementRepository.save(element));
+            elementRepository.save(element);
+            return true;
+        } else {
+            return false;
         }
-        return Optional.empty();
+    }
+
+    public boolean editContent(long id, String content, String userLogin) {
+        KanbanElement element = elementRepository.findById(id).orElseThrow();
+        User user = userRepository.findByUsername(userLogin);
+        Kanban kanban = element.getKanbanColumn().getKanban();
+        if (canEditKanban(kanban, user)) {
+            checkElement(element);
+            element.setContent(content);
+            element.setTimeOfUpdate(getEpochSeconds());
+            element.setLastRedactor(user);
+            elementRepository.save(element);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean editDate(long id, String date, String userLogin) {
+        KanbanElement element = elementRepository.findById(id).orElseThrow();
+        User user = userRepository.findByUsername(userLogin);
+        Kanban kanban = element.getKanbanColumn().getKanban();
+        if (canEditKanban(kanban, user)) {
+            checkElement(element);
+            element.setSelectedDate(LocalDate.parse(date).toEpochDay());
+            element.setTimeOfUpdate(getEpochSeconds());
+            element.setLastRedactor(user);
+            elementRepository.save(element);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public boolean transportElement(TransportElementRequest request, String userLogin) {

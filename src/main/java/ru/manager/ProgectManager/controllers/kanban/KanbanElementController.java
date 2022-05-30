@@ -12,9 +12,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import ru.manager.ProgectManager.DTO.request.NameRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.CreateKanbanElementRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.TransportElementRequest;
-import ru.manager.ProgectManager.DTO.request.kanban.UpdateKanbanElementRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanElementContentResponse;
@@ -147,7 +147,7 @@ public class KanbanElementController {
         }
     }
 
-    @Operation(summary = "Изменение элемента", description = "Обновление всех текстовых полей элемента")
+    @Operation(summary = "Переименование элемента")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "404", description = "Попытка обращения к несуществующему элементу", content = {
                     @Content(mediaType = "application/json",
@@ -163,22 +163,17 @@ public class KanbanElementController {
                     description = "Операция недоступна, поскольку элемент перемещён в корзину", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
-            }),
-            @ApiResponse(responseCode = "406", description = "Неприемлемый формат даты", content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class))
             })
     })
-    @PutMapping
-    public ResponseEntity<?> editElement(@RequestParam long id, @RequestBody @Valid UpdateKanbanElementRequest request,
+    @PutMapping("/rename")
+    public ResponseEntity<?> rename(@RequestParam long id, @RequestBody @Valid NameRequest request,
                                          BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            return entityConfigurator.createErrorResponse(bindingResult);
+            return new ResponseEntity<>(new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
+                    HttpStatus.BAD_REQUEST);
         } else {
             try {
-                Optional<KanbanElement> element = kanbanElementService.setElement(id, request,
-                        provider.getLoginFromToken());
-                if (element.isPresent()) {
+                if (kanbanElementService.rename(id, request.getName(), provider.getLoginFromToken())) {
                     return new ResponseEntity<>(HttpStatus.OK);
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -188,9 +183,73 @@ public class KanbanElementController {
             } catch (IncorrectStatusException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
                         HttpStatus.GONE);
-            } catch (DateTimeParseException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.WRONG_DATE_FORMAT), HttpStatus.NOT_ACCEPTABLE);
             }
+        }
+    }
+
+    @Operation(summary = "Изменение даты, прикреплённой к элементу")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "404", description = "Попытка обращения к несуществующему элементу", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к ресурсу"),
+            @ApiResponse(responseCode = "400", description = "Неверный формат даты", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "200", description = "Элемент успешно изменён"),
+            @ApiResponse(responseCode = "410",
+                    description = "Операция недоступна, поскольку элемент перемещён в корзину", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
+    })
+    @PutMapping("/date")
+    public ResponseEntity<?> editDate(@RequestParam long id, @RequestParam String date) {
+        try {
+            if (kanbanElementService.editDate(id, date, provider.getLoginFromToken())) {
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
+        } catch (IncorrectStatusException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
+                    HttpStatus.GONE);
+        } catch (DateTimeParseException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.WRONG_DATE_FORMAT), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @Operation(summary = "Изменение контента элемента")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "404", description = "Попытка обращения к несуществующему элементу", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к ресурсу"),
+            @ApiResponse(responseCode = "200", description = "Элемент успешно изменён"),
+            @ApiResponse(responseCode = "410",
+                    description = "Операция недоступна, поскольку элемент перемещён в корзину", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
+    })
+    @PutMapping("/content")
+    public ResponseEntity<?> editContent(@RequestParam long id, @RequestParam String content) {
+        try {
+            if (kanbanElementService.editContent(id, content, provider.getLoginFromToken())) {
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
+        } catch (IncorrectStatusException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
+                    HttpStatus.GONE);
         }
     }
 
