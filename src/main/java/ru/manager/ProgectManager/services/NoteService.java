@@ -42,7 +42,7 @@ public class NoteService {
 
     public boolean deleteNote(long targetUserId, String ownerLogin) {
         User owner = userRepository.findByUsername(ownerLogin);
-        Optional<Note> note = noteRepository.findById(targetUserId);
+        Optional<Note> note = noteRepository.findByUserId(targetUserId);
         if(note.isPresent()) {
             owner.getNotes().remove(note.get());
             userRepository.save(owner);
