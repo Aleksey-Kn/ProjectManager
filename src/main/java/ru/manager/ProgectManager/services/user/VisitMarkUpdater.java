@@ -110,7 +110,7 @@ public class VisitMarkUpdater {
                         .findAny()
                         .ifPresent(visitMark -> {
                             u.getVisitMarks().remove(visitMark);
-                            visitMarkRepository.delete(visitMark);
+                            userRepository.save(u);
                         }));
     }
 

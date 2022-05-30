@@ -95,13 +95,9 @@ public class KanbanElementController {
             @ApiResponse(responseCode = "200", description = "Добавленный элемент", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = IdResponse.class))
-            }),
-            @ApiResponse(responseCode = "406", description = "Неприемлемый формат даты", content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class))
             })
     })
-    @PostMapping()
+    @PostMapping
     public ResponseEntity<?> addElement(@RequestBody @Valid CreateKanbanElementRequest request, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
@@ -116,8 +112,6 @@ public class KanbanElementController {
                 }
             } catch (NoSuchElementException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.NOT_FOUND);
-            } catch (DateTimeParseException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.WRONG_DATE_FORMAT), HttpStatus.NOT_ACCEPTABLE);
             }
         }
     }

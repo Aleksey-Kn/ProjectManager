@@ -55,7 +55,8 @@ public class KanbanElementContentResponse {
         creator = new PublicMainUserDataResponse(kanbanElement.getOwner(), zoneId);
         lastRedactor = new PublicMainUserDataResponse(kanbanElement.getLastRedactor(), zoneId);
         content = kanbanElement.getContent();
-        selectedDate = LocalDate.ofEpochDay(kanbanElement.getSelectedDate()).toString();
+        selectedDate = kanbanElement.getSelectedDate() == 0? null:
+                LocalDate.ofEpochDay(kanbanElement.getSelectedDate()).toString();
         comments = (kanbanElement.getComments() == null? List.of():
                 kanbanElement.getComments().stream()
                 .sorted(Comparator.comparing(KanbanElementComment::getId))

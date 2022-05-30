@@ -36,7 +36,8 @@ public class KanbanElementMainDataResponse {
         serialNumber = kanbanElement.getSerialNumber();
         name = kanbanElement.getName();
         tags = kanbanElement.getTags();
-        selectedDate = LocalDate.ofEpochDay(kanbanElement.getSelectedDate()).toString();
+        selectedDate = kanbanElement.getSelectedDate() == 0? null:
+                LocalDate.ofEpochDay(kanbanElement.getSelectedDate()).toString();
         creator = new PublicMainUserDataResponse(kanbanElement.getOwner(), zoneId);
         lastRedactor = new PublicMainUserDataResponse(kanbanElement.getLastRedactor(), zoneId);
         commentCount = (kanbanElement.getComments() == null? 0: kanbanElement.getComments().size());

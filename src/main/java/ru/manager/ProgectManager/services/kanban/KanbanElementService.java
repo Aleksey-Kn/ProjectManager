@@ -37,7 +37,6 @@ public class KanbanElementService {
         Kanban kanban = column.getKanban();
         if (canEditKanban(kanban, user)) {
             KanbanElement element = new KanbanElement();
-            element.setContent(request.getContent());
             element.setName(request.getName().trim());
             element.setOwner(user);
             element.setLastRedactor(user);
@@ -45,7 +44,6 @@ public class KanbanElementService {
             element.setStatus(ElementStatus.ALIVE);
             element.setTimeOfCreate(getEpochSeconds());
             element.setTimeOfUpdate(getEpochSeconds());
-            element.setSelectedDate(LocalDate.parse(request.getDate()).toEpochDay());
 
             createSoftRemover(column, element);
 
@@ -69,7 +67,7 @@ public class KanbanElementService {
             element.setContent(request.getContent());
             element.setName(request.getName().trim());
             element.setTimeOfUpdate(getEpochSeconds());
-            element.setSelectedDate(LocalDate.parse(request.getDate()).toEpochDay());
+            element.setSelectedDate(request.getDate() == null? 0: LocalDate.parse(request.getDate()).toEpochDay());
             element.setLastRedactor(user);
             return Optional.of(elementRepository.save(element));
         }

@@ -12,11 +12,7 @@ import javax.validation.constraints.NotBlank;
 public class CreateKanbanElementRequest {
     @Schema(description = "Идентификатор колонки, в которой будет создан элемент", required = true)
     private long columnId;
-    @Schema(description = "Текст внутри элемента")
-    private String content;
     @NotBlank(message = "NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS")
     @Schema(description = "Имя элемента")
     private String name;
-    @Schema(description = "Выбранная пользователем дата, которая будет отображаться в данной ячейке")
-    private String date;
 }
