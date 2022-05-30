@@ -10,8 +10,9 @@ import javax.validation.constraints.NotBlank;
 @Validated
 @Schema(description = "Данные для запроса блокирования пользователя")
 public class LockRequest {
+    @NotBlank
     @Schema(description = "Идентификатор блокируемого пользователя")
-    private long id;
+    private String idOrLogin;
     @NotBlank
     @Schema(description = "Причина блокировки пользователя")
     private String cause;

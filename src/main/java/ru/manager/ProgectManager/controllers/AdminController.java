@@ -14,10 +14,13 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.adminAction.LockRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
+import ru.manager.ProgectManager.DTO.response.user.UserDataForAdminList;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.AdminService;
+import ru.manager.ProgectManager.services.user.UserService;
 
 import javax.validation.Valid;
+import java.security.Principal;
 import java.util.NoSuchElementException;
 
 @RestController
@@ -26,11 +29,12 @@ import java.util.NoSuchElementException;
 @Tag(name = "Возможности суперпользователя")
 public class AdminController {
     private final AdminService adminService;
+    private final UserService userService;
 
     @Operation(summary = "Блокирование пользователя")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Пользователь успешно заблокирован"),
-            @ApiResponse(responseCode = "400", description = "Необходимо указать причину блокировки", content = {
+            @ApiResponse(responseCode = "400", description = "Поля запроса не должны быть пустыми", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -68,11 +72,16 @@ public class AdminController {
     })
     @PostMapping("/unlock")
     public ResponseEntity<?> unlock(@RequestParam @Parameter(description = "Идентификатор разблокируемого пользователя")
-                                                long id) {
-        if(adminService.unlockAccount(id)) {
+                                                String idOrLogin) {
+        if(adminService.unlockAccount(idOrLogin)) {
             return new ResponseEntity<>(HttpStatus.OK);
         } else {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER), HttpStatus.NOT_FOUND);
         }
+    }
+
+    @GetMapping("/all")
+    public UserDataForAdminList allUser(Principal principal) {
+        return adminService.findAllUser(userService.findZoneIdForThisUser(principal.getName()));
     }
 }
