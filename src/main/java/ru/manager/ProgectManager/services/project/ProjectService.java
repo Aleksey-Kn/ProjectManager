@@ -1,6 +1,7 @@
 package ru.manager.ProgectManager.services.project;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.java.Log;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import ru.manager.ProgectManager.DTO.request.ProjectDataRequest;
@@ -19,14 +20,12 @@ import ru.manager.ProgectManager.repositories.UserWithProjectConnectorRepository
 import ru.manager.ProgectManager.services.user.VisitMarkUpdater;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Log
 public class ProjectService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
@@ -54,17 +53,10 @@ public class ProjectService {
         project.setDescription(request.getDescription());
         project.setStartDate(request.getStartDate());
         project.setDeadline(request.getDeadline());
+        project = projectRepository.save(project);
 
         UserWithProjectConnector connector = new UserWithProjectConnector();
         connector.setRoleType(TypeRoleProject.ADMIN);
-        connector = connectorRepository.save(connector);
-
-        project.setConnectors(Collections.singleton(connector));
-        project = projectRepository.save(project);
-
-        owner.getUserWithProjectConnectors().add(connector);
-        userRepository.save(owner);
-
         connector.setProject(project);
         connector.setUser(owner);
         connectorRepository.save(connector);
@@ -108,17 +100,11 @@ public class ProjectService {
         Project project = projectRepository.findById(id).orElseThrow();
         if (isAdmin(project, admin)) {
             visitMarkUpdater.deleteVisitMark(project, project.getId(), ResourceType.PROJECT);
-
-            List<UserWithProjectConnector> removable = new LinkedList<>(project.getConnectors());
-            project.getConnectors().clear();
-            removable.stream()
-                    .map(UserWithProjectConnector::getUser)
-                    .forEach(u -> {
-                        u.getUserWithProjectConnectors().removeIf(c -> c.getProject().equals(project));
-                        userRepository.save(u);
-                    });
-
-            connectorRepository.deleteAll(removable);
+            project.getConnectors().forEach(connector -> {
+                connector.setProject(null);
+                connector.setUser(null);
+                connectorRepository.delete(connector);
+            });
             projectRepository.delete(project);
             return true;
         }

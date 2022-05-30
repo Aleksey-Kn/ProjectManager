@@ -1,8 +1,8 @@
 package ru.manager.ProgectManager.entitys;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
+import ru.manager.ProgectManager.entitys.accessProject.AccessProject;
 import ru.manager.ProgectManager.entitys.accessProject.CustomProjectRole;
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
 import ru.manager.ProgectManager.entitys.documents.Page;
@@ -42,21 +42,20 @@ public class Project {
     @Column
     private String deadline;
 
-    @JsonIgnore
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<CustomProjectRole> availableRole;
 
-    @JsonIgnore
     @OneToMany(mappedBy = "project", cascade = CascadeType.PERSIST)
     private Set<UserWithProjectConnector> connectors;
 
-    @JsonIgnore
     @OneToMany(mappedBy = "project", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Kanban> kanbans;
 
-    @JsonIgnore
     @OneToMany(mappedBy = "project", cascade = CascadeType.REMOVE)
     private Set<Page> pages;
+
+    @OneToMany(mappedBy = "project", cascade = CascadeType.REMOVE)
+    private Set<AccessProject> accessOnThis;
 
     @Override
     public boolean equals(Object o) {

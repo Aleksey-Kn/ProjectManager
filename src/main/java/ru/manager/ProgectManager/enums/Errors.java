@@ -1,6 +1,7 @@
 package ru.manager.ProgectManager.enums;
 
 public enum Errors {
+    // локальные ошибки времени выполнения
     TOKEN_EXPIRED_OR_INVALID(1000),
     USER_WITH_THIS_EMAIL_ALREADY_CREATED(1001),
     USER_WITH_THIS_LOGIN_ALREADY_CREATED(1002),
@@ -25,9 +26,13 @@ public enum Errors {
     NO_SUCH_SPECIFIED_MAIL(1021),
     ACCOUNT_IS_LOCKED(1022),
     INCORRECT_TIME_ZONE_FORMAT(1023),
+    LAST_ADMIN_CAN_NOT_LEAVE(1024),
+    // ошибки выполнения общего назначения
     INDEX_MORE_COLLECTION_SIZE(1100),
     BAD_FILE(1101),
     TEXT_LENGTH_IS_TOO_LONG(1102),
+    WRONG_DATE_FORMAT(1103),
+    //ошибки валидации
     NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS(2000),
     LOGIN_MUST_BE_CONTAINS_VISIBLE_SYMBOLS(2001),
     PASSWORD_MUST_BE_LONGER_3_SYMBOLS(2002),
@@ -37,8 +42,7 @@ public enum Errors {
     INDEX_MUST_BE_MORE_0(2006),
     COUNT_MUST_BE_MORE_1(2007),
     TEXT_MUST_BE_CONTAINS_VISIBLE_SYMBOL(2008),
-    FIELD_MUST_BE_NOT_NULL(2009),
-    WRONG_DATE_FORMAT(2010);
+    FIELD_MUST_BE_NOT_NULL(2009);
 
     Errors(int value){
         numValue = value;

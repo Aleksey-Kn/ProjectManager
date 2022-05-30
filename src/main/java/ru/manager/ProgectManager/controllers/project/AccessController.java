@@ -220,7 +220,7 @@ public class AccessController {
                 return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
             }
         } catch (IllegalActionException e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ErrorResponse(Errors.LAST_ADMIN_CAN_NOT_LEAVE), HttpStatus.BAD_REQUEST);
         }
     }
 
