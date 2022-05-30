@@ -373,6 +373,11 @@ public class PageService {
                 .anyMatch(connector -> connector.getPage().equals(root))));
     }
 
+    public boolean canEditPage(Page page, String userLogin) {
+        User user = userRepository.findByUsername(userLogin);
+        return canEditPage(page, user);
+    }
+
     private boolean canSeePage(Page page, User user) {
         Page root = (page.getRoot() == null ? page : page.getRoot());
         return page.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)

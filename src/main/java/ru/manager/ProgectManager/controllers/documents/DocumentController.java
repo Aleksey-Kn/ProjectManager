@@ -143,7 +143,7 @@ public class DocumentController {
             Optional<Page> response = pageService.find(id, login);
             if (response.isPresent()) {
                 return ResponseEntity.ok(new PageContentResponse(response.get(),
-                        userService.findZoneIdForThisUser(login)));
+                        userService.findZoneIdForThisUser(login), pageService.canEditPage(response.get(), login)));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
@@ -212,9 +212,10 @@ public class DocumentController {
     @GetMapping
     public ResponseEntity<?> findById(@RequestParam @Parameter(description = "Идентификатор страницы") long id) {
         try {
-            Optional<Page> page = pageService.find(id, provider.getLoginFromToken());
+            String login = provider.getLoginFromToken();
+            Optional<Page> page = pageService.find(id, login);
             if (page.isPresent()) {
-                return ResponseEntity.ok(new PageNameResponse(page.get()));
+                return ResponseEntity.ok(new PageNameResponse(page.get(), pageService.canEditPage(page.get(), login)));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
@@ -241,7 +242,8 @@ public class DocumentController {
             String login = provider.getLoginFromToken();
             Optional<Page> page = pageService.find(id, login);
             if (page.isPresent()) {
-                return ResponseEntity.ok(new PageAllDataResponse(page.get(), userService.findZoneIdForThisUser(login)));
+                return ResponseEntity.ok(new PageAllDataResponse(page.get(), userService.findZoneIdForThisUser(login),
+                        pageService.canEditPage(page.get(), login)));
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }

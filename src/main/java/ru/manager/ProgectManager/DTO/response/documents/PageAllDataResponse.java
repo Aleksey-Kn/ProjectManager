@@ -20,13 +20,16 @@ public class PageAllDataResponse {
     private final String content;
     @Schema(description = "Дата последнего изменения ресурса")
     private final String updateDate;
+    @Schema(description = "Может ли пользователь изменять информацию в данной странице")
+    private final boolean canEdit;
 
-    public PageAllDataResponse(Page page, int zoneId) {
+    public PageAllDataResponse(Page page, int zoneId, boolean canEditDocument) {
         id = page.getId();
         name = page.getName();
         published = page.isPublished();
         updateDate = LocalDateTime
                 .ofEpochSecond(page.getUpdateTime(), 0, ZoneOffset.ofHours(zoneId)).toString();
         content = page.getContent();
+        canEdit = canEditDocument;
     }
 }

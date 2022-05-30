@@ -13,10 +13,13 @@ public class PageNameResponse {
     private final String name;
     @Schema(description = "Флаг того, опубликована ли страница")
     private final boolean published;
+    @Schema(description = "Может ли пользователь изменять информацию в данной странице")
+    private final boolean canEdit;
 
-    public PageNameResponse(Page page){
+    public PageNameResponse(Page page, boolean canEditDocument){
         id = page.getId();
         name = page.getName();
         published = page.isPublished();
+        canEdit = canEditDocument;
     }
 }

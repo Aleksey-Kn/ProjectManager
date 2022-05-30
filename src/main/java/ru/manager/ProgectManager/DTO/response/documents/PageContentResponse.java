@@ -14,10 +14,13 @@ public class PageContentResponse {
     private final String content;
     @Schema(description = "Дата последнего изменения ресурса")
     private final String updateDate;
+    @Schema(description = "Может ли пользователь изменять информацию в данной странице")
+    private final boolean canEdit;
 
-    public PageContentResponse(Page page, int zoneId) {
+    public PageContentResponse(Page page, int zoneId, boolean canEditDocument) {
         content = page.getContent();
         updateDate = LocalDateTime
                 .ofEpochSecond(page.getUpdateTime(), 0, ZoneOffset.ofHours(zoneId)).toString();
+        canEdit = canEditDocument;
     }
 }

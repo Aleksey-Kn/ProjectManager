@@ -15,6 +15,6 @@ public class CustomRoleWithPageConnectorResponse {
 
     public CustomRoleWithPageConnectorResponse(CustomRoleWithDocumentConnector connector) {
         canEdit = connector.isCanEdit();
-        page = new PageNameResponse(connector.getPage());
+        page = new PageNameResponse(connector.getPage(), canEdit);
     }
 }
