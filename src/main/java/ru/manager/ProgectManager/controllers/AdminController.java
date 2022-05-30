@@ -46,7 +46,7 @@ public class AdminController {
     })
     @PostMapping("/lock")
     public ResponseEntity<?> lock(@RequestBody @Valid LockRequest lockRequest, BindingResult bindingResult) {
-        if(bindingResult.hasErrors()) {
+        if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.TEXT_MUST_BE_CONTAINS_VISIBLE_SYMBOL),
                     HttpStatus.BAD_REQUEST);
         } else {
@@ -72,14 +72,19 @@ public class AdminController {
     })
     @PostMapping("/unlock")
     public ResponseEntity<?> unlock(@RequestParam @Parameter(description = "Идентификатор разблокируемого пользователя")
-                                                String idOrLogin) {
-        if(adminService.unlockAccount(idOrLogin)) {
+                                            String idOrLogin) {
+        if (adminService.unlockAccount(idOrLogin)) {
             return new ResponseEntity<>(HttpStatus.OK);
         } else {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER), HttpStatus.NOT_FOUND);
         }
     }
 
+    @Operation(summary = "Получение данных всех пользователей системы")
+    @ApiResponse(responseCode = "200", content = {
+            @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = UserDataForAdminList.class))
+    })
     @GetMapping("/all")
     public UserDataForAdminList allUser(Principal principal) {
         return adminService.findAllUser(userService.findZoneIdForThisUser(principal.getName()));
