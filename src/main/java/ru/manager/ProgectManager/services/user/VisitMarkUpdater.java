@@ -114,6 +114,15 @@ public class VisitMarkUpdater {
                         }));
     }
 
+    public void deleteVisitMarkIfLeaveFromProject(long projectId, User user) {
+        user.getVisitMarks().parallelStream()
+                .filter(visitMark -> (visitMark.getResourceType() == ResourceType.PROJECT
+                        && visitMark.getResourceId() == projectId)
+                        || (visitMark.getResourceType() != ResourceType.PROJECT && visitMark.getProjectId() == projectId))
+                .forEach(visitMark -> user.getVisitMarks().remove(visitMark));
+        userRepository.save(user);
+    }
+
     private VisitMark generateDefaultVisitMark(User user, ResourceType resourceType, long id, String name) {
         user.getVisitMarks().forEach(vm -> vm.setSerialNumber(vm.getSerialNumber() + 1));
         user.getVisitMarks().removeIf(vm -> vm.getSerialNumber() > 120);

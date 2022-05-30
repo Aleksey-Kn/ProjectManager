@@ -17,6 +17,7 @@ import ru.manager.ProgectManager.exception.NoSuchResourceException;
 import ru.manager.ProgectManager.repositories.*;
 import ru.manager.ProgectManager.services.MailService;
 import ru.manager.ProgectManager.services.user.NotificationService;
+import ru.manager.ProgectManager.services.user.VisitMarkUpdater;
 
 import java.time.LocalDate;
 import java.util.Optional;
@@ -35,6 +36,7 @@ public class AccessProjectService {
     private final MailService mailService;
     private final NotificationService notificationService;
     private final ProjectService projectService;
+    private final VisitMarkUpdater visitMarkUpdater;
 
     public Optional<AccessProject> generateTokenForAccessProject(String fromUser,
                                                                  long projectId,
@@ -124,11 +126,13 @@ public class AccessProjectService {
 
     public boolean leave(long projectId, String userLogin) {
         Optional<Project> project = projectRepository.findById(projectId);
+        User user = userRepository.findByUsername(userLogin);
         if (project.isPresent()) {
+            visitMarkUpdater.deleteVisitMarkIfLeaveFromProject(projectId, user);
             if(project.get().getConnectors().size() == 1) {
                 projectService.deleteProject(projectId, userLogin);
             } else {
-                userRepository.findByUsername(userLogin).getUserWithProjectConnectors().parallelStream()
+                user.getUserWithProjectConnectors().parallelStream()
                         .filter(c -> c.getProject().equals(project.get()))
                         .findAny().ifPresent(connector -> {
                             if (connector.getRoleType() != TypeRoleProject.ADMIN || project.get().getConnectors().stream()
@@ -148,6 +152,7 @@ public class AccessProjectService {
         Project project = projectRepository.findById(projectId).orElseThrow();
         User user = userRepository.findById(userId).orElseThrow(NoSuchResourceException::new);
         if (isAdmin(project, admin) && !isAdmin(project, user)) {
+            visitMarkUpdater.deleteVisitMarkIfLeaveFromProject(projectId, user);
             notificationService.addNotificationAboutDeleteFromProject(project.getName(), user);
             user.getUserWithProjectConnectors().parallelStream()
                     .filter(c -> c.getProject().equals(project))
