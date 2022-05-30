@@ -1,6 +1,7 @@
 package ru.manager.ProgectManager.services.project;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.java.Log;
 import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.request.accessProject.AccessProjectTroughMailRequest;
 import ru.manager.ProgectManager.DTO.response.project.ProjectResponse;
@@ -24,6 +25,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Log
 public class AccessProjectService {
     private final UserRepository userRepository;
     private final KanbanRepository kanbanRepository;
@@ -88,9 +90,6 @@ public class AccessProjectService {
 
     public Optional<ProjectResponse> findInfoOfProjectFromAccessToken(String token, int zoneId) {
         AccessProject accessProject = accessProjectRepository.findById(token).orElseThrow();
-        if (accessProject.isDisposable() || LocalDate.ofEpochDay(accessProject.getTimeForDie()).isBefore(LocalDate.now())) {
-            accessProjectRepository.delete(accessProject);
-        }
         if (LocalDate.ofEpochDay(accessProject.getTimeForDie()).isAfter(LocalDate.now())) {
             return Optional.of(new ProjectResponse(accessProject.getProject(),
                     (accessProject.getTypeRoleProject() == TypeRoleProject.CUSTOM_ROLE
@@ -115,12 +114,7 @@ public class AccessProjectService {
                 connector.setProject(project);
                 connector.setRoleType(accessProject.getTypeRoleProject());
                 connector.setCustomProjectRole(accessProject.getProjectRole());
-                connector = projectConnectorRepository.save(connector);
-
-                project.getConnectors().add(connector);
-                user.getUserWithProjectConnectors().add(connector);
-                projectRepository.save(project);
-                userRepository.save(user);
+                projectConnectorRepository.save(connector);
             }
             return true;
         } else {
