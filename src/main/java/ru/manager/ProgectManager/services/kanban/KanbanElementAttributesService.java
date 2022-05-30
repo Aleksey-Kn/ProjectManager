@@ -33,7 +33,7 @@ public class KanbanElementAttributesService {
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(request.getId()).orElseThrow();
         Kanban kanban = element.getKanbanColumn().getKanban();
-        if (canEditKanban(kanban, user)) {
+        if (canSeeKanban(kanban, user)) {
             checkElement(element);
             KanbanElementComment comment = new KanbanElementComment();
             comment.setText(request.getText());
@@ -117,10 +117,7 @@ public class KanbanElementAttributesService {
         Kanban kanban = attachment.getElement().getKanbanColumn().getKanban();
         if(attachment.getElement().getStatus() == ElementStatus.DELETED)
             throw new NoSuchElementException();
-        if (kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
-                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
-                || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
-                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))) {
+        if (canSeeKanban(kanban, user)) {
             return Optional.of(attachment);
         } else {
             return Optional.empty();
@@ -267,6 +264,13 @@ public class KanbanElementAttributesService {
                 && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
                 || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
                 .filter(CustomRoleWithKanbanConnector::isCanEdit)
+                .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))));
+    }
+
+    private boolean canSeeKanban(Kanban kanban, User user) {
+        return kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
+                && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
+                || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
                 .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))));
     }
 
