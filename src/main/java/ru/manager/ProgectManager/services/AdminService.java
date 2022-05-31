@@ -22,8 +22,9 @@ public class AdminService {
         User blockingUser = findOnIdOrLogin(lockRequest.getIdOrLogin()).orElseThrow();
         if(blockingUser.getUserWithRoleConnectors().parallelStream().noneMatch(r -> r.getName().equals("ROLE_ADMIN"))) {
             blockingUser.setAccountNonLocked(false);
+            blockingUser = userRepository.save(blockingUser);
             if(lockRequest.getCause() != null && !lockRequest.getCause().isBlank()) {
-                mailService.sendAboutLockAccount(userRepository.save(blockingUser), lockRequest.getCause());
+                mailService.sendAboutLockAccount(blockingUser, lockRequest.getCause());
             }
             return true;
         } else {
