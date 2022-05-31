@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.MailException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import ru.manager.ProgectManager.DTO.request.user.AuthDto;
 import ru.manager.ProgectManager.DTO.request.user.LocaleRequest;
@@ -21,10 +22,7 @@ import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.EmailAlreadyUsedException;
 import ru.manager.ProgectManager.exception.IllegalActionException;
 import ru.manager.ProgectManager.exception.IncorrectStatusException;
-import ru.manager.ProgectManager.repositories.ApproveActionTokenRepository;
-import ru.manager.ProgectManager.repositories.RoleRepository;
-import ru.manager.ProgectManager.repositories.UsedAddressRepository;
-import ru.manager.ProgectManager.repositories.UserRepository;
+import ru.manager.ProgectManager.repositories.*;
 import ru.manager.ProgectManager.services.MailService;
 
 import java.io.IOException;
@@ -44,6 +42,7 @@ public class UserService {
     private UsedAddressRepository usedAddressRepository;
     private NotificationService notificationService;
     private PhotoCompressor compressor;
+    private RefreshTokenRepository refreshTokenRepository;
 
     public boolean saveUser(RegisterUserDTO registerUserDTO) {
         if (userRepository.findByUsername(registerUserDTO.getLogin()) == null) {
@@ -106,10 +105,12 @@ public class UserService {
         }
     }
 
+    @Transactional
     public boolean resetPass(String token, String newPassword) {
         Optional<ApproveActionToken> approveActionToken = approveActionTokenRepository.findById(token);
         if (approveActionToken.isPresent() && approveActionToken.get().getActionType() == ActionType.RESET_PASS) {
             User user = approveActionToken.get().getUser();
+            refreshTokenRepository.deleteAllByLogin(user.getUsername());
             user.setPassword(passwordEncoder.encode(newPassword));
             userRepository.save(user);
             approveActionTokenRepository.delete(approveActionToken.get());
@@ -158,9 +159,11 @@ public class UserService {
         userRepository.save(user);
     }
 
+    @Transactional
     public boolean updatePass(String oldPass, String newPass, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         if (passwordEncoder.matches(oldPass, user.getPassword())) {
+            refreshTokenRepository.deleteAllByLogin(user.getUsername());
             user.setPassword(passwordEncoder.encode(newPass));
             userRepository.save(user);
             return true;
@@ -289,5 +292,10 @@ public class UserService {
     @Autowired
     public void setCompressor(PhotoCompressor compressor) {
         this.compressor = compressor;
+    }
+
+    @Autowired
+    public void setRefreshTokenRepository(RefreshTokenRepository refreshTokenRepository) {
+        this.refreshTokenRepository = refreshTokenRepository;
     }
 }

@@ -25,8 +25,7 @@ public class RefreshTokenService {
     }
 
     public Optional<String> findLogin(String token) {
-        Optional<RefreshToken> refreshToken = refreshTokenRepository.findById(token);
-        return refreshToken
+        return refreshTokenRepository.findById(token)
                 .filter(value -> LocalDate.ofEpochDay(value.getTimeToDie()).isAfter(LocalDate.now()))
                 .map(RefreshToken::getLogin);
     }
