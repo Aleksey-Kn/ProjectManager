@@ -31,7 +31,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         corsConfiguration.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type"));
         corsConfiguration.setAllowedOrigins(List.of("http://25.56.253.26:3333", "http://192.168.1.48:3333",
                 "http://192.168.1.48:3332", "http://25.56.253.26:3332", "http://localhost:3332", "http://localhost:3333",
-                "http://192.168.50.16:3000", "http://192.168.50.16:3333"));
+                "http://192.168.50.16:3000", "http://192.168.50.16:3333", "http://192.168.0.152:3333"));
         corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
         corsConfiguration.setAllowCredentials(true);
         corsConfiguration.setExposedHeaders(List.of("Authorization"));
@@ -46,7 +46,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 .antMatchers("/admin/**").hasRole("ADMIN")
                 .antMatchers("/users/**").hasRole("USER")
-                .antMatchers("/authorization/*", "/test/*", "/photo/*").permitAll()
+                .antMatchers("/authorization/*", "/photo/*").permitAll()
                 .and()
                 .exceptionHandling()
                 .authenticationEntryPoint(authenticationEntryPoint())
