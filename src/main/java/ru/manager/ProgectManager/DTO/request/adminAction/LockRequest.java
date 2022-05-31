@@ -13,7 +13,6 @@ public class LockRequest {
     @NotBlank
     @Schema(description = "Идентификатор блокируемого пользователя")
     private String idOrLogin;
-    @NotBlank
     @Schema(description = "Причина блокировки пользователя")
     private String cause;
 }

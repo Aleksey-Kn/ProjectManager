@@ -23,6 +23,8 @@ public class UserDataForAdmin {
     private final String lastVisit;
     @Schema(description = "Заблокирован ли данный аккаунт")
     private final boolean nonLocked;
+    @Schema(description = "Логин пользователя")
+    private final String login;
 
     public UserDataForAdmin(User user, int zoneId) {
         email = user.getEmail();
@@ -32,5 +34,6 @@ public class UserDataForAdmin {
         lastVisit = (user.getLastVisit() == 0? null: LocalDateTime
                 .ofEpochSecond(user.getLastVisit(), 0, ZoneOffset.ofHours(zoneId)).toString());
         nonLocked = user.isAccountNonLocked();
+        login = user.getUsername();
     }
 }

@@ -47,7 +47,7 @@ public class AdminController {
     @PostMapping("/lock")
     public ResponseEntity<?> lock(@RequestBody @Valid LockRequest lockRequest, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.TEXT_MUST_BE_CONTAINS_VISIBLE_SYMBOL),
+            return new ResponseEntity<>(new ErrorResponse(Errors.LOGIN_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
                     HttpStatus.BAD_REQUEST);
         } else {
             try {
