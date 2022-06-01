@@ -355,6 +355,7 @@ public class PageService {
         return true;
     }
 
+    // установка нового корня в случае перенесения подстраницы из одного корневого каталга в другой
     private void recursiveSetRoot(Page now, Page root) {
         now.setRoot(root);
         now.getSubpages().forEach(subpage -> recursiveSetRoot(subpage, root));

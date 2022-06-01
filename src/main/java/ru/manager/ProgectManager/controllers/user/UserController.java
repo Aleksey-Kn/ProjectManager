@@ -27,8 +27,8 @@ import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.Errors;
-import ru.manager.ProgectManager.services.NoteService;
 import ru.manager.ProgectManager.services.project.AccessProjectService;
+import ru.manager.ProgectManager.services.user.NoteService;
 import ru.manager.ProgectManager.services.user.UserService;
 
 import javax.validation.Valid;

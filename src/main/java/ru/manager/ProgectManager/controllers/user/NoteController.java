@@ -16,7 +16,7 @@ import ru.manager.ProgectManager.DTO.request.user.NoteRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.enums.Errors;
-import ru.manager.ProgectManager.services.NoteService;
+import ru.manager.ProgectManager.services.user.NoteService;
 
 import javax.validation.Valid;
 import java.util.NoSuchElementException;

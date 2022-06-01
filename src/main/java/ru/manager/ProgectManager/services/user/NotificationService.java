@@ -12,6 +12,7 @@ import ru.manager.ProgectManager.repositories.UserRepository;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.function.Predicate;
 
 @Service
 @RequiredArgsConstructor
@@ -58,6 +59,15 @@ public class NotificationService {
             notification.setNewNotification(false);
             notificationRepository.save(notification);
         });
+        user.getNotifications().parallelStream()
+                .filter(Predicate.not(Notification::isNewNotification))
+                .filter(notification -> LocalDateTime.ofEpochSecond(notification.getCreateDatetime(), 0,
+                        ZoneOffset.systemDefault().getRules().getOffset(Instant.now()))
+                        .isBefore(LocalDateTime.now().minusMonths(1)))
+                .forEach(notification -> {
+                    user.getNotifications().remove(notification);
+                    notificationRepository.delete(notification);
+                });
     }
 
     public boolean hasNewNotification(String userLogin) {
