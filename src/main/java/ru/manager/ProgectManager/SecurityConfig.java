@@ -31,7 +31,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         corsConfiguration.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type"));
         corsConfiguration.setAllowedOrigins(List.of("http://25.56.253.26:3333", "http://192.168.1.48:3333",
                 "http://192.168.1.48:3332", "http://25.56.253.26:3332", "http://localhost:3332", "http://localhost:3333",
-                "http://192.168.50.16:3000", "http://192.168.50.16:3333", "http://192.168.0.152:3333"));
+                "http://192.168.50.16:3000", "http://192.168.50.16:3333", "http://192.168.0.152:3333",
+                "http://194.67.91.11:3333", "https://194.67.91.11:3333", "http://veehark.xyz", "https://veehark.xyz"));
         corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
         corsConfiguration.setAllowCredentials(true);
         corsConfiguration.setExposedHeaders(List.of("Authorization"));
