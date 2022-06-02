@@ -11,6 +11,7 @@ import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConne
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.entitys.user.User;
+import ru.manager.ProgectManager.enums.Locale;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.IllegalActionException;
 import ru.manager.ProgectManager.exception.NoSuchResourceException;
@@ -62,10 +63,13 @@ public class AccessProjectService {
             String token = UUID.randomUUID().toString();
             AccessProject accessProject = createAccessProject(token, project, request.getTypeRoleProject(),
                     request.getRoleId(), true, request.getLiveTimeInDays());
-            User targetUser = userRepository.findByEmail(request.getEmail()).orElseThrow(IllegalArgumentException::new);
-            mailService.sendInvitationToProject(targetUser, project.getName(), request.getUrl(), token);
-            notificationService
-                    .addNotificationAboutInvitationToProject(token, project.getName(), request.getUrl(), targetUser);
+            userRepository.findByEmail(request.getEmail()).ifPresentOrElse(targetUser -> {
+                mailService.sendInvitationToProject(targetUser.getEmail(), targetUser.getLocale(), project.getName(),
+                        request.getUrl(), token);
+                notificationService
+                        .addNotificationAboutInvitationToProject(token, project.getName(), request.getUrl(), targetUser);
+            }, () -> mailService.sendInvitationToProject(request.getEmail(), Locale.en, project.getName(),
+                    request.getUrl(), token));
             accessProjectRepository.save(accessProject);
             return true;
         } else {
@@ -129,7 +133,7 @@ public class AccessProjectService {
         User user = userRepository.findByUsername(userLogin);
         if (project.isPresent()) {
             visitMarkUpdater.deleteVisitMarkIfLeaveFromProject(projectId, user);
-            if(project.get().getConnectors().size() == 1) {
+            if (project.get().getConnectors().size() == 1) {
                 projectService.deleteProject(projectId, userLogin);
             } else {
                 user.getUserWithProjectConnectors().parallelStream()

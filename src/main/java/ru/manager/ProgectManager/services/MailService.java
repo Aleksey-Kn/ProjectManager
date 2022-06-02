@@ -44,9 +44,9 @@ public class MailService {
         approveActionTokenRepository.save(approveActionToken);
     }
 
-    public void sendInvitationToProject(User user, String projectName, String url, String token) {
-        send(user.getEmail(), localisedMessages.buildSubjectForInvitationToProject(user.getLocale(), projectName),
-                localisedMessages.buildTextForInvitationToProject(user.getLocale(), projectName, url, token));
+    public void sendInvitationToProject(String email, Locale locale, String projectName, String url, String token) {
+        send(email, localisedMessages.buildSubjectForInvitationToProject(locale, projectName),
+                localisedMessages.buildTextForInvitationToProject(locale, projectName, url, token));
     }
 
     public void sendAboutAuthorisation(User user, String ip, String browser, String country, String city, String zoneId) {

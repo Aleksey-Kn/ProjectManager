@@ -167,7 +167,7 @@ public class AccessController {
                             @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ErrorResponse.class))
                     }),
-            @ApiResponse(responseCode = "404", description = "Указанного проекта, почты или роли не существует",
+            @ApiResponse(responseCode = "404", description = "Указанного проекта или роли не существует",
                     content = {
                             @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ErrorResponse.class))
@@ -195,8 +195,6 @@ public class AccessController {
             } catch (NoSuchResourceException e) {
                 return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CUSTOM_ROLE),
                         HttpStatus.NOT_FOUND);
-            } catch (IllegalArgumentException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER), HttpStatus.NOT_FOUND);
             }
         }
     }
