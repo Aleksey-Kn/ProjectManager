@@ -45,6 +45,7 @@ public class AdminService {
 
     public UserDataForAdminList findAllUser(int zoneId) {
         return new UserDataForAdminList(StreamSupport.stream(userRepository.findAll().spliterator(), true)
+                .filter(User::isEnabled)
                 .map(user -> new UserDataForAdmin(user, zoneId))
                 .collect(Collectors.toList()));
     }

@@ -37,7 +37,7 @@ public class ProjectRoleService {
         User user = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(request.getProjectId()).orElseThrow();
         if (isAdmin(project, user)) {
-            if(containsRoleNameInProject(project, request.getName()))
+            if (containsRoleNameInProject(project, request.getName()))
                 throw new IllegalArgumentException();
 
             CustomProjectRole customProjectRole = new CustomProjectRole();
@@ -105,7 +105,7 @@ public class ProjectRoleService {
         CustomProjectRole customProjectRole = customProjectRoleRepository.findById(id).orElseThrow();
         Project project = customProjectRole.getProject();
         if (isAdmin(project, user)) {
-            if(containsRoleNameInProject(project, name))
+            if (containsRoleNameInProject(project, name))
                 throw new IllegalArgumentException();
             customProjectRole.setName(name);
             customProjectRoleRepository.save(customProjectRole);
@@ -265,6 +265,30 @@ public class ProjectRoleService {
             return true;
         }
         return false;
+    }
+
+    public Optional<Set<User>> findUsersOnRole(String roleName, long projectId, String userLogin) {
+        User admin = userRepository.findByUsername(userLogin);
+        Project project = projectRepository.findById(projectId).orElseThrow();
+        if (isAdmin(project, admin)) {
+            return Optional.of(switch (roleName.toLowerCase()) {
+                case "admin" -> project.getConnectors().parallelStream()
+                        .filter(connector -> connector.getRoleType() == TypeRoleProject.ADMIN)
+                        .map(UserWithProjectConnector::getUser)
+                        .collect(Collectors.toSet());
+                case "standard_user" -> project.getConnectors().parallelStream()
+                        .filter(connector -> connector.getRoleType() == TypeRoleProject.STANDARD_USER)
+                        .map(UserWithProjectConnector::getUser)
+                        .collect(Collectors.toSet());
+                default -> project.getConnectors().parallelStream()
+                        .filter(connector -> connector.getRoleType() == TypeRoleProject.CUSTOM_ROLE)
+                        .filter(connector -> connector.getCustomProjectRole().getName().equals(roleName))
+                        .map(UserWithProjectConnector::getUser)
+                        .collect(Collectors.toSet());
+            });
+        } else {
+            return Optional.empty();
+        }
     }
 
     private boolean isAdmin(Project project, User user) {
