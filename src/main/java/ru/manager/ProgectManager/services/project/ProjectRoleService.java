@@ -282,7 +282,7 @@ public class ProjectRoleService {
                         .collect(Collectors.toSet());
                 default -> project.getConnectors().parallelStream()
                         .filter(connector -> connector.getRoleType() == TypeRoleProject.CUSTOM_ROLE)
-                        .filter(connector -> connector.getCustomProjectRole().getName().equals(roleName))
+                        .filter(connector -> connector.getCustomProjectRole().getName().toLowerCase().equals(roleName))
                         .map(UserWithProjectConnector::getUser)
                         .collect(Collectors.toSet());
             });
