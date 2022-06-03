@@ -267,23 +267,31 @@ public class ProjectRoleService {
         return false;
     }
 
-    public Optional<Set<User>> findUsersOnRole(String roleName, long projectId, String userLogin) {
+    public Optional<Set<User>> findUsersOnRole(TypeRoleProject type, long roleId, long projectId, String userData,
+                                               String userLogin) { // user data - nickname or email
+        String data = userData.trim().toLowerCase();
         User admin = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(projectId).orElseThrow();
         if (isAdmin(project, admin)) {
-            return Optional.of(switch (roleName.toLowerCase()) {
-                case "admin" -> project.getConnectors().parallelStream()
+            return Optional.of(switch (type) {
+                case ADMIN -> project.getConnectors().parallelStream()
                         .filter(connector -> connector.getRoleType() == TypeRoleProject.ADMIN)
                         .map(UserWithProjectConnector::getUser)
+                        .filter(user -> user.getNickname().toLowerCase().contains(data)
+                                || user.getEmail().toLowerCase().contains(data))
                         .collect(Collectors.toSet());
-                case "standard_user" -> project.getConnectors().parallelStream()
+                case STANDARD_USER -> project.getConnectors().parallelStream()
                         .filter(connector -> connector.getRoleType() == TypeRoleProject.STANDARD_USER)
                         .map(UserWithProjectConnector::getUser)
+                        .filter(user -> user.getNickname().toLowerCase().contains(data)
+                                || user.getEmail().toLowerCase().contains(data))
                         .collect(Collectors.toSet());
-                default -> project.getConnectors().parallelStream()
+                case CUSTOM_ROLE -> project.getConnectors().parallelStream()
                         .filter(connector -> connector.getRoleType() == TypeRoleProject.CUSTOM_ROLE)
-                        .filter(connector -> connector.getCustomProjectRole().getName().toLowerCase().equals(roleName))
+                        .filter(connector -> connector.getCustomProjectRole().getId() == roleId)
                         .map(UserWithProjectConnector::getUser)
+                        .filter(user -> user.getNickname().toLowerCase().contains(data)
+                                || user.getEmail().toLowerCase().contains(data))
                         .collect(Collectors.toSet());
             });
         } else {

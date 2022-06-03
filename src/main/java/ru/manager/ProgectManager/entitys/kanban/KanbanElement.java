@@ -39,7 +39,7 @@ public class KanbanElement {
     @Column(nullable = false)
     private String name;
 
-    @Column
+    @Column(length = 2000)
     private String content;
 
     @Enumerated(EnumType.ORDINAL)

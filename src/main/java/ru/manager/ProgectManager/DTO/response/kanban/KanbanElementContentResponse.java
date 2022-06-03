@@ -47,6 +47,10 @@ public class KanbanElementContentResponse {
     private final String selectedDate;
     @Schema(description = "Список зафиксированных работ")
     private final List<WorkTrackAllResponse> workTracks;
+    @Schema(description = "Название колонки, к которой принадлежит элемент")
+    private final String columnName;
+    @Schema(description = "Идентификатор колонки, к которой принадлежит элемент")
+    private final long columnId;
 
     public KanbanElementContentResponse(KanbanElement kanbanElement, int zoneId) {
         id = kanbanElement.getId();
@@ -55,6 +59,8 @@ public class KanbanElementContentResponse {
         creator = new PublicMainUserDataResponse(kanbanElement.getOwner(), zoneId);
         lastRedactor = new PublicMainUserDataResponse(kanbanElement.getLastRedactor(), zoneId);
         content = kanbanElement.getContent();
+        columnId = kanbanElement.getKanbanColumn().getId();
+        columnName = kanbanElement.getKanbanColumn().getName();
         selectedDate = kanbanElement.getSelectedDate() == 0? null:
                 LocalDate.ofEpochDay(kanbanElement.getSelectedDate()).toString();
         comments = (kanbanElement.getComments() == null? List.of():
