@@ -4,8 +4,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
+import ru.manager.ProgectManager.entitys.ScheduledMailInfo;
 import ru.manager.ProgectManager.entitys.kanban.TimeRemover;
+import ru.manager.ProgectManager.repositories.ScheduledMailInfoRepository;
 import ru.manager.ProgectManager.repositories.TimeRemoverRepository;
+import ru.manager.ProgectManager.services.MailService;
 import ru.manager.ProgectManager.services.kanban.ArchiveAndTrashService;
 import ru.manager.ProgectManager.services.kanban.KanbanElementService;
 
@@ -20,6 +23,8 @@ public class ScheduleRemover {
     private TimeRemoverRepository timeRemoverRepository;
     private ArchiveAndTrashService trashService;
     private KanbanElementService elementService;
+    private ScheduledMailInfoRepository scheduledMailInfoRepository;
+    private MailService mailService;
 
     @Scheduled(fixedDelay = 86_400_000)
     public void remover() {
@@ -55,6 +60,19 @@ public class ScheduleRemover {
         }
     }
 
+    @Scheduled(fixedDelay = 3_600_000)
+    public void scheduledMailSandler() {
+        for(ScheduledMailInfo scheduledMailInfo: scheduledMailInfoRepository.findAll()) {
+            mailService.send(scheduledMailInfo);
+            if(scheduledMailInfo.isResend()) {
+                scheduledMailInfoRepository.delete(scheduledMailInfo);
+            } else {
+                scheduledMailInfo.setResend(true);
+                scheduledMailInfoRepository.save(scheduledMailInfo);
+            }
+        }
+    }
+
     @Autowired
     public void setTimeRemoverRepository(TimeRemoverRepository timeRemoverRepository) {
         this.timeRemoverRepository = timeRemoverRepository;
@@ -68,5 +86,15 @@ public class ScheduleRemover {
     @Autowired
     public void setElementService(KanbanElementService elementService) {
         this.elementService = elementService;
+    }
+
+    @Autowired
+    public void setScheduledMailInfoRepository(ScheduledMailInfoRepository scheduledMailInfoRepository) {
+        this.scheduledMailInfoRepository = scheduledMailInfoRepository;
+    }
+
+    @Autowired
+    public void setMailService(MailService mailService) {
+        this.mailService = mailService;
     }
 }

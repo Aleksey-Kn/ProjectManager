@@ -53,6 +53,13 @@ public class LocalisedMessages {
         };
     }
 
+    public String buildSubjectAboutCompletionOfRegistration(Locale locale) {
+        return switch (locale) {
+            case ru -> "Завершение регистрации";
+            case en -> "Completion of registration";
+        };
+    }
+
     // Тексты письма
 
     public String buildTextForMailApprove(Locale locale, String url, String token) {
@@ -113,5 +120,14 @@ public class LocalisedMessages {
             case ru -> "Вы были исключены из проекта ";
             case en -> "You were excluded from the project ";
         } + "'" + projectName + "'";
+    }
+
+    public String buildTextAboutCompletionOfRegistration(Locale locale) {
+        return switch (locale) {
+            case ru -> "Ранее вы зарегистрировались в сервисе Daask. Мы знаем, что письма могут потеряться, поэтому повторно" +
+                    " высылаем вам ссылку, по которой вы сможете завершить регистрацию и начать пользоваться нашим сервисом: ";
+            case en -> "Previously, you signed up for the Daask service. We know that emails can get lost, so we send you" +
+                    " the link again so you can complete your registration and start using our service: ";
+        };
     }
 }

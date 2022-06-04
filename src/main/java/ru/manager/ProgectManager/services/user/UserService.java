@@ -10,8 +10,10 @@ import ru.manager.ProgectManager.DTO.request.user.AuthDto;
 import ru.manager.ProgectManager.DTO.request.user.LocaleRequest;
 import ru.manager.ProgectManager.DTO.request.user.RegisterUserDTO;
 import ru.manager.ProgectManager.DTO.response.PointerResource;
+import ru.manager.ProgectManager.components.LocalisedMessages;
 import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.entitys.Project;
+import ru.manager.ProgectManager.entitys.ScheduledMailInfo;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithDocumentConnector;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
 import ru.manager.ProgectManager.entitys.accessProject.UserWithProjectConnector;
@@ -43,6 +45,8 @@ public class UserService {
     private NotificationService notificationService;
     private PhotoCompressor compressor;
     private RefreshTokenRepository refreshTokenRepository;
+    private LocalisedMessages localisedMessages;
+    private ScheduledMailInfoRepository mailInfoRepository;
 
     public boolean saveUser(RegisterUserDTO registerUserDTO) {
         if (userRepository.findByUsername(registerUserDTO.getLogin()) == null) {
@@ -64,7 +68,12 @@ public class UserService {
             user.setZoneId(Integer.parseInt(registerUserDTO.getZoneId()));
             user = userRepository.save(user);
             try {
-                mailService.sendEmailApprove(user, registerUserDTO.getUrl(), registerUserDTO.getLocale());
+                ScheduledMailInfo scheduledMailInfo = new ScheduledMailInfo();
+                scheduledMailInfo.setUserEmail(user.getEmail());
+                scheduledMailInfo.setSubject(localisedMessages.buildSubjectAboutCompletionOfRegistration(user.getLocale()));
+                scheduledMailInfo.setText(localisedMessages.buildTextAboutCompletionOfRegistration(user.getLocale()) +
+                        mailService.sendEmailApprove(user, registerUserDTO.getUrl(), registerUserDTO.getLocale()));
+                mailInfoRepository.save(scheduledMailInfo);
             } catch (MailException e) {
                 userRepository.delete(user);
                 throw e;
@@ -88,6 +97,7 @@ public class UserService {
         if (approveEnabledUser.isPresent() && approveEnabledUser.get().getActionType() == ActionType.APPROVE_ENABLE) {
             User user = approveEnabledUser.get().getUser();
             user.setEnabled(true);
+            mailInfoRepository.deleteById(user.getEmail());
             approveActionTokenRepository.delete(approveEnabledUser.get());
             return Optional.of(userRepository.save(user).getUsername());
         } else {
@@ -297,5 +307,15 @@ public class UserService {
     @Autowired
     public void setRefreshTokenRepository(RefreshTokenRepository refreshTokenRepository) {
         this.refreshTokenRepository = refreshTokenRepository;
+    }
+
+    @Autowired
+    public void setLocalisedMessages(LocalisedMessages localisedMessages) {
+        this.localisedMessages = localisedMessages;
+    }
+
+    @Autowired
+    public void setMailInfoRepository(ScheduledMailInfoRepository mailInfoRepository) {
+        this.mailInfoRepository = mailInfoRepository;
     }
 }

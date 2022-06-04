@@ -5,6 +5,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.components.LocalisedMessages;
+import ru.manager.ProgectManager.entitys.ScheduledMailInfo;
 import ru.manager.ProgectManager.entitys.user.ApproveActionToken;
 import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.ActionType;
@@ -20,7 +21,7 @@ public class MailService {
     private final ApproveActionTokenRepository approveActionTokenRepository;
     private final LocalisedMessages localisedMessages;
 
-    public void sendEmailApprove(User user, String url, Locale locale) {
+    public String sendEmailApprove(User user, String url, Locale locale) {
         String token = UUID.randomUUID().toString();
         send(user.getEmail(), localisedMessages.buildSubjectForMailApprove(locale),
                 localisedMessages.buildTextForMailApprove(locale, url, token));
@@ -30,6 +31,7 @@ public class MailService {
         approveActionToken.setUser(user);
         approveActionToken.setActionType(ActionType.APPROVE_ENABLE);
         approveActionTokenRepository.save(approveActionToken);
+        return url + "?token=" + token; // возвращает ссылку для подтверждения почты
     }
 
     public void sendResetPass(User user, String url) {
@@ -62,6 +64,10 @@ public class MailService {
     public void sendAboutUnlockAccount(User user) {
         send(user.getEmail(), localisedMessages.buildSubjectAboutUnlockAccount(user.getLocale()),
                 localisedMessages.buildTextAboutUnlockAccount(user.getLocale()));
+    }
+
+    public void send(ScheduledMailInfo scheduledMailInfo) {
+        send(scheduledMailInfo.getUserEmail(), scheduledMailInfo.getSubject(), scheduledMailInfo.getText());
     }
 
     private void send(String address, String subject, String text) {
