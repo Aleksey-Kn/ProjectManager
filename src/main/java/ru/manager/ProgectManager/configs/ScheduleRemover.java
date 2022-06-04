@@ -1,5 +1,6 @@
 package ru.manager.ProgectManager.configs;
 
+import lombok.extern.java.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -19,6 +20,7 @@ import java.util.stream.StreamSupport;
 
 @Configuration
 @EnableScheduling
+@Log
 public class ScheduleRemover {
     private TimeRemoverRepository timeRemoverRepository;
     private ArchiveAndTrashService trashService;
@@ -70,6 +72,14 @@ public class ScheduleRemover {
                 scheduledMailInfo.setResend(true);
                 scheduledMailInfoRepository.save(scheduledMailInfo);
             }
+        }
+    }
+
+    @Scheduled(fixedDelay = 1000)
+    public void checkFreeMemory() {
+        long free = Runtime.getRuntime().freeMemory() / 1048576;
+        if(free < 100) {
+            log.warning("Free memory is " + free + "Mb!");
         }
     }
 
