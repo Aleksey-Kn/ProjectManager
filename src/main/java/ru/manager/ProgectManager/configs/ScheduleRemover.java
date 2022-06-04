@@ -13,6 +13,11 @@ import ru.manager.ProgectManager.services.MailService;
 import ru.manager.ProgectManager.services.kanban.ArchiveAndTrashService;
 import ru.manager.ProgectManager.services.kanban.KanbanElementService;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.OperatingSystemMXBean;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -75,11 +80,29 @@ public class ScheduleRemover {
         }
     }
 
-    @Scheduled(fixedDelay = 1000)
+    @Scheduled(fixedDelay = 3_000)
     public void checkFreeMemory() {
-        long free = Runtime.getRuntime().freeMemory() / 1048576;
+        long free = 0;
+        String osName = System.getProperty("os.name");
+        if (osName.equals("Linux")) {
+            try {
+                BufferedReader memInfo = new BufferedReader(new FileReader("/proc/meminfo"));
+                String line;
+                while ((line = memInfo.readLine()) != null) {
+                    if (line.startsWith("MemAvailable: ")) {
+                        free = Long.parseLong(line.split("[^0-9]+")[1]) / 1024;
+                    }
+                }
+            } catch (IOException e) {
+                log.severe(e.getMessage());
+            }
+        } else {
+            OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
+            com.sun.management.OperatingSystemMXBean sunOsBean = (com.sun.management.OperatingSystemMXBean)osBean;
+            free = sunOsBean.getFreePhysicalMemorySize() / 1_048_576;
+        }
         if(free < 100) {
-            log.warning("Free memory is " + free + "Mb!");
+            log.warning(free <= 0? "Can't check free memory": "Free memory is " + free + "Mb!");
         }
     }
 
