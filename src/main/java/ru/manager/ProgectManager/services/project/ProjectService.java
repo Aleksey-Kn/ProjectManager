@@ -111,12 +111,32 @@ public class ProjectService {
         return false;
     }
 
-    public Optional<UserDataListResponse> findAllParticipants(long id, String userLogin) {
+    public Optional<UserDataListResponse> findAllMembers(long id, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(id).orElseThrow();
         if (project.getConnectors().stream().map(UserWithProjectConnector::getUser).anyMatch(u -> u.equals(user))) {
             int zoneId = user.getZoneId();
             return Optional.of(new UserDataListResponse(project.getConnectors().stream()
+                    .map(connector -> new UserDataWithProjectRoleResponse(connector.getUser(),
+                            (connector.getRoleType() == TypeRoleProject.CUSTOM_ROLE
+                                    ? connector.getCustomProjectRole().getName()
+                                    : connector.getRoleType().name()),
+                            zoneId))
+                    .collect(Collectors.toList())));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    public Optional<UserDataListResponse> findMembersByNicknameOrEmail(long id, String nicknameOrEmail, String userLogin) {
+        String name = nicknameOrEmail.toLowerCase().trim();
+        User user = userRepository.findByUsername(userLogin);
+        Project project = projectRepository.findById(id).orElseThrow();
+        if (project.getConnectors().stream().map(UserWithProjectConnector::getUser).anyMatch(u -> u.equals(user))) {
+            int zoneId = user.getZoneId();
+            return Optional.of(new UserDataListResponse(project.getConnectors().stream()
+                    .filter(connector -> connector.getUser().getNickname().toLowerCase().contains(name)
+                            || connector.getUser().getEmail().toLowerCase().contains(name))
                     .map(connector -> new UserDataWithProjectRoleResponse(connector.getUser(),
                             (connector.getRoleType() == TypeRoleProject.CUSTOM_ROLE
                                     ? connector.getCustomProjectRole().getName()

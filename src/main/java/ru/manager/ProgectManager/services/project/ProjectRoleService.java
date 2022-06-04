@@ -272,7 +272,7 @@ public class ProjectRoleService {
         String data = userData.trim().toLowerCase();
         User admin = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(projectId).orElseThrow();
-        if (isAdmin(project, admin)) {
+        if (project.getConnectors().stream().map(UserWithProjectConnector::getUser).anyMatch(u -> u.equals(admin))) {
             return Optional.of(switch (type) {
                 case ADMIN -> project.getConnectors().parallelStream()
                         .filter(connector -> connector.getRoleType() == TypeRoleProject.ADMIN)

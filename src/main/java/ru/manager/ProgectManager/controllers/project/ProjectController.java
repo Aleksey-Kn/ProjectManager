@@ -235,11 +235,40 @@ public class ProjectController {
             })
     })
     @GetMapping("/project/users")
-    public ResponseEntity<?> allParticipants(@RequestParam @Parameter(description = "Идентификатор проекта")
-                                                     long id, Principal principal) {
+    public ResponseEntity<?> allParticipants(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
+                                             Principal principal) {
         try {
             Optional<UserDataListResponse> response = projectService
-                    .findAllParticipants(id, principal.getName());
+                    .findAllMembers(id, principal.getName());
+            if (response.isPresent()) {
+                return ResponseEntity.ok(response.get());
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Operation(summary = "Поиск участников проекта")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "404", description = "Обращание к несуществующему проекту", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к указанному проекту"),
+            @ApiResponse(responseCode = "200", description = "Список найденных участников проекта", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = UserDataListResponse.class))
+            })
+    })
+    @GetMapping("/project/users/find")
+    public ResponseEntity<?> findMembers(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
+                                         @RequestParam @Parameter(description = "Имя или почта пользователя") String name,
+                                         Principal principal) {
+        try {
+            Optional<UserDataListResponse> response = projectService
+                    .findMembersByNicknameOrEmail(id, name, principal.getName());
             if (response.isPresent()) {
                 return ResponseEntity.ok(response.get());
             } else {
@@ -264,7 +293,7 @@ public class ProjectController {
     })
     @GetMapping("/project/users/role")
     public ResponseEntity<?> findParticipantsOnRole(@RequestParam long projectId, @RequestParam TypeRoleProject type,
-                                                    @RequestParam long roleId,
+                                                    @RequestParam(required = false) long roleId,
                                                     @RequestParam
                                                     @Parameter(description = "Никнейм или почта искомого пользователя")
                                                             String name,
