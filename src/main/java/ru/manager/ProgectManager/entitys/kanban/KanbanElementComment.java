@@ -21,6 +21,9 @@ public class KanbanElementComment {
     @Column
     private long dateTime;
 
+    @Column
+    private boolean redacted;
+
     @ManyToOne
     @JoinColumn(name = "element_id")
     private KanbanElement kanbanElement;

@@ -83,6 +83,7 @@ public class KanbanElementAttributesService {
 
             comment.setText(request.getText());
             comment.setDateTime(getEpochSeconds());
+            comment.setRedacted(true);
             return Optional.of(commentRepository.save(comment));
         } else {
             return Optional.empty();
