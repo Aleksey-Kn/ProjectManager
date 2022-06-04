@@ -305,9 +305,15 @@ public class ProjectRoleService {
                 .anyMatch(c -> c.getProject().equals(project));
     }
 
-    private boolean containsRoleNameInProject(Project project, String newName) {
+    private boolean containsRoleNameInProject(Project project, String inputName) {
+        String newName = inputName.replace(" ", "").toLowerCase();
+        if (newName.equals("administrator") || newName.equals("commonmember") || newName.equals("moderator")
+                || newName.equals("модератор") || newName.equals("администратор")
+                || newName.equals("обычныйпользователь")) {
+            return true;
+        }
         return project.getAvailableRole().parallelStream()
                 .map(CustomProjectRole::getName)
-                .anyMatch(name -> name.equals(newName));
+                .anyMatch(name -> name.toLowerCase().equals(newName));
     }
 }
