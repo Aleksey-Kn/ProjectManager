@@ -17,7 +17,11 @@ public class CustomRoleWithDocumentConnector {
 
     private boolean canEdit;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "role_id")
+    private CustomProjectRole customProjectRole;
+
+    @ManyToOne(optional = false)
     @JoinColumn(name = "root_page_id")
     private Page page;
 

@@ -23,10 +23,10 @@ public class CustomProjectRole {
     @Column
     private boolean canEditResources;
 
-    @OneToMany(cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "customProjectRole", cascade = CascadeType.REMOVE)
     private Set<CustomRoleWithKanbanConnector> customRoleWithKanbanConnectors;
 
-    @OneToMany(cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "customProjectRole", cascade = CascadeType.REMOVE)
     private Set<CustomRoleWithDocumentConnector> customRoleWithDocumentConnectors;
 
     @ManyToOne

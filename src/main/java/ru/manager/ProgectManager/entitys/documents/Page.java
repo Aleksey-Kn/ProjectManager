@@ -3,6 +3,7 @@ package ru.manager.ProgectManager.entitys.documents;
 import lombok.Getter;
 import lombok.Setter;
 import ru.manager.ProgectManager.entitys.Project;
+import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithDocumentConnector;
 import ru.manager.ProgectManager.entitys.user.User;
 
 import javax.persistence.*;
@@ -41,6 +42,9 @@ public class Page {
 
     @OneToMany(mappedBy = "parent", cascade = CascadeType.REMOVE)
     private Set<Page> subpages;
+
+    @OneToMany(mappedBy = "page", cascade = CascadeType.REMOVE)
+    private Set<CustomRoleWithDocumentConnector> roleConnectors;
 
     @ManyToOne
     @JoinColumn(name = "project_id")

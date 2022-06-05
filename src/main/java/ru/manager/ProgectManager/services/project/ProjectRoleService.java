@@ -44,15 +44,17 @@ public class ProjectRoleService {
             customProjectRole.setProject(project);
             customProjectRole.setName(request.getName().trim());
             customProjectRole.setCanEditResources(request.isCanEditResource());
-            customProjectRole.setCustomRoleWithKanbanConnectors(request.getKanbanConnectorRequests().stream().map(kr -> {
+            CustomProjectRole savedRole = customProjectRoleRepository.save(customProjectRole);
+            request.getKanbanConnectorRequests().forEach(kr -> {
                 CustomRoleWithKanbanConnector customRoleWithKanbanConnector = new CustomRoleWithKanbanConnector();
                 customRoleWithKanbanConnector.setCanEdit(kr.isCanEdit());
                 customRoleWithKanbanConnector.setKanban(project.getKanbans().parallelStream()
                         .filter(k -> k.getId() == kr.getId())
                         .findAny().orElseThrow(() -> new NoSuchResourceException("Kanban: " + kr.getId())));
-                return kanbanConnectorRepository.save(customRoleWithKanbanConnector);
-            }).collect(Collectors.toSet()));
-            customProjectRole.setCustomRoleWithDocumentConnectors(request.getDocumentConnectorRequest().stream().map(dr -> {
+                customRoleWithKanbanConnector.setCustomProjectRole(savedRole);
+                kanbanConnectorRepository.save(customRoleWithKanbanConnector);
+            });
+            request.getDocumentConnectorRequest().forEach(dr -> {
                 CustomRoleWithDocumentConnector customRoleWithDocumentConnector = new CustomRoleWithDocumentConnector();
                 customRoleWithDocumentConnector.setCanEdit(dr.isCanEdit());
                 customRoleWithDocumentConnector.setId(dr.getId());
@@ -60,9 +62,10 @@ public class ProjectRoleService {
                         .filter(p -> p.getRoot() == null)
                         .filter(p -> p.getId() == dr.getId())
                         .findAny().orElseThrow(() -> new NoSuchResourceException("Page: " + dr.getId())));
-                return documentConnectorRepository.save(customRoleWithDocumentConnector);
-            }).collect(Collectors.toSet()));
-            return Optional.of(customProjectRoleRepository.save(customProjectRole));
+                customRoleWithDocumentConnector.setCustomProjectRole(savedRole);
+                documentConnectorRepository.save(customRoleWithDocumentConnector);
+            });
+            return Optional.of(savedRole);
         }
         return Optional.empty();
     }
@@ -157,10 +160,9 @@ public class ProjectRoleService {
                                 .findAny()
                                 .orElseThrow(NoSuchResourceException::new));
                         connector.setCanEdit(rc.isCanEdit());
-                        customProjectRole.getCustomRoleWithKanbanConnectors()
-                                .add(kanbanConnectorRepository.save(connector));
+                        connector.setCustomProjectRole(customProjectRole);
+                        kanbanConnectorRepository.save(connector);
                     });// коннекторы, ранее не присутствовавшие в роли
-            customProjectRoleRepository.save(customProjectRole);
             return true;
         } else {
             return false;
@@ -198,10 +200,9 @@ public class ProjectRoleService {
                                 .findAny()
                                 .orElseThrow(NoSuchResourceException::new));
                         connector.setCanEdit(rc.isCanEdit());
-                        customProjectRole.getCustomRoleWithDocumentConnectors()
-                                .add(documentConnectorRepository.save(connector));
+                        connector.setCustomProjectRole(customProjectRole);
+                        documentConnectorRepository.save(connector);
                     });// коннекторы, ранее не присутствовавшие в роли
-            customProjectRoleRepository.save(customProjectRole);
             return true;
         } else {
             return false;
@@ -216,10 +217,7 @@ public class ProjectRoleService {
             request.getResourceId().forEach(id -> customProjectRole.getCustomRoleWithKanbanConnectors().stream()
                     .filter(connector -> connector.getKanban().getId() == id)
                     .findAny()
-                    .ifPresent(kanbanConnector -> {
-                        customProjectRole.getCustomRoleWithKanbanConnectors().remove(kanbanConnector);
-                        kanbanConnectorRepository.delete(kanbanConnector);
-                    }));
+                    .ifPresent(kanbanConnectorRepository::delete));
             return true;
         } else {
             return false;
@@ -234,10 +232,7 @@ public class ProjectRoleService {
             request.getResourceId().forEach(id -> customProjectRole.getCustomRoleWithDocumentConnectors().stream()
                     .filter(connector -> connector.getPage().getId() == id)
                     .findAny()
-                    .ifPresent(pageConnector -> {
-                        customProjectRole.getCustomRoleWithDocumentConnectors().remove(pageConnector);
-                        documentConnectorRepository.delete(pageConnector);
-                    }));
+                    .ifPresent(documentConnectorRepository::delete));
             return true;
         } else {
             return false;

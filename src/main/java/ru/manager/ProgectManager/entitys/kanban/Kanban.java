@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
 import ru.manager.ProgectManager.entitys.Project;
+import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
 
 import javax.persistence.*;
 import java.util.Objects;
@@ -30,6 +31,10 @@ public class Kanban {
     @JsonIgnore
     @OneToMany(mappedBy = "kanban", cascade = CascadeType.ALL)
     private Set<KanbanColumn> kanbanColumns;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "kanban", cascade = CascadeType.REMOVE)
+    private Set<CustomRoleWithKanbanConnector> roleConnectors;
 
     @JsonIgnore
     @ManyToOne
