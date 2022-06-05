@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>ru.manager</groupId>
 	<artifactId>ProgectManager</artifactId>
-	<version>0.2.11-SNAPSHOT</version>
+	<version>0.2.12-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>ProgectManager</name>
 	<description>Дипломная работа СибГУТИ</description>

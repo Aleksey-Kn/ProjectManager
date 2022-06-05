@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.calendar.CalendarResponseList;
+import ru.manager.ProgectManager.DTO.response.calendar.ShortKanbanElementInfoList;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.CalendarService;
 
@@ -29,7 +30,7 @@ import java.util.Optional;
 public class CalendarController {
     private final CalendarService calendarService;
 
-    @Operation(summary = "Получение карточек канбана, принадлежащих к указанному месяцу")
+    @Operation(summary = "Получение карточек канбана из указанного проекта, принадлежащих к указанному месяцу")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Карточки, принадлежащие к указанному месяцу", content = {
                     @Content(mediaType = "application/json",
@@ -42,7 +43,7 @@ public class CalendarController {
             })
     })
     @GetMapping
-    public ResponseEntity<?> findCalendar(@RequestParam int projectId, @RequestParam int year, @RequestParam int month,
+    public ResponseEntity<?> findCalendar(@RequestParam long projectId, @RequestParam int year, @RequestParam int month,
                                           Principal principal) {
         try{
             Optional<CalendarResponseList> response =
@@ -55,5 +56,43 @@ public class CalendarController {
         } catch (NoSuchElementException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
         }
+    }
+
+    @Operation(summary = "Получение карточек указанного канбана, принадлежащих к указанному месяцу")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Карточки, принадлежащие к указанному месяцу", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = CalendarResponseList.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к указанному канбану"),
+            @ApiResponse(responseCode = "404", description = "Указанного канбана не существует", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
+    })
+    @GetMapping("/kanban")
+    public ResponseEntity<?> findCalendarFromKanban(@RequestParam long id, @RequestParam int year,
+                                                    @RequestParam int month, Principal principal) {
+        try{
+            Optional<CalendarResponseList> response =
+                    calendarService.findCalendarOnKanban(id, year, month, principal.getName());
+            if(response.isPresent()) {
+                return ResponseEntity.ok(response.get());
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @Operation(summary = "Получение карточек из всех доступных канбанов, выбранная дата которых равна указанному дню")
+    @ApiResponse(responseCode = "200", description = "Список информации о найденных карточках", content = {
+            @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = ShortKanbanElementInfoList.class))
+    })
+    @GetMapping("/by_day")
+    public ShortKanbanElementInfoList findAllCardsByDay(@RequestParam String date, Principal principal) {
+        return calendarService.findTaskOnDay(date, principal.getName());
     }
 }

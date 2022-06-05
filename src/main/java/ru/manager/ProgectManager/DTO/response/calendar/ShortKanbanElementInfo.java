@@ -11,9 +11,12 @@ public class ShortKanbanElementInfo {
     private final long id;
     @Schema(description = "Название элемента")
     private final String cardName;
+    @Schema(description = "Возможность данного пользователя редактировать данный элемент")
+    private final boolean canEdit;
 
-    public ShortKanbanElementInfo(KanbanElement element) {
+    public ShortKanbanElementInfo(KanbanElement element, boolean canRedact) {
         id = element.getId();
         cardName = element.getName();
+        canEdit = canRedact;
     }
 }
