@@ -6,7 +6,8 @@ import ru.manager.ProgectManager.DTO.response.user.PublicMainUserDataResponse;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
 import ru.manager.ProgectManager.entitys.kanban.Tag;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Set;
 
 @Getter
@@ -37,7 +38,8 @@ public class KanbanElementMainDataResponse {
         name = kanbanElement.getName();
         tags = kanbanElement.getTags();
         selectedDate = kanbanElement.getSelectedDate() == 0? null:
-                LocalDate.ofEpochDay(kanbanElement.getSelectedDate()).toString();
+                LocalDateTime.ofEpochSecond(kanbanElement.getSelectedDate(), 0, ZoneOffset.ofHours(zoneId))
+                        .toString();
         creator = new PublicMainUserDataResponse(kanbanElement.getOwner(), zoneId);
         lastRedactor = new PublicMainUserDataResponse(kanbanElement.getLastRedactor(), zoneId);
         commentCount = (kanbanElement.getComments() == null? 0: kanbanElement.getComments().size());

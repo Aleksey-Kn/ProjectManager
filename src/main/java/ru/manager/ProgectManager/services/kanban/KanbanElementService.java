@@ -95,7 +95,7 @@ public class KanbanElementService {
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
             checkElement(element);
-            element.setSelectedDate(LocalDate.parse(date).toEpochDay());
+            element.setSelectedDate(LocalDateTime.parse(date).toEpochSecond(ZoneOffset.ofHours(user.getZoneId())));
             element.setTimeOfUpdate(getEpochSeconds());
             element.setLastRedactor(user);
             elementRepository.save(element);
