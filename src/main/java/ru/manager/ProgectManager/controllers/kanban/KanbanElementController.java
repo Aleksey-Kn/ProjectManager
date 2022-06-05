@@ -68,11 +68,10 @@ public class KanbanElementController {
     public ResponseEntity<?> getContent(@RequestParam long elementId) {
         try {
             String login = provider.getLoginFromToken();
-            Optional<KanbanElement> content = kanbanElementService
+            Optional<KanbanElementContentResponse> content = kanbanElementService
                     .getContentFromElement(elementId, login);
             if (content.isPresent()) {
-                int zoneId = userService.findZoneIdForThisUser(login);
-                return ResponseEntity.ok(new KanbanElementContentResponse(content.get(), zoneId));
+                return ResponseEntity.ok(content.get());
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }

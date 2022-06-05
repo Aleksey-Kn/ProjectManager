@@ -50,8 +50,11 @@ public class KanbanElementContentResponse {
     private final String columnName;
     @Schema(description = "Идентификатор колонки, к которой принадлежит элемент")
     private final long columnId;
+    @Schema(description = "Возможность данного пользователя редактировать данный элемент")
+    private final boolean canEdit;
 
-    public KanbanElementContentResponse(KanbanElement kanbanElement, int zoneId) {
+    public KanbanElementContentResponse(KanbanElement kanbanElement, int zoneId, boolean canRedact) {
+        canEdit = canRedact;
         id = kanbanElement.getId();
         name = kanbanElement.getName();
         tags = kanbanElement.getTags();

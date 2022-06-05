@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.request.kanban.CreateKanbanElementRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.TransportElementRequest;
+import ru.manager.ProgectManager.DTO.response.kanban.KanbanElementContentResponse;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
 import ru.manager.ProgectManager.entitys.kanban.*;
 import ru.manager.ProgectManager.entitys.user.User;
@@ -233,12 +234,13 @@ public class KanbanElementService {
         elementRepository.saveAll(column.getElements());
     }
 
-    public Optional<KanbanElement> getContentFromElement(long id, String userLogin) {
+    public Optional<KanbanElementContentResponse> getContentFromElement(long id, String userLogin) {
         KanbanElement kanbanElement = elementRepository.findById(id).orElseThrow();
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = kanbanElement.getKanbanColumn().getKanban();
         if (canSeeKanban(kanban, user)) {
-            return Optional.of(kanbanElement);
+            return Optional.of(new KanbanElementContentResponse(kanbanElement, user.getZoneId(),
+                    canEditKanban(kanban, user)));
         }
         return Optional.empty();
     }
