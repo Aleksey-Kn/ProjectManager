@@ -223,6 +223,36 @@ public class KanbanElementController {
         }
     }
 
+    @Operation(summary = "Удаление даты, прикреплённой к элементу")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "404", description = "Попытка обращения к несуществующему элементу", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
+            @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к ресурсу"),
+            @ApiResponse(responseCode = "200", description = "Элемент успешно изменён"),
+            @ApiResponse(responseCode = "410",
+                    description = "Операция недоступна, поскольку элемент перемещён в корзину", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
+    })
+    @DeleteMapping("/date")
+    public ResponseEntity<?> dropDate(@RequestParam long id) {
+        try {
+            if (kanbanElementService.dropDate(id, provider.getLoginFromToken())) {
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } catch (NoSuchElementException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
+        } catch (IncorrectStatusException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
+                    HttpStatus.GONE);
+        }
+    }
+
     @Operation(summary = "Изменение контента элемента")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "404", description = "Попытка обращения к несуществующему элементу", content = {

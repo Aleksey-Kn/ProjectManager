@@ -1,6 +1,7 @@
 package ru.manager.ProgectManager.services.kanban;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.java.Log;
 import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.request.kanban.CreateKanbanElementRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.TransportElementRequest;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
+@Log
 public class KanbanElementService {
     private final KanbanColumnRepository columnRepository;
     private final KanbanElementRepository elementRepository;
@@ -95,7 +97,24 @@ public class KanbanElementService {
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
             checkElement(element);
+            log.info("Get date: " + date);
             element.setSelectedDate(LocalDateTime.parse(date).toEpochSecond(ZoneOffset.ofHours(user.getZoneId())));
+            element.setTimeOfUpdate(getEpochSeconds());
+            element.setLastRedactor(user);
+            elementRepository.save(element);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean dropDate(long id, String userLogin) {
+        KanbanElement element = elementRepository.findById(id).orElseThrow();
+        User user = userRepository.findByUsername(userLogin);
+        Kanban kanban = element.getKanbanColumn().getKanban();
+        if (canEditKanban(kanban, user)) {
+            checkElement(element);
+            element.setSelectedDate(0);
             element.setTimeOfUpdate(getEpochSeconds());
             element.setLastRedactor(user);
             elementRepository.save(element);
