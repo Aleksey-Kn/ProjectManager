@@ -20,6 +20,7 @@ import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.CalendarService;
 
 import java.security.Principal;
+import java.time.format.DateTimeParseException;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -45,10 +46,10 @@ public class CalendarController {
     @GetMapping
     public ResponseEntity<?> findCalendar(@RequestParam long projectId, @RequestParam int year, @RequestParam int month,
                                           Principal principal) {
-        try{
+        try {
             Optional<CalendarResponseList> response =
                     calendarService.findCalendar(projectId, year, month, principal.getName());
-            if(response.isPresent()) {
+            if (response.isPresent()) {
                 return ResponseEntity.ok(response.get());
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -73,10 +74,10 @@ public class CalendarController {
     @GetMapping("/kanban")
     public ResponseEntity<?> findCalendarFromKanban(@RequestParam long id, @RequestParam int year,
                                                     @RequestParam int month, Principal principal) {
-        try{
+        try {
             Optional<CalendarResponseList> response =
                     calendarService.findCalendarOnKanban(id, year, month, principal.getName());
-            if(response.isPresent()) {
+            if (response.isPresent()) {
                 return ResponseEntity.ok(response.get());
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -87,12 +88,22 @@ public class CalendarController {
     }
 
     @Operation(summary = "Получение карточек из всех доступных канбанов, выбранная дата которых равна указанному дню")
-    @ApiResponse(responseCode = "200", description = "Список информации о найденных карточках", content = {
-            @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = ShortKanbanElementInfoList.class))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Список информации о найденных карточках", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ShortKanbanElementInfoList.class))
+            }),
+            @ApiResponse(responseCode = "400", description = "Неверный формат даты", content = {
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            })
     })
     @GetMapping("/by_day")
-    public ShortKanbanElementInfoList findAllCardsByDay(@RequestParam String date, Principal principal) {
-        return calendarService.findTaskOnDay(date, principal.getName());
+    public ResponseEntity<?> findAllCardsByDay(@RequestParam String date, Principal principal) {
+        try {
+            return ResponseEntity.ok(calendarService.findTaskOnDay(date, principal.getName()));
+        } catch (DateTimeParseException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.WRONG_DATE_FORMAT), HttpStatus.BAD_REQUEST);
+        }
     }
 }

@@ -81,10 +81,6 @@ public class CalendarService {
     }
 
     public ShortKanbanElementInfoList findTaskOnDay(String date, String userLogin) {
-        int oddIndex = date.indexOf('Z');
-        if(oddIndex != -1) {
-            date = date.substring(0, oddIndex);
-        }
         User user = userRepository.findByUsername(userLogin);
         int zoneId = user.getZoneId();
         LocalDate targetDate = LocalDateTime.parse(date).toLocalDate();
