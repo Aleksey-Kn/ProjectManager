@@ -102,7 +102,7 @@ public class VisitMarkUpdater {
     }
 
     public void deleteVisitMark(Project project, long id, ResourceType resourceType) {
-        project.getConnectors().parallelStream()
+        project.getConnectors().stream()
                 .map(UserWithProjectConnector::getUser)
                 .forEach(u -> u.getVisitMarks().stream()
                         .filter(visitMark -> visitMark.getResourceType() == resourceType)
