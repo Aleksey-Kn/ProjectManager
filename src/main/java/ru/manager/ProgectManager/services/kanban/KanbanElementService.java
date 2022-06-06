@@ -1,6 +1,7 @@
 package ru.manager.ProgectManager.services.kanban;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.java.Log;
 import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.request.kanban.CreateKanbanElementRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.TransportElementRequest;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
+@Log
 public class KanbanElementService {
     private final KanbanColumnRepository columnRepository;
     private final KanbanElementRepository elementRepository;
@@ -91,6 +93,7 @@ public class KanbanElementService {
     }
 
     public boolean editDate(long id, String date, String userLogin) {
+        log.info("Get date: " + date);
         int oddIndex = date.indexOf('Z');
         if(oddIndex != -1) {
             date = date.substring(0, oddIndex);
@@ -101,6 +104,8 @@ public class KanbanElementService {
         if (canEditKanban(kanban, user)) {
             checkElement(element);
             element.setSelectedDate(LocalDateTime.parse(date).toEpochSecond(ZoneOffset.ofHours(user.getZoneId())));
+            log.info("Save date: " + LocalDateTime.ofEpochSecond(element.getSelectedDate(), 0,
+                    ZoneOffset.ofHours(user.getZoneId())));
             element.setTimeOfUpdate(getEpochSeconds());
             element.setLastRedactor(user);
             elementRepository.save(element);

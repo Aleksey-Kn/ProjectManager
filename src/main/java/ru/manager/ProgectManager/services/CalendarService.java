@@ -107,8 +107,6 @@ public class CalendarService {
     private boolean belongThisYearAndMonths(long epochSeconds, int year, int month, int zoneId) {
         LocalDateTime localDateTime = LocalDateTime
                 .ofEpochSecond(epochSeconds, 0, ZoneOffset.ofHours(zoneId));
-        System.out.println("Year: " + localDateTime.getYear());
-        System.out.println("Month: " + localDateTime.getMonthValue());
         return localDateTime.getYear() == year && localDateTime.getMonthValue() == month;
     }
 
@@ -116,15 +114,17 @@ public class CalendarService {
         int zoneId = user.getZoneId();
         Map<Long, Set<ShortKanbanElementInfo>> groups = new HashMap<>();
         for (KanbanElement element : elements) {
-            if (!groups.containsKey(element.getSelectedDate())) {
-                groups.put(element.getSelectedDate(), new HashSet<>());
+            if (!groups.containsKey(LocalDateTime.ofEpochSecond(element.getSelectedDate(), 0,
+                    ZoneOffset.ofHours(zoneId)).toLocalDate().toEpochDay())) {
+                groups.put(LocalDateTime.ofEpochSecond(element.getSelectedDate(), 0,
+                        ZoneOffset.ofHours(zoneId)).toLocalDate().toEpochDay(), new HashSet<>());
             }
-            groups.get(element.getSelectedDate()).add(new ShortKanbanElementInfo(element, canEditElement(element, user)));
+            groups.get(LocalDateTime.ofEpochSecond(element.getSelectedDate(), 0,
+                    ZoneOffset.ofHours(zoneId)).toLocalDate().toEpochDay())
+                    .add(new ShortKanbanElementInfo(element, canEditElement(element, user)));
         }
         return Optional.of(new CalendarResponseList(groups.entrySet().stream()
-                .map(entry -> new CalendarResponse(LocalDateTime
-                        .ofEpochSecond(entry.getKey(), 0, ZoneOffset.ofHours(zoneId))
-                        .toString(), entry.getValue()))
+                .map(entry -> new CalendarResponse(LocalDate.ofEpochDay(entry.getKey()).toString(), entry.getValue()))
                 .collect(Collectors.toSet())));
     }
 
