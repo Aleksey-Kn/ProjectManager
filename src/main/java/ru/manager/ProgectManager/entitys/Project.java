@@ -48,7 +48,7 @@ public class Project {
     @OneToMany(mappedBy = "project", cascade = CascadeType.PERSIST)
     private Set<UserWithProjectConnector> connectors;
 
-    @OneToMany(mappedBy = "project", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Kanban> kanbans;
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.REMOVE)
