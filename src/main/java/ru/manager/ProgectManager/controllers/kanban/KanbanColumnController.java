@@ -21,13 +21,13 @@ import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanColumnResponse;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
-import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.entitys.kanban.KanbanColumn;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.kanban.KanbanColumnService;
 import ru.manager.ProgectManager.services.user.UserService;
 
 import javax.validation.Valid;
+import java.security.Principal;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -37,7 +37,6 @@ import java.util.Optional;
 @Tag(name = "Манипуляции с колонками канбан-доски")
 public class KanbanColumnController {
     private final KanbanColumnService kanbanColumnService;
-    private final JwtProvider provider;
     private final ErrorResponseEntityConfigurator entityConfigurator;
     private final UserService userService;
 
@@ -59,12 +58,12 @@ public class KanbanColumnController {
     })
     @PostMapping()
     public ResponseEntity<?> addColumn(@RequestBody @Valid KanbanColumnRequest kanbanColumnRequest,
-                                       BindingResult bindingResult) {
+                                       BindingResult bindingResult, Principal principal) {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         }
         try {
-            String login = provider.getLoginFromToken();
+            String login = principal.getName();
             Optional<KanbanColumn> column = kanbanColumnService.addColumn(kanbanColumnRequest, login);
             if (column.isPresent()) {
                 return ResponseEntity.ok(new IdResponse(column.get().getId()));
@@ -90,9 +89,9 @@ public class KanbanColumnController {
     })
     @GetMapping()
     public ResponseEntity<?> findColumn(@RequestParam @Parameter(description = "Идентификатор колонки") long id,
-                                        @RequestParam int pageIndex, @RequestParam int rowCount) {
+                                        @RequestParam int pageIndex, @RequestParam int rowCount, Principal principal) {
         try {
-            String login = provider.getLoginFromToken();
+            String login = principal.getName();
             Optional<KanbanColumn> kanbanColumn = kanbanColumnService.findKanbanColumn(id, login);
             if (kanbanColumn.isPresent()) {
                 return ResponseEntity.ok(new KanbanColumnResponse(kanbanColumn.get(), pageIndex, rowCount,
@@ -120,12 +119,12 @@ public class KanbanColumnController {
     })
     @PutMapping()
     public ResponseEntity<?> renameColumn(@RequestParam long id, @RequestBody @Valid NameRequest name,
-                                          BindingResult bindingResult) {
+                                          BindingResult bindingResult, Principal principal) {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
-                String login = provider.getLoginFromToken();
+                String login = principal.getName();
                 Optional<KanbanColumn> column = kanbanColumnService.renameColumn(id, name.getName(), login);
                 if (column.isPresent()) {
                     return new ResponseEntity<>(HttpStatus.OK);
@@ -148,9 +147,9 @@ public class KanbanColumnController {
             @ApiResponse(responseCode = "200", description = "Колонка успешно удалена")
     })
     @DeleteMapping()
-    public ResponseEntity<?> removeColumn(@RequestParam long id) {
+    public ResponseEntity<?> removeColumn(@RequestParam long id, Principal principal) {
         try {
-            String login = provider.getLoginFromToken();
+            String login = principal.getName();
             if (kanbanColumnService.deleteColumn(id, login)) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {
@@ -178,11 +177,11 @@ public class KanbanColumnController {
     })
     @PutMapping("/transport")
     public ResponseEntity<?> transportColumn(@RequestBody @Valid TransportColumnRequest transportColumnRequest,
-                                             BindingResult bindingResult) {
+                                             BindingResult bindingResult, Principal principal) {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
-            String login = provider.getLoginFromToken();
+            String login = principal.getName();
             try {
                 if (kanbanColumnService.transportColumn(transportColumnRequest, login)) {
                     return new ResponseEntity<>(HttpStatus.OK);
@@ -212,9 +211,9 @@ public class KanbanColumnController {
     })
     @PostMapping("/sort")
     public ResponseEntity<?> sortColumn(@RequestBody SortColumnRequest sortColumnRequest, @RequestParam int pageIndex,
-                                        @RequestParam int rowCount) {
+                                        @RequestParam int rowCount, Principal principal) {
         try {
-            String login = provider.getLoginFromToken();
+            String login = principal.getName();
             Optional<KanbanColumn> kanbanColumn = kanbanColumnService
                     .sortColumn(sortColumnRequest, login);
             if (kanbanColumn.isPresent()) {
@@ -243,13 +242,13 @@ public class KanbanColumnController {
             @ApiResponse(responseCode = "200", description = "Установка интервала удаления произошла успешно")
     })
     @PostMapping("/delay")
-    public ResponseEntity<?> setDelayRemover(@RequestBody @Valid DelayRemoveRequest request, BindingResult bindingResult) {
+    public ResponseEntity<?> setDelayRemover(@RequestBody @Valid DelayRemoveRequest request, BindingResult bindingResult,
+                                             Principal principal) {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.COUNT_MUST_BE_MORE_1), HttpStatus.BAD_REQUEST);
         } else {
             try {
-                if (kanbanColumnService.setDelayDeleter(request.getId(), request.getDelay(),
-                        provider.getLoginFromToken())) {
+                if (kanbanColumnService.setDelayDeleter(request.getId(), request.getDelay(), principal.getName())) {
                     return new ResponseEntity<>(HttpStatus.OK);
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -270,9 +269,10 @@ public class KanbanColumnController {
             @ApiResponse(responseCode = "200", description = "Отключение автоматической очистки столбца прошло успешно")
     })
     @DeleteMapping("/delay")
-    public ResponseEntity<?> deleteDelayRemover(@RequestParam @Parameter(description = "Идентификатор колонки") long id) {
+    public ResponseEntity<?> deleteDelayRemover(@RequestParam @Parameter(description = "Идентификатор колонки") long id,
+                                                Principal principal) {
         try {
-            if (kanbanColumnService.removeDelayDeleter(id, provider.getLoginFromToken())) {
+            if (kanbanColumnService.removeDelayDeleter(id, principal.getName())) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);

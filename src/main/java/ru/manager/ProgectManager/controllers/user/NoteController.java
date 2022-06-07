@@ -14,11 +14,11 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.user.NoteRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
-import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.user.NoteService;
 
 import javax.validation.Valid;
+import java.security.Principal;
 import java.util.NoSuchElementException;
 
 @RestController
@@ -27,7 +27,6 @@ import java.util.NoSuchElementException;
 @Tag(name = "Заметки о пользователях")
 public class NoteController {
     private final NoteService noteService;
-    private final JwtProvider provider;
 
     @Operation(summary = "Создание или изменение заметки")
     @ApiResponses(value = {
@@ -40,13 +39,14 @@ public class NoteController {
             @ApiResponse(responseCode = "409", description = "Нельзя присваивать заметку самому себе")
     })
     @PostMapping("/note")
-    public ResponseEntity<?> postNote(@RequestBody @Valid NoteRequest noteRequest, BindingResult bindingResult) {
+    public ResponseEntity<?> postNote(@RequestBody @Valid NoteRequest noteRequest, BindingResult bindingResult,
+                                      Principal principal) {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.TEXT_MUST_BE_CONTAINS_VISIBLE_SYMBOL),
                     HttpStatus.BAD_REQUEST);
         } else {
             try {
-                if (noteService.setNote(noteRequest.getText(), noteRequest.getTargetUserId(), provider.getLoginFromToken())) {
+                if (noteService.setNote(noteRequest.getText(), noteRequest.getTargetUserId(), principal.getName())) {
                     return new ResponseEntity<>(HttpStatus.OK);
                 } else {
                     return new ResponseEntity<>(HttpStatus.CONFLICT);
@@ -64,8 +64,8 @@ public class NoteController {
     })
     @DeleteMapping("/note")
     public ResponseEntity<?> deleteNote(@RequestParam @Parameter(description = "Идентификатор пользователя, " +
-            "к которому приклеплёна удаляемая записка") long id) {
-        if (noteService.deleteNote(id, provider.getLoginFromToken())) {
+            "к которому приклеплёна удаляемая записка") long id, Principal principal) {
+        if (noteService.deleteNote(id, principal.getName())) {
             return new ResponseEntity<>(HttpStatus.OK);
         } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);

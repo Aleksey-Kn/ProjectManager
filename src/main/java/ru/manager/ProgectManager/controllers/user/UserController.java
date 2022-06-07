@@ -23,7 +23,6 @@ import ru.manager.ProgectManager.DTO.response.user.MyselfUserDataResponse;
 import ru.manager.ProgectManager.DTO.response.user.PublicAllDataResponse;
 import ru.manager.ProgectManager.DTO.response.user.VisitMarkListResponse;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
-import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.Errors;
@@ -33,6 +32,7 @@ import ru.manager.ProgectManager.services.user.UserService;
 
 import javax.validation.Valid;
 import java.io.IOException;
+import java.security.Principal;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -43,7 +43,6 @@ import java.util.Optional;
 @Tag(name = "Управление аккаунтом пользователя")
 public class UserController {
     private final UserService userService;
-    private final JwtProvider jwtProvider;
     private final AccessProjectService accessProjectService;
     private final ErrorResponseEntityConfigurator entityConfigurator;
     private final NoteService noteService;
@@ -54,8 +53,8 @@ public class UserController {
                     schema = @Schema(implementation = MyselfUserDataResponse.class))
     })
     @GetMapping("/current")
-    public ResponseEntity<?> findMyselfAccountData() {
-        return ResponseEntity.ok(new MyselfUserDataResponse(userService.findByUsername(jwtProvider.getLoginFromToken())
+    public ResponseEntity<?> findMyselfAccountData(Principal principal) {
+        return ResponseEntity.ok(new MyselfUserDataResponse(userService.findByUsername(principal.getName())
                 .orElseThrow()));
     }
 
@@ -73,9 +72,9 @@ public class UserController {
     })
     @GetMapping("/other")
     public ResponseEntity<?> findOtherAccountData(@RequestParam @Parameter(description = "Идентификатор искомого пользователя")
-                                                          long id) {
+                                                          long id, Principal principal) {
         Optional<User> targetUser = userService.findById(id);
-        String nowLogin = jwtProvider.getLoginFromToken();
+        String nowLogin = principal.getName();
         if (targetUser.isPresent()) {
             return ResponseEntity.ok(new PublicAllDataResponse(targetUser.get(),
                     userService.findZoneIdForThisUser(nowLogin),
@@ -95,12 +94,13 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "Имя пользователя успешно изменено")
     })
     @PutMapping()
-    public ResponseEntity<?> rename(@RequestBody @Valid NameRequest request, BindingResult bindingResult) {
+    public ResponseEntity<?> rename(@RequestBody @Valid NameRequest request, BindingResult bindingResult,
+                                    Principal principal) {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
                     HttpStatus.BAD_REQUEST);
         } else {
-            userService.renameUser(jwtProvider.getLoginFromToken(), request.getName());
+            userService.renameUser(principal.getName(), request.getName());
             return new ResponseEntity<>(HttpStatus.OK);
         }
     }
@@ -120,11 +120,12 @@ public class UserController {
                     }),
     })
     @PutMapping("/pass")
-    public ResponseEntity<?> updatePass(@RequestBody @Valid UpdatePassRequest request, BindingResult bindingResult) {
+    public ResponseEntity<?> updatePass(@RequestBody @Valid UpdatePassRequest request, BindingResult bindingResult,
+                                        Principal principal) {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
-            if (userService.updatePass(request.getOldPass(), request.getNewPass(), jwtProvider.getLoginFromToken())) {
+            if (userService.updatePass(request.getOldPass(), request.getNewPass(), principal.getName())) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_LOGIN_OR_PASSWORD), HttpStatus.FORBIDDEN);
@@ -141,11 +142,12 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "Язык успешно изменён")
     })
     @PutMapping("/locale")
-    public ResponseEntity<?> updateLocale(@RequestBody @Valid LocaleRequest request, BindingResult bindingResult) {
+    public ResponseEntity<?> updateLocale(@RequestBody @Valid LocaleRequest request, BindingResult bindingResult,
+                                          Principal principal) {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.FIELD_MUST_BE_NOT_NULL), HttpStatus.BAD_REQUEST);
         } else {
-            userService.updateLocale(request, jwtProvider.getLoginFromToken());
+            userService.updateLocale(request, principal.getName());
             return new ResponseEntity<>(HttpStatus.OK);
         }
     }
@@ -160,9 +162,9 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "Фотография успешно сжата и сохранена")
     })
     @PostMapping("/photo")
-    public ResponseEntity<?> setPhoto(@RequestParam("file") MultipartFile multipartFile) {
+    public ResponseEntity<?> setPhoto(@RequestParam("file") MultipartFile multipartFile, Principal principal) {
         try {
-            userService.setPhoto(jwtProvider.getLoginFromToken(), multipartFile);
+            userService.setPhoto(principal.getName(), multipartFile);
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (IOException e) {
             return new ResponseEntity<>(new ErrorResponse(Errors.BAD_FILE), HttpStatus.BAD_REQUEST);
@@ -175,8 +177,8 @@ public class UserController {
                     schema = @Schema(implementation = ProjectListResponse.class))
     })
     @GetMapping("/projects")
-    public ProjectListResponse getUserProjects() {
-        String login = jwtProvider.getLoginFromToken();
+    public ProjectListResponse getUserProjects(Principal principal) {
+        String login = principal.getName();
         List<Project> projectList = userService.allProjectOfThisUser(login);
         List<String> roles = new LinkedList<>();
         projectList.forEach(p -> roles.add(accessProjectService.findUserRoleName(login, p.getId())));
@@ -190,8 +192,8 @@ public class UserController {
                             schema = @Schema(implementation = ProjectListResponse.class))
             })
     @GetMapping("/projects_by_name")
-    public ProjectListResponse findProjectsByName(@RequestParam String name) {
-        String login = jwtProvider.getLoginFromToken();
+    public ProjectListResponse findProjectsByName(@RequestParam String name, Principal principal) {
+        String login = principal.getName();
         List<Project> projects = userService.projectsByNameOfThisUser(name, login);
         List<String> roles = new LinkedList<>();
         projects.forEach(p -> roles.add(accessProjectService.findUserRoleName(login, p.getId())));
@@ -205,8 +207,8 @@ public class UserController {
                             schema = @Schema(implementation = ListPointerResources.class))
             })
     @GetMapping("/resources")
-    public ListPointerResources findResourcesByName(@RequestParam String name) {
-        return new ListPointerResources(userService.availableResourceByName(name, jwtProvider.getLoginFromToken()));
+    public ListPointerResources findResourcesByName(@RequestParam String name, Principal principal) {
+        return new ListPointerResources(userService.availableResourceByName(name, principal.getName()));
     }
 
     @Operation(summary = "Список последних посещённых ресурсов пользователем")
@@ -216,7 +218,7 @@ public class UserController {
                             schema = @Schema(implementation = VisitMarkListResponse.class))
             })
     @GetMapping("/lasts")
-    public VisitMarkListResponse findLastSee() {
-        return new VisitMarkListResponse(userService.lastVisits(jwtProvider.getLoginFromToken()));
+    public VisitMarkListResponse findLastSee(Principal principal) {
+        return new VisitMarkListResponse(userService.lastVisits(principal.getName()));
     }
 }

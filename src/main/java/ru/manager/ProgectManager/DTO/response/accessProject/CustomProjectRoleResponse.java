@@ -28,7 +28,7 @@ public class CustomProjectRoleResponse {
         kanbanConnectorResponses = role.getCustomRoleWithKanbanConnectors().stream()
                 .map(CustomRoleWithKanbanConnectorResponse::new)
                 .collect(Collectors.toList());
-        pageConnectorResponses = role.getCustomRoleWithDocumentConnectors().parallelStream()
+        pageConnectorResponses = role.getCustomRoleWithDocumentConnectors().stream()
                 .map(CustomRoleWithPageConnectorResponse::new)
                 .collect(Collectors.toList());
     }

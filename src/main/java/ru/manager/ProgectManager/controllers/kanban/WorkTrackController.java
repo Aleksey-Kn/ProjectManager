@@ -16,12 +16,12 @@ import ru.manager.ProgectManager.DTO.request.user.CreateWorkTrackRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.workTrack.AllWorkUserInfo;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
-import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.exception.IncorrectStatusException;
 import ru.manager.ProgectManager.services.user.WorkTrackService;
 
 import javax.validation.Valid;
+import java.security.Principal;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -31,7 +31,6 @@ import java.util.Optional;
 @Tag(name = "Манипуляции с трекингом времени работы")
 public class WorkTrackController {
     private final WorkTrackService workTrackService;
-    private final JwtProvider provider;
     private final ErrorResponseEntityConfigurator entityConfigurator;
 
     @Operation(summary = "Добавление времени работы")
@@ -55,12 +54,12 @@ public class WorkTrackController {
     })
     @PostMapping()
     public ResponseEntity<?> addWorkTrack(@RequestBody @Valid CreateWorkTrackRequest request,
-                                          BindingResult bindingResult) {
+                                          BindingResult bindingResult, Principal principal) {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
-                if (workTrackService.addWorkTrack(request, provider.getLoginFromToken())) {
+                if (workTrackService.addWorkTrack(request, principal.getName())) {
                     return new ResponseEntity<>(HttpStatus.OK);
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -91,9 +90,9 @@ public class WorkTrackController {
     })
     @DeleteMapping()
     public ResponseEntity<?> removeWorkTrack(@RequestParam @Parameter(description = "Идентификатор удаляемого времени работы")
-                                                     long id) {
+                                                     long id, Principal principal) {
         try {
-            if (workTrackService.removeWorkTrack(id, provider.getLoginFromToken())) {
+            if (workTrackService.removeWorkTrack(id, principal.getName())) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -121,12 +120,13 @@ public class WorkTrackController {
     })
     @GetMapping()
     public ResponseEntity<?> findWorkTracks(@RequestParam String fromDate, @RequestParam String toDate,
-                                            @RequestParam long projectId, @RequestParam long userId) {
+                                            @RequestParam long projectId, @RequestParam long userId,
+                                            Principal principal) {
         try {
             Optional<AllWorkUserInfo> response = (userId == 0
-                    ? workTrackService.findWorkTrackMyself(fromDate, toDate, projectId, provider.getLoginFromToken())
+                    ? workTrackService.findWorkTrackMyself(fromDate, toDate, projectId, principal.getName())
                     : workTrackService.findOtherWorkTrackAsAdmin(fromDate, toDate, projectId, userId,
-                    provider.getLoginFromToken()));
+                    principal.getName()));
             if (response.isPresent()) {
                 return ResponseEntity.ok(response.get());
             } else {

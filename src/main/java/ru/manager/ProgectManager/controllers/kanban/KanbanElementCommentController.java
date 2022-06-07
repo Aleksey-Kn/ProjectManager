@@ -16,7 +16,6 @@ import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanElementCommentResponse;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
-import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElementComment;
 import ru.manager.ProgectManager.enums.Errors;
@@ -24,6 +23,7 @@ import ru.manager.ProgectManager.exception.IncorrectStatusException;
 import ru.manager.ProgectManager.services.kanban.KanbanElementAttributesService;
 
 import javax.validation.Valid;
+import java.security.Principal;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -33,7 +33,6 @@ import java.util.Optional;
 @Tag(name = "Манипуляции с комментариями в элементе канбана")
 public class KanbanElementCommentController {
     private final KanbanElementAttributesService attributesService;
-    private final JwtProvider provider;
     private final ErrorResponseEntityConfigurator entityConfigurator;
 
     @Operation(summary = "Добавление комментария к элементу канбана")
@@ -58,12 +57,13 @@ public class KanbanElementCommentController {
             })
     })
     @PostMapping()
-    public ResponseEntity<?> addComment(@RequestBody @Valid KanbanCommentRequest request, BindingResult bindingResult) {
+    public ResponseEntity<?> addComment(@RequestBody @Valid KanbanCommentRequest request, BindingResult bindingResult,
+                                        Principal principal) {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
-                Optional<KanbanElementComment> comment = attributesService.addComment(request, provider.getLoginFromToken());
+                Optional<KanbanElementComment> comment = attributesService.addComment(request, principal.getName());
                 if (comment.isPresent()) {
                     return ResponseEntity.ok(new IdResponse(comment.get().getId()));
                 } else {
@@ -101,12 +101,13 @@ public class KanbanElementCommentController {
             })
     })
     @PutMapping()
-    public ResponseEntity<?> updateComment(@RequestBody @Valid KanbanCommentRequest request, BindingResult bindingResult) {
+    public ResponseEntity<?> updateComment(@RequestBody @Valid KanbanCommentRequest request, BindingResult bindingResult,
+                                           Principal principal) {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
-                Optional<KanbanElementComment> comment = attributesService.updateComment(request, provider.getLoginFromToken());
+                Optional<KanbanElementComment> comment = attributesService.updateComment(request, principal.getName());
                 if (comment.isPresent()) {
                     return ResponseEntity.ok(new KanbanElementCommentResponse(comment.get(), request.getZone()));
                 } else {
@@ -136,9 +137,9 @@ public class KanbanElementCommentController {
             })
     })
     @DeleteMapping()
-    public ResponseEntity<?> removeComment(@RequestParam long id) {
+    public ResponseEntity<?> removeComment(@RequestParam long id, Principal principal) {
         try {
-            Optional<KanbanElement> element = attributesService.deleteComment(id, provider.getLoginFromToken());
+            Optional<KanbanElement> element = attributesService.deleteComment(id, principal.getName());
             if (element.isPresent()) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {

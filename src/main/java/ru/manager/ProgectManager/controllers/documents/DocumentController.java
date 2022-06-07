@@ -19,13 +19,13 @@ import ru.manager.ProgectManager.DTO.request.documents.TransportPageRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.DTO.response.documents.*;
-import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.entitys.documents.Page;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.documents.PageService;
 import ru.manager.ProgectManager.services.user.UserService;
 
 import javax.validation.Valid;
+import java.security.Principal;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -36,7 +36,6 @@ import java.util.Optional;
 @Tag(name = "Манипуляция страницами документации")
 public class DocumentController {
     private final PageService pageService;
-    private final JwtProvider provider;
     private final UserService userService;
 
     @Operation(summary = "Добавление страницы документации")
@@ -52,13 +51,14 @@ public class DocumentController {
             })
     })
     @PostMapping
-    public ResponseEntity<?> addPage(@RequestBody @Valid CreatePageRequest request, BindingResult bindingResult) {
+    public ResponseEntity<?> addPage(@RequestBody @Valid CreatePageRequest request, BindingResult bindingResult,
+                                     Principal principal) {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
                     HttpStatus.BAD_REQUEST);
         } else {
             try {
-                Optional<Long> id = pageService.createPage(request, provider.getLoginFromToken());
+                Optional<Long> id = pageService.createPage(request, principal.getName());
                 if (id.isPresent()) {
                     return ResponseEntity.ok(new IdResponse(id.get()));
                 } else {
@@ -85,13 +85,14 @@ public class DocumentController {
     })
     @PutMapping("/rename")
     public ResponseEntity<?> rename(@RequestParam @Parameter(description = "Идентификатор страницы") long id,
-                                    @RequestBody @Valid NameRequest request, BindingResult bindingResult) {
+                                    @RequestBody @Valid NameRequest request, BindingResult bindingResult,
+                                    Principal principal) {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
                     HttpStatus.BAD_REQUEST);
         } else {
             try {
-                if (pageService.rename(id, request.getName(), provider.getLoginFromToken())) {
+                if (pageService.rename(id, request.getName(), principal.getName())) {
                     return new ResponseEntity<>(HttpStatus.OK);
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -112,9 +113,9 @@ public class DocumentController {
             })
     })
     @PutMapping("/content")
-    public ResponseEntity<?> setContent(@RequestBody ContentRequest request) {
+    public ResponseEntity<?> setContent(@RequestBody ContentRequest request, Principal principal) {
         try {
-            if (pageService.setContent(request.getId(), request.getContent(), provider.getLoginFromToken())) {
+            if (pageService.setContent(request.getId(), request.getContent(), principal.getName())) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -137,9 +138,10 @@ public class DocumentController {
             })
     })
     @GetMapping("/content")
-    public ResponseEntity<?> getContent(@RequestParam @Parameter(description = "Идентификатор страницы") long id) {
+    public ResponseEntity<?> getContent(@RequestParam @Parameter(description = "Идентификатор страницы") long id,
+                                        Principal principal) {
         try {
-            String login = provider.getLoginFromToken();
+            String login = principal.getName();
             Optional<Page> response = pageService.find(id, login);
             if (response.isPresent()) {
                 return ResponseEntity.ok(new PageContentResponse(response.get(),
@@ -163,9 +165,10 @@ public class DocumentController {
             })
     })
     @PutMapping("/publish")
-    public ResponseEntity<?> publish(@RequestParam @Parameter(description = "Идентификатор страницы") long id) {
+    public ResponseEntity<?> publish(@RequestParam @Parameter(description = "Идентификатор страницы") long id,
+                                     Principal principal) {
         try {
-            if (pageService.publish(id, provider.getLoginFromToken())) {
+            if (pageService.publish(id, principal.getName())) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -185,9 +188,10 @@ public class DocumentController {
             })
     })
     @DeleteMapping
-    public ResponseEntity<?> delete(@RequestParam @Parameter(description = "Идентификатор страницы") long id) {
+    public ResponseEntity<?> delete(@RequestParam @Parameter(description = "Идентификатор страницы") long id,
+                                    Principal principal) {
         try {
-            if (pageService.deletePage(id, provider.getLoginFromToken())) {
+            if (pageService.deletePage(id, principal.getName())) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -210,9 +214,10 @@ public class DocumentController {
             })
     })
     @GetMapping
-    public ResponseEntity<?> findById(@RequestParam @Parameter(description = "Идентификатор страницы") long id) {
+    public ResponseEntity<?> findById(@RequestParam @Parameter(description = "Идентификатор страницы") long id,
+                                      Principal principal) {
         try {
-            String login = provider.getLoginFromToken();
+            String login = principal.getName();
             Optional<Page> page = pageService.find(id, login);
             if (page.isPresent()) {
                 return ResponseEntity.ok(new PageNameResponse(page.get(), pageService.canEditPage(page.get(), login)));
@@ -237,9 +242,10 @@ public class DocumentController {
             })
     })
     @GetMapping("/data")
-    public ResponseEntity<?> findAllPageData(@RequestParam @Parameter(description = "Идентификатор страницы") long id) {
+    public ResponseEntity<?> findAllPageData(@RequestParam @Parameter(description = "Идентификатор страницы") long id,
+                                             Principal principal) {
         try {
-            String login = provider.getLoginFromToken();
+            String login = principal.getName();
             Optional<Page> page = pageService.find(id, login);
             if (page.isPresent()) {
                 return ResponseEntity.ok(new PageAllDataResponse(page.get(), userService.findZoneIdForThisUser(login),
@@ -266,9 +272,10 @@ public class DocumentController {
     })
     @GetMapping("/root")
     public ResponseEntity<?> findRootPages(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
-                                           @RequestParam int pageIndex, @RequestParam int rowCount) {
+                                           @RequestParam int pageIndex, @RequestParam int rowCount,
+                                           Principal principal) {
         try {
-            Optional<List<PageResponse>> pageList = pageService.findAllRoot(id, provider.getLoginFromToken());
+            Optional<List<PageResponse>> pageList = pageService.findAllRoot(id, principal.getName());
             if (pageList.isPresent()) {
                 return ResponseEntity.ok(new PageResponseList(pageList.get(), pageIndex, rowCount));
             } else {
@@ -294,9 +301,9 @@ public class DocumentController {
     @GetMapping("/find")
     public ResponseEntity<?> findByName(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
                                         @RequestParam int pageIndex, @RequestParam int rowCount,
-                                        @RequestParam String name) {
+                                        @RequestParam String name, Principal principal) {
         try {
-            String login = provider.getLoginFromToken();
+            String login = principal.getName();
             Optional<List<PageNameAndUpdateDateResponse>> pageSet = pageService.findByName(id, name, login,
                     userService.findZoneIdForThisUser(login));
             if (pageSet.isPresent()) {
@@ -323,9 +330,10 @@ public class DocumentController {
     })
     @GetMapping("/all")
     public ResponseEntity<?> findAllWithSort(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
-                                             @RequestParam int pageIndex, @RequestParam int rowCount) {
+                                             @RequestParam int pageIndex, @RequestParam int rowCount,
+                                             Principal principal) {
         try {
-            String login = provider.getLoginFromToken();
+            String login = principal.getName();
             int zoneId = userService.findZoneIdForThisUser(login);
             Optional<List<PageNameAndUpdateDateResponse>> pages = pageService.findAllWithSort(id, login, zoneId);
             if (pages.isPresent()) {
@@ -351,8 +359,8 @@ public class DocumentController {
     })
     @GetMapping("/lasts")
     public ResponseEntity<?> findLastSee(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
-                                         @RequestParam int pageIndex, @RequestParam int rowCount) {
-        String login = provider.getLoginFromToken();
+                                         @RequestParam int pageIndex, @RequestParam int rowCount, Principal principal) {
+        String login = principal.getName();
         int zoneId = userService.findZoneIdForThisUser(login);
         Optional<List<PageNameAndUpdateDateResponse>> responses = pageService.findLastSeeDocument(id, login, zoneId);
         if (responses.isPresent()) {
@@ -375,9 +383,10 @@ public class DocumentController {
             })
     })
     @GetMapping("/children")
-    public ResponseEntity<?> findChildren(@RequestParam long id, @RequestParam int pageIndex, @RequestParam int rowCount) {
+    public ResponseEntity<?> findChildren(@RequestParam long id, @RequestParam int pageIndex, @RequestParam int rowCount,
+                                          Principal principal) {
         try {
-            Optional<List<PageResponse>> pages = pageService.findSubpages(id, provider.getLoginFromToken());
+            Optional<List<PageResponse>> pages = pageService.findSubpages(id, principal.getName());
             if(pages.isPresent()) {
                 return ResponseEntity.ok(new PageResponseList(pages.get(), pageIndex, rowCount));
             } else {
@@ -402,12 +411,13 @@ public class DocumentController {
             })
     })
     @PutMapping("/transport")
-    public ResponseEntity<?> transport(@RequestBody @Valid TransportPageRequest request, BindingResult bindingResult) {
+    public ResponseEntity<?> transport(@RequestBody @Valid TransportPageRequest request, BindingResult bindingResult,
+                                       Principal principal) {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.INDEX_MUST_BE_MORE_0), HttpStatus.BAD_REQUEST);
         } else {
             try {
-                if (pageService.transport(request, provider.getLoginFromToken())) {
+                if (pageService.transport(request, principal.getName())) {
                     return new ResponseEntity<>(HttpStatus.OK);
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);

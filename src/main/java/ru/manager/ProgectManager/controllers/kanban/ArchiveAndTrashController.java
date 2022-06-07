@@ -13,13 +13,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanElements;
-import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.exception.IncorrectStatusException;
 import ru.manager.ProgectManager.services.kanban.ArchiveAndTrashService;
 import ru.manager.ProgectManager.services.user.UserService;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -30,7 +30,6 @@ import java.util.Optional;
 @Tag(name = "Средства работы с корзиной и архивом")
 public class ArchiveAndTrashController {
     private final ArchiveAndTrashService trashService;
-    private final JwtProvider provider;
     private final UserService userService;
 
     @Operation(summary = "Перемещение элемента в архив")
@@ -48,9 +47,9 @@ public class ArchiveAndTrashController {
             })
     })
     @PutMapping("/archive")
-    public ResponseEntity<?> archive(@RequestParam long id){
+    public ResponseEntity<?> archive(@RequestParam long id, Principal principal){
         try{
-            if(trashService.archive(id, provider.getLoginFromToken())){
+            if(trashService.archive(id, principal.getName())){
                 return new ResponseEntity<>(HttpStatus.OK);
             } else{
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -79,9 +78,9 @@ public class ArchiveAndTrashController {
             })
     })
     @PutMapping("/reestablish")
-    public ResponseEntity<?> reestablish(@RequestParam long id){
+    public ResponseEntity<?> reestablish(@RequestParam long id, Principal principal){
         try{
-            if(trashService.reestablish(id, provider.getLoginFromToken())){
+            if(trashService.reestablish(id, principal.getName())){
                 return new ResponseEntity<>(HttpStatus.OK);
             } else{
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -109,9 +108,9 @@ public class ArchiveAndTrashController {
     })
     @GetMapping("/archive")
     public ResponseEntity<?> getArchive(@RequestParam @Parameter(description = "Идентификатор канбана") long id,
-                                        @RequestParam int pageIndex, @RequestParam int rowCount){
+                                        @RequestParam int pageIndex, @RequestParam int rowCount, Principal principal){
         try {
-            String login = provider.getLoginFromToken();
+            String login = principal.getName();
             Optional<List<KanbanElement>> elements = trashService.findArchive(id, login);
             if(elements.isPresent()){
                 return ResponseEntity.ok(new KanbanElements(elements.get(), pageIndex, rowCount,
@@ -139,9 +138,9 @@ public class ArchiveAndTrashController {
     })
     @GetMapping("/trash")
     public ResponseEntity<?> getTrash(@RequestParam @Parameter(description = "Идентификатор канбана") long id,
-                                      @RequestParam int pageIndex, @RequestParam int rowCount){
+                                      @RequestParam int pageIndex, @RequestParam int rowCount, Principal principal){
         try {
-            String login = provider.getLoginFromToken();
+            String login = principal.getName();
             Optional<List<KanbanElement>> elements = trashService.findTrash(id, login);
             if(elements.isPresent()){
                 return ResponseEntity.ok(new KanbanElements(elements.get(), pageIndex, rowCount,

@@ -18,7 +18,6 @@ import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.accessProject.AccessProjectResponse;
 import ru.manager.ProgectManager.DTO.response.project.ProjectResponse;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
-import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.entitys.accessProject.AccessProject;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.exception.IllegalActionException;
@@ -27,6 +26,7 @@ import ru.manager.ProgectManager.services.project.AccessProjectService;
 import ru.manager.ProgectManager.services.user.UserService;
 
 import javax.validation.Valid;
+import java.security.Principal;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -38,7 +38,6 @@ import java.util.Optional;
         description = "Позволяет приглашать пользователя в проект с помощью токена доступа")
 public class AccessController {
     private final AccessProjectService accessProjectService;
-    private final JwtProvider provider;
     private final ErrorResponseEntityConfigurator entityConfigurator;
     private final UserService userService;
 
@@ -57,9 +56,9 @@ public class AccessController {
             @ApiResponse(responseCode = "200", description = "Подключение к проекту произошло успешно")
     })
     @GetMapping()
-    public ResponseEntity<?> getAccess(@RequestParam String token) {
+    public ResponseEntity<?> getAccess(@RequestParam String token, Principal principal) {
         try {
-            if (accessProjectService.createAccessForUser(token, provider.getLoginFromToken())) {
+            if (accessProjectService.createAccessForUser(token, principal.getName())) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(
@@ -89,10 +88,10 @@ public class AccessController {
             })
     })
     @GetMapping("/info")
-    public ResponseEntity<?> getInfo(@RequestParam String token) {
+    public ResponseEntity<?> getInfo(@RequestParam String token, Principal principal) {
         try {
             Optional<ProjectResponse> response = accessProjectService.findInfoOfProjectFromAccessToken(token,
-                    userService.findZoneIdForThisUser(provider.getLoginFromToken()));
+                    userService.findZoneIdForThisUser(principal.getName()));
             if (response.isPresent()) {
                 return ResponseEntity.ok(response.get());
             } else {
@@ -133,12 +132,13 @@ public class AccessController {
     })
     @PostMapping("/create")
     public ResponseEntity<?> postAccess(@RequestBody @Valid AccessProjectRequest accessProjectRequest,
-                                        BindingResult bindingResult) {
+                                        BindingResult bindingResult, Principal principal) {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
-                Optional<AccessProject> accessProject = accessProjectService.generateTokenForAccessProject(provider.getLoginFromToken(),
+                Optional<AccessProject> accessProject = accessProjectService.generateTokenForAccessProject(
+                        principal.getName(),
                         accessProjectRequest.getProjectId(), accessProjectRequest.getTypeRoleProject(),
                         accessProjectRequest.getRoleId(), accessProjectRequest.isDisposable(),
                         accessProjectRequest.getLiveTimeInDays());
@@ -180,12 +180,12 @@ public class AccessController {
     })
     @PostMapping("/send")
     public ResponseEntity<?> sendAccessToMail(@RequestBody @Valid AccessProjectTroughMailRequest request,
-                                              BindingResult bindingResult) {
+                                              BindingResult bindingResult, Principal principal) {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
-                if (accessProjectService.sendInvitationToMail(request, provider.getLoginFromToken())) {
+                if (accessProjectService.sendInvitationToMail(request, principal.getName())) {
                     return new ResponseEntity<>(HttpStatus.OK);
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -210,9 +210,10 @@ public class AccessController {
             @ApiResponse(responseCode = "200", description = "Текущий пользователь исключён из проекта")
     })
     @PostMapping("/leave")
-    public ResponseEntity<?> leave(@RequestParam @Parameter(description = "Идентификатор покидаемого проекта") long id) {
+    public ResponseEntity<?> leave(@RequestParam @Parameter(description = "Идентификатор покидаемого проекта") long id,
+                                   Principal principal) {
         try {
-            if (accessProjectService.leave(id, provider.getLoginFromToken())) {
+            if (accessProjectService.leave(id, principal.getName())) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
@@ -233,9 +234,9 @@ public class AccessController {
             @ApiResponse(responseCode = "200", description = "Указанный пользователь исключён из проекта")
     })
     @DeleteMapping("/kick")
-    public ResponseEntity<?> kick(@RequestParam long projectId, @RequestParam long userId) {
+    public ResponseEntity<?> kick(@RequestParam long projectId, @RequestParam long userId, Principal principal) {
         try {
-            if (accessProjectService.kick(projectId, userId, provider.getLoginFromToken())) {
+            if (accessProjectService.kick(projectId, userId, principal.getName())) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);

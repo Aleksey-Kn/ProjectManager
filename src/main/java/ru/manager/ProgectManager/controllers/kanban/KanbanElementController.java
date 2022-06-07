@@ -20,7 +20,6 @@ import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanElementContentResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanElements;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
-import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.entitys.kanban.KanbanColumn;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
 import ru.manager.ProgectManager.enums.ElementStatus;
@@ -32,6 +31,7 @@ import ru.manager.ProgectManager.services.kanban.KanbanElementService;
 import ru.manager.ProgectManager.services.user.UserService;
 
 import javax.validation.Valid;
+import java.security.Principal;
 import java.time.format.DateTimeParseException;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -44,7 +44,6 @@ import java.util.Set;
 public class KanbanElementController {
     private final KanbanElementService kanbanElementService;
     private final KanbanElementAttributesService attributesService;
-    private final JwtProvider provider;
     private final ErrorResponseEntityConfigurator entityConfigurator;
     private final UserService userService;
 
@@ -65,9 +64,9 @@ public class KanbanElementController {
             })
     })
     @GetMapping()
-    public ResponseEntity<?> getContent(@RequestParam long elementId) {
+    public ResponseEntity<?> getContent(@RequestParam long elementId, Principal principal) {
         try {
-            String login = provider.getLoginFromToken();
+            String login = principal.getName();
             Optional<KanbanElementContentResponse> content = kanbanElementService
                     .getContentFromElement(elementId, login);
             if (content.isPresent()) {
@@ -97,12 +96,13 @@ public class KanbanElementController {
             })
     })
     @PostMapping
-    public ResponseEntity<?> addElement(@RequestBody @Valid CreateKanbanElementRequest request, BindingResult bindingResult) {
+    public ResponseEntity<?> addElement(@RequestBody @Valid CreateKanbanElementRequest request,
+                                        BindingResult bindingResult, Principal principal) {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
-                String login = provider.getLoginFromToken();
+                String login = principal.getName();
                 Optional<KanbanElement> element = kanbanElementService.addElement(request, login);
                 if (element.isPresent()) {
                     return ResponseEntity.ok(new IdResponse(element.get().getId()));
@@ -131,9 +131,10 @@ public class KanbanElementController {
     public ResponseEntity<?> findElementsByName(@RequestParam @Parameter(description = "Идентиикатор канбана") long id,
                                                 @RequestParam SearchElementType type,
                                                 @RequestParam ElementStatus status, @RequestParam String name,
-                                                @RequestParam int pageIndex, @RequestParam int rowCount) {
+                                                @RequestParam int pageIndex, @RequestParam int rowCount,
+                                                Principal principal) {
         try {
-            String login = provider.getLoginFromToken();
+            String login = principal.getName();
             Optional<Set<KanbanElement>> elements = kanbanElementService.findElements(id, type, name, status, login);
             if (elements.isPresent()) {
                 return ResponseEntity.ok(new KanbanElements(elements.get(), pageIndex, rowCount,
@@ -166,13 +167,13 @@ public class KanbanElementController {
     })
     @PutMapping("/rename")
     public ResponseEntity<?> rename(@RequestParam long id, @RequestBody @Valid NameRequest request,
-                                         BindingResult bindingResult) {
+                                         BindingResult bindingResult, Principal principal) {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
                     HttpStatus.BAD_REQUEST);
         } else {
             try {
-                if (kanbanElementService.rename(id, request.getName(), provider.getLoginFromToken())) {
+                if (kanbanElementService.rename(id, request.getName(), principal.getName())) {
                     return new ResponseEntity<>(HttpStatus.OK);
                 } else {
                     return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -205,9 +206,9 @@ public class KanbanElementController {
             })
     })
     @PutMapping("/date")
-    public ResponseEntity<?> editDate(@RequestParam long id, @RequestParam String date) {
+    public ResponseEntity<?> editDate(@RequestParam long id, @RequestParam String date, Principal principal) {
         try {
-            if (kanbanElementService.editDate(id, date, provider.getLoginFromToken())) {
+            if (kanbanElementService.editDate(id, date, principal.getName())) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -237,9 +238,9 @@ public class KanbanElementController {
             })
     })
     @DeleteMapping("/date")
-    public ResponseEntity<?> dropDate(@RequestParam long id) {
+    public ResponseEntity<?> dropDate(@RequestParam long id, Principal principal) {
         try {
-            if (kanbanElementService.dropDate(id, provider.getLoginFromToken())) {
+            if (kanbanElementService.dropDate(id, principal.getName())) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -267,9 +268,9 @@ public class KanbanElementController {
             })
     })
     @PutMapping("/content")
-    public ResponseEntity<?> editContent(@RequestParam long id, @RequestParam String content) {
+    public ResponseEntity<?> editContent(@RequestParam long id, @RequestParam String content, Principal principal) {
         try {
-            if (kanbanElementService.editContent(id, content, provider.getLoginFromToken())) {
+            if (kanbanElementService.editContent(id, content, principal.getName())) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -297,9 +298,9 @@ public class KanbanElementController {
             })
     })
     @DeleteMapping()
-    public ResponseEntity<?> removeElement(@RequestParam long id) {
+    public ResponseEntity<?> removeElement(@RequestParam long id, Principal principal) {
         try {
-            String login = provider.getLoginFromToken();
+            String login = principal.getName();
             Optional<KanbanColumn> column = kanbanElementService.utilizeElementFromUser(id, login);
             if (column.isPresent()) {
                 return new ResponseEntity<>(HttpStatus.OK);
@@ -336,12 +337,12 @@ public class KanbanElementController {
     })
     @PutMapping("/transport")
     public ResponseEntity<?> transportElement(@RequestBody @Valid TransportElementRequest transportElementRequest,
-                                              BindingResult bindingResult) {
+                                              BindingResult bindingResult, Principal principal) {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
             try {
-                if (kanbanElementService.transportElement(transportElementRequest, provider.getLoginFromToken())) {
+                if (kanbanElementService.transportElement(transportElementRequest, principal.getName())) {
                     return new ResponseEntity<>(HttpStatus.OK);
                 }
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -374,9 +375,9 @@ public class KanbanElementController {
             @ApiResponse(responseCode = "200", description = "Тег успешно добавлен"),
     })
     @PostMapping("/tag")
-    public ResponseEntity<?> addTag(@RequestParam long elementId, @RequestParam long tagId) {
+    public ResponseEntity<?> addTag(@RequestParam long elementId, @RequestParam long tagId, Principal principal) {
         try {
-            if (attributesService.addTag(elementId, tagId, provider.getLoginFromToken())) {
+            if (attributesService.addTag(elementId, tagId, principal.getName())) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -407,9 +408,9 @@ public class KanbanElementController {
             @ApiResponse(responseCode = "200", description = "Тег успешно удалён"),
     })
     @DeleteMapping("/tag")
-    public ResponseEntity<?> removeTag(@RequestParam long elementId, @RequestParam long tagId) {
+    public ResponseEntity<?> removeTag(@RequestParam long elementId, @RequestParam long tagId, Principal principal) {
         try {
-            if (attributesService.removeTag(elementId, tagId, provider.getLoginFromToken())) {
+            if (attributesService.removeTag(elementId, tagId, principal.getName())) {
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);

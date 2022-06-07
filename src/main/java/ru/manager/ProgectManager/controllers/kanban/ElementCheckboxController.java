@@ -16,13 +16,13 @@ import ru.manager.ProgectManager.DTO.request.NameRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.CheckboxRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.IdResponse;
-import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.entitys.kanban.CheckBox;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.exception.IncorrectStatusException;
 import ru.manager.ProgectManager.services.kanban.KanbanElementAttributesService;
 
 import javax.validation.Valid;
+import java.security.Principal;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -32,7 +32,6 @@ import java.util.Optional;
 @Tag(name = "Манипуляции с чекбоксами элементов канбан-доски")
 public class ElementCheckboxController {
     private final KanbanElementAttributesService attributesService;
-    private final JwtProvider provider;
 
     @Operation(summary = "Добавление нового чекбокса в элемент канбана")
     @ApiResponses(value = {
@@ -57,13 +56,14 @@ public class ElementCheckboxController {
                     })
     })
     @PostMapping()
-    public ResponseEntity<?> addCheckbox(@RequestBody @Valid CheckboxRequest request, BindingResult bindingResult){
+    public ResponseEntity<?> addCheckbox(@RequestBody @Valid CheckboxRequest request, BindingResult bindingResult,
+                                         Principal principal){
         if(bindingResult.hasErrors()){
             return new ResponseEntity<>(new ErrorResponse(Errors.TEXT_MUST_BE_CONTAINS_VISIBLE_SYMBOL),
                     HttpStatus.BAD_REQUEST);
         } else{
             try{
-                Optional<CheckBox> checkBox = attributesService.addCheckbox(request, provider.getLoginFromToken());
+                Optional<CheckBox> checkBox = attributesService.addCheckbox(request, principal.getName());
                 if(checkBox.isPresent()){
                     return ResponseEntity.ok(new IdResponse(checkBox.get().getId()));
                 } else {
@@ -94,9 +94,10 @@ public class ElementCheckboxController {
                     })
     })
     @DeleteMapping()
-    public ResponseEntity<?> removeCheckbox(@RequestParam @Parameter(description = "Идентификатор чекбокса") long id){
+    public ResponseEntity<?> removeCheckbox(@RequestParam @Parameter(description = "Идентификатор чекбокса") long id,
+                                            Principal principal){
         try{
-            if(attributesService.deleteCheckbox(id, provider.getLoginFromToken())){
+            if(attributesService.deleteCheckbox(id, principal.getName())){
                 return new ResponseEntity<>(HttpStatus.OK);
             } else{
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -125,9 +126,10 @@ public class ElementCheckboxController {
                     })
     })
     @PutMapping("/select")
-    public ResponseEntity<?> click(@RequestParam @Parameter(description = "Идентификатор чекбокса") long id){
+    public ResponseEntity<?> click(@RequestParam @Parameter(description = "Идентификатор чекбокса") long id,
+                                   Principal principal){
         try{
-            if(attributesService.tapCheckbox(id, provider.getLoginFromToken())){
+            if(attributesService.tapCheckbox(id, principal.getName())){
                 return new ResponseEntity<>(HttpStatus.OK);
             } else{
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
@@ -157,9 +159,9 @@ public class ElementCheckboxController {
     })
     @PutMapping("/rename")
     public ResponseEntity<?> rename(@RequestParam @Parameter(description = "Идентификатор чекбокса") long id,
-                                    @RequestBody @Valid NameRequest nameRequest){
+                                    @RequestBody @Valid NameRequest nameRequest, Principal principal){
         try{
-            if(attributesService.editCheckbox(id, nameRequest.getName(), provider.getLoginFromToken())){
+            if(attributesService.editCheckbox(id, nameRequest.getName(), principal.getName())){
                 return new ResponseEntity<>(HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
