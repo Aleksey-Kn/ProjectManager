@@ -9,3 +9,4 @@ src/main/resources/keystore.p12
 *.iws
 *.iml
 *.ipr
+*.jar
