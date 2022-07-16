@@ -6,9 +6,11 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
+import java.time.Duration;
+
 public class MySqlInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
-    private static final DockerImageName IMAGE = DockerImageName.parse("mysql:8.0.27");
+    private static final DockerImageName IMAGE = DockerImageName.parse("mysql:5.7");
     private static final MySQLContainer<?> MY_SQL_CONTAINER = new MySQLContainer<>(IMAGE);
 
     @Override
@@ -17,6 +19,7 @@ public class MySqlInitializer implements ApplicationContextInitializer<Configura
                 .withUsername("al")
                 .withPassword("aladmin")
                 .withDatabaseName("project_manager")
+                .withStartupTimeout(Duration.ofMinutes(5))
                 .start();
         TestPropertyValues.of(
                 "spring.datasource.url=" + MY_SQL_CONTAINER.getJdbcUrl(),
