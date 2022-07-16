@@ -280,3 +280,7 @@ owner_id BIGINT NOT NULL,
 task_id BIGINT NOT NULL,
 PRIMARY KEY (id)
 );
+
+create table project_manager.hibernate_sequence (
+    next_val bigint
+);
