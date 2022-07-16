@@ -162,7 +162,7 @@ ALTER TABLE project_manager.custom_project_role_custom_role_with_kanban_connecto
     ADD UNIQUE INDEX UK_custom_role_with_kanban_connectors_id(custom_role_with_kanban_connectors_id);
 
 ALTER TABLE project_manager.custom_project_role_custom_role_with_kanban_connectors
-    ADD CONSTRAINT connectors_to_custom_project_role FOREIGN KEY (custom_project_role_id)
+    ADD CONSTRAINT kanban_connectors_to_custom_project_role FOREIGN KEY (custom_project_role_id)
         REFERENCES project_manager.custom_project_role(id);
 
 ALTER TABLE project_manager.custom_project_role_custom_role_with_kanban_connectors
@@ -177,7 +177,7 @@ ALTER TABLE project_manager.custom_project_role_custom_role_with_document_connec
         REFERENCES project_manager.custom_role_with_document_connector(id);
 
 ALTER TABLE project_manager.custom_project_role_custom_role_with_document_connectors
-    ADD CONSTRAINT connectors_to_custom_project_role FOREIGN KEY (custom_project_role_id)
+    ADD CONSTRAINT document_connectors_to_custom_project_role FOREIGN KEY (custom_project_role_id)
         REFERENCES project_manager.custom_project_role(id);
 
 ALTER TABLE project_manager.custom_project_role
