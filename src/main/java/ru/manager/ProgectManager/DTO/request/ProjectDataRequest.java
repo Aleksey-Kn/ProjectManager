@@ -2,10 +2,12 @@ package ru.manager.ProgectManager.DTO.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
+import lombok.experimental.SuperBuilder;
 import org.springframework.validation.annotation.Validated;
 
 import javax.validation.constraints.NotBlank;
 
+@SuperBuilder
 @Getter
 @Validated
 @Schema(description = "Форма для отправки данных проекта")

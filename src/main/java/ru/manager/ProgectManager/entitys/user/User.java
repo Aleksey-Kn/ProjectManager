@@ -47,7 +47,7 @@ public class User implements UserDetails {
     @Lob
     private byte[] photo;
 
-    @ManyToMany
+    @ManyToMany(cascade = {CascadeType.MERGE, CascadeType.REFRESH})
     @JoinTable(name = "user_role", joinColumns = {@JoinColumn(name = "user_key")},
             inverseJoinColumns = {@JoinColumn(name = "role_key")})
     private Set<Role> userWithRoleConnectors;

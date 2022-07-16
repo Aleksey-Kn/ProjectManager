@@ -48,12 +48,12 @@ public class UserService {
     private LocalisedMessages localisedMessages;
     private ScheduledMailInfoRepository mailInfoRepository;
 
-    public boolean saveUser(RegisterUserDTO registerUserDTO) {
+    @Transactional
+    public Optional<User> saveUser(RegisterUserDTO registerUserDTO) {
         if (userRepository.findByUsername(registerUserDTO.getLogin()) == null) {
             if (userRepository.findByEmail(registerUserDTO.getEmail()).isPresent()) {
                 throw new EmailAlreadyUsedException();
             }
-
             Role role = roleRepository.findByName("ROLE_USER");
             User user = new User();
             user.setUsername(registerUserDTO.getLogin().trim());
@@ -79,9 +79,9 @@ public class UserService {
                 throw e;
             }
 
-            return true;
+            return Optional.of(user);
         } else {
-            return false;
+            return Optional.empty();
         }
     }
 

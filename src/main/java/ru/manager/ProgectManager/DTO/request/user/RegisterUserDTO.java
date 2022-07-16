@@ -2,6 +2,7 @@ package ru.manager.ProgectManager.DTO.request.user;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.experimental.SuperBuilder;
 import org.springframework.validation.annotation.Validated;
 import ru.manager.ProgectManager.enums.Locale;
 
@@ -10,6 +11,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
+@SuperBuilder
 @Data
 @Validated
 @Schema(description = "Запрос на создание пользователя")

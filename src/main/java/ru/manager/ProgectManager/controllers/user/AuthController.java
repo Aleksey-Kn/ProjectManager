@@ -66,7 +66,7 @@ public class AuthController {
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterUserDTO registerUserDTO, BindingResult bindingResult) {
         if (!bindingResult.hasErrors()) {
             try {
-                if (userService.saveUser(registerUserDTO)) {
+                if (userService.saveUser(registerUserDTO).isPresent()) {
                     return new ResponseEntity<>(HttpStatus.OK);
                 } else {
                     return new ResponseEntity<>(
