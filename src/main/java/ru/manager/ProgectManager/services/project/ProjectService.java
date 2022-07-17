@@ -3,6 +3,7 @@ package ru.manager.ProgectManager.services.project;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import ru.manager.ProgectManager.DTO.request.ProjectDataRequest;
 import ru.manager.ProgectManager.DTO.response.user.UserDataListResponse;
@@ -95,6 +96,7 @@ public class ProjectService {
         return false;
     }
 
+    @Transactional
     public boolean deleteProject(long id, String adminLogin) {
         User admin = userRepository.findByUsername(adminLogin);
         Project project = projectRepository.findById(id).orElseThrow();
@@ -148,6 +150,7 @@ public class ProjectService {
         }
     }
 
+    @Transactional
     public boolean canCreateOrDeleteResources(Project project, String userLogin) {
         return project.getConnectors().parallelStream()
                 .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN

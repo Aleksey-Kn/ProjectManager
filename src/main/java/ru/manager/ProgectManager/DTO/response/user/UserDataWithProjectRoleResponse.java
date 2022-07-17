@@ -1,6 +1,7 @@
 package ru.manager.ProgectManager.DTO.response.user;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import ru.manager.ProgectManager.entitys.user.User;
 
@@ -9,6 +10,7 @@ import java.time.ZoneOffset;
 
 @Getter
 @Schema(description = "Информация об участнике проекта")
+@EqualsAndHashCode
 public class UserDataWithProjectRoleResponse {
     @Schema(description = "Идентификатор пользователя")
     private final long id;

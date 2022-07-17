@@ -15,8 +15,12 @@ public class TestDataBuilder {
     }
 
     public static ProjectDataRequest buildProjectDto() {
+        return prepareProjectRequest().status("Status").name("Project").build();
+    }
+
+    public static ProjectDataRequest.ProjectDataRequestBuilder<?, ?> prepareProjectRequest() {
         return ProjectDataRequest.builder().deadline("2020-12-30T01:01:30").description("Description")
-                .startDate("2000-12-30T01:01:30").status("Status").name("Project").statusColor("red").build();
+                .startDate("2000-12-30T01:01:30").statusColor("red");
     }
 
     public static Project buildProject(final long id) {
