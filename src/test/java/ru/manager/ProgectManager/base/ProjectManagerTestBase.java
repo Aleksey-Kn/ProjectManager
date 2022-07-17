@@ -8,6 +8,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import ru.manager.ProgectManager.init.MySqlInitializer;
+import ru.manager.ProgectManager.repositories.ApproveActionTokenRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
 import ru.manager.ProgectManager.services.user.UserService;
 
@@ -26,7 +27,8 @@ public abstract class ProjectManagerTestBase {
     protected JdbcTemplate jdbcTemplate;
 
     @AfterEach
-    void removeUser() {
+    void removeUser(@Autowired ApproveActionTokenRepository approveActionTokenRepository) {
+        approveActionTokenRepository.deleteAll();
         userRepository.deleteAll();
     }
 }

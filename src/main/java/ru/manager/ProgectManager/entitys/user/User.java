@@ -52,10 +52,10 @@ public class User implements UserDetails {
             inverseJoinColumns = {@JoinColumn(name = "role_key")})
     private Set<Role> userWithRoleConnectors;
 
-    @OneToMany(mappedBy = "owner")
+    @OneToMany(mappedBy = "owner", cascade = CascadeType.REMOVE)
     private Set<WorkTrack> workTrackSet;
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE)
     private Set<UserWithProjectConnector> userWithProjectConnectors;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
