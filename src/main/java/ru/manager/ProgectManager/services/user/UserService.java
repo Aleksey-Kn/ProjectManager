@@ -6,16 +6,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import ru.manager.ProgectManager.DTO.UserDetailsDTO;
 import ru.manager.ProgectManager.DTO.request.user.AuthDto;
 import ru.manager.ProgectManager.DTO.request.user.LocaleRequest;
 import ru.manager.ProgectManager.DTO.request.user.RegisterUserDTO;
-import ru.manager.ProgectManager.DTO.response.ListPointerResources;
 import ru.manager.ProgectManager.DTO.response.PointerResource;
-import ru.manager.ProgectManager.DTO.response.project.ProjectListResponse;
 import ru.manager.ProgectManager.DTO.response.user.MyselfUserDataResponse;
 import ru.manager.ProgectManager.DTO.response.user.PublicAllDataResponse;
-import ru.manager.ProgectManager.DTO.response.user.VisitMarkListResponse;
 import ru.manager.ProgectManager.components.LocalisedMessages;
 import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.entitys.Project;
@@ -28,13 +24,12 @@ import ru.manager.ProgectManager.enums.ActionType;
 import ru.manager.ProgectManager.enums.Size;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.EmailAlreadyUsedException;
-import ru.manager.ProgectManager.exception.user.AccountIsLockedException;
-import ru.manager.ProgectManager.exception.user.AccountIsNotEnabledException;
+import ru.manager.ProgectManager.exception.IllegalActionException;
+import ru.manager.ProgectManager.exception.IncorrectStatusException;
 import ru.manager.ProgectManager.exception.user.IncorrectLoginOrPasswordException;
 import ru.manager.ProgectManager.exception.user.NoSuchUser;
 import ru.manager.ProgectManager.repositories.*;
 import ru.manager.ProgectManager.services.MailService;
-import ru.manager.ProgectManager.services.project.ProjectService;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -44,7 +39,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional(readOnly = true)
 public class UserService {
     private RoleRepository roleRepository;
     private UserRepository userRepository;
@@ -57,10 +51,9 @@ public class UserService {
     private RefreshTokenRepository refreshTokenRepository;
     private LocalisedMessages localisedMessages;
     private ScheduledMailInfoRepository mailInfoRepository;
-    private ProjectService projectService;
 
     @Transactional
-    public Optional<String> saveUser(RegisterUserDTO registerUserDTO) {
+    public Optional<User> saveUser(RegisterUserDTO registerUserDTO) {
         if (userRepository.findByUsername(registerUserDTO.getLogin()) == null) {
             if (userRepository.findByEmail(registerUserDTO.getEmail()).isPresent()) {
                 throw new EmailAlreadyUsedException();
@@ -90,22 +83,19 @@ public class UserService {
                 throw e;
             }
 
-            return Optional.of(user.getUsername());
+            return Optional.of(user);
         } else {
             return Optional.empty();
         }
     }
 
-    @Transactional
-    public void updateLastVisitAndZone(String username, int zoneId) {
-        User user = userRepository.findByUsername(username);
+    public void updateLastVisitAndZone(User user, int zoneId) {
         user.setLastVisit(LocalDateTime.now()
                 .toEpochSecond(ZoneOffset.systemDefault().getRules().getOffset(Instant.now())));
         user.setZoneId(zoneId);
         userRepository.save(user);
     }
 
-    @Transactional
     public Optional<String> enabledUser(String token) {
         Optional<ApproveActionToken> approveEnabledUser = approveActionTokenRepository.findById(token);
         if (approveEnabledUser.isPresent() && approveEnabledUser.get().getActionType() == ActionType.APPROVE_ENABLE) {
@@ -144,12 +134,8 @@ public class UserService {
         }
     }
 
-    public MyselfUserDataResponse findMyselfUserDataResponseByUsername(String username) {
+    public MyselfUserDataResponse findByUsername(String username) {
         return new MyselfUserDataResponse(userRepository.findByUsername(username));
-    }
-
-    public UserDetailsDTO findUserDetailsByUsername(String username) {
-        return new UserDetailsDTO(userRepository.findByUsername(username));
     }
 
     public PublicAllDataResponse findById(long id, String userLogin) {
@@ -157,14 +143,13 @@ public class UserService {
                 findZoneIdForThisUser(userLogin));
     }
 
-    @Transactional
-    public String login(AuthDto authDto) {
+    public Optional<User> login(AuthDto authDto) {
         Optional<User> user = findLoginOrEmail(authDto.getLogin());
         if (user.isPresent() && passwordEncoder.matches(authDto.getPassword(), user.get().getPassword())) {
             if(!user.get().isEnabled())
-                throw new AccountIsNotEnabledException();
+                throw new IllegalActionException();
             if(!user.get().isAccountNonLocked())
-                throw new AccountIsLockedException();
+                throw new IncorrectStatusException();
 
             user.get().setZoneId(Integer.parseInt(authDto.getZoneId()));
             user.get().setLastVisit(LocalDateTime.now()
@@ -178,13 +163,11 @@ public class UserService {
                 usedAddress.setIp(authDto.getIp());
                 user.get().getUsedAddresses().add(usedAddressRepository.save(usedAddress));
             }
-            return userRepository.save(user.get()).getUsername();
-        } else {
-            throw new IncorrectLoginOrPasswordException();
+            return Optional.of(userRepository.save(user.get()));
         }
+        return Optional.empty();
     }
 
-    @Transactional
     public void renameUser(String login, String newName) {
         User user = userRepository.findByUsername(login);
         user.setNickname(newName.trim());
@@ -203,14 +186,12 @@ public class UserService {
         }
     }
 
-    @Transactional
     public void updateLocale(LocaleRequest localeRequest, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         user.setLocale(localeRequest.getLocale());
         userRepository.save(user);
     }
 
-    @Transactional
     public void setPhoto(String login, MultipartFile multipartFile) throws IOException {
         User user = userRepository.findByUsername(login);
         if (user != null) {
@@ -223,27 +204,21 @@ public class UserService {
         return userRepository.findById(id).orElseThrow().getPhoto();
     }
 
-    public ProjectListResponse allProjectOfThisUser(String login) {
-        List<Project> projectList = userRepository.findByUsername(login).getUserWithProjectConnectors().stream()
+    public List<Project> allProjectOfThisUser(String login) {
+        return userRepository.findByUsername(login).getUserWithProjectConnectors().stream()
                 .map(UserWithProjectConnector::getProject)
                 .collect(Collectors.toList());
-        List<String> roles = new LinkedList<>();
-        projectList.forEach(p -> roles.add(projectService.findUserRoleName(login, p.getId())));
-        return new ProjectListResponse(projectList, roles, findZoneIdForThisUser(login));
     }
 
-    public ProjectListResponse projectsByNameOfThisUser(String inputName, String userLogin) {
+    public List<Project> projectsByNameOfThisUser(String inputName, String userLogin) {
         String name = inputName.trim().toLowerCase();
-        List<Project> projectList = userRepository.findByUsername(userLogin).getUserWithProjectConnectors().stream()
+        return userRepository.findByUsername(userLogin).getUserWithProjectConnectors().stream()
                 .map(UserWithProjectConnector::getProject)
                 .filter(p -> p.getName().toLowerCase().contains(name))
                 .collect(Collectors.toList());
-        List<String> roles = new LinkedList<>();
-        projectList.forEach(p -> roles.add(projectService.findUserRoleName(userLogin, p.getId())));
-        return new ProjectListResponse(projectList, roles, findZoneIdForThisUser(userLogin));
     }
 
-    public ListPointerResources availableResourceByName(String inputName, String userLogin) {
+    public List<PointerResource> availableResourceByName(String inputName, String userLogin) {
         String name = inputName.trim().toLowerCase();
         Set<UserWithProjectConnector> connectors = // получение подключений текущего пользователя
                 userRepository.findByUsername(userLogin).getUserWithProjectConnectors();
@@ -270,14 +245,14 @@ public class UserService {
                 .filter(section -> section.getName().toLowerCase().contains(name))
                 .map(PointerResource::new)
                 .collect(Collectors.toList()));
-        return new ListPointerResources(result);
+        return result;
     }
 
-    public VisitMarkListResponse lastVisits(String userLogin) {
-        return new VisitMarkListResponse(userRepository.findByUsername(userLogin).getVisitMarks().stream()
+    public List<VisitMark> lastVisits(String userLogin) {
+        return userRepository.findByUsername(userLogin).getVisitMarks().stream()
                 .sorted(Comparator.comparing(VisitMark::getSerialNumber))
                 .limit(20)
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList());
     }
 
     public int findZoneIdForThisUser(String userLogin) {
@@ -346,10 +321,5 @@ public class UserService {
     @Autowired
     public void setMailInfoRepository(ScheduledMailInfoRepository mailInfoRepository) {
         this.mailInfoRepository = mailInfoRepository;
-    }
-
-    @Autowired
-    public void setProjectService(ProjectService projectService) {
-        this.projectService = projectService;
     }
 }

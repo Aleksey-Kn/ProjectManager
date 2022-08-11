@@ -69,7 +69,7 @@ public class ProjectController {
 
     @Operation(summary = "Получение данных проекта")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "404", description = "Обращание к несуществующему проекту", content = {
+            @ApiResponse(responseCode = "404", description = "Обращение к несуществующему проекту", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
