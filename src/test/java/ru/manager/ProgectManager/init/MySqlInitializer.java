@@ -10,7 +10,7 @@ import java.time.Duration;
 
 public class MySqlInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
-    private static final DockerImageName IMAGE = DockerImageName.parse("mysql:5.7");
+    private static final DockerImageName IMAGE = DockerImageName.parse("mysql:8.0.27");
     private static final MySQLContainer<?> MY_SQL_CONTAINER = new MySQLContainer<>(IMAGE);
 
     @Override
