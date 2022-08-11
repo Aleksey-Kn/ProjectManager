@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.mail.MailException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import ru.manager.ProgectManager.DTO.UserDetailsDTO;
 import ru.manager.ProgectManager.DTO.request.RefreshTokenRequest;
 import ru.manager.ProgectManager.DTO.request.user.AuthDto;
 import ru.manager.ProgectManager.DTO.request.user.DropPassRequest;
@@ -22,11 +23,10 @@ import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.user.AuthResponse;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.components.authorization.JwtProvider;
-import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.exception.EmailAlreadyUsedException;
-import ru.manager.ProgectManager.exception.IllegalActionException;
-import ru.manager.ProgectManager.exception.IncorrectStatusException;
+import ru.manager.ProgectManager.exception.user.AccountIsLockedException;
+import ru.manager.ProgectManager.exception.user.AccountIsNotEnabledException;
 import ru.manager.ProgectManager.services.RefreshTokenService;
 import ru.manager.ProgectManager.services.user.UserService;
 
@@ -44,6 +44,36 @@ public class AuthController {
     private final RefreshTokenService refreshTokenService;
     private final ErrorResponseEntityConfigurator entityConfigurator;
 
+    @ExceptionHandler(MailException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse maliExceptionHandler() {
+        return new ErrorResponse(Errors.NO_SUCH_SPECIFIED_MAIL);
+    }
+
+    @ExceptionHandler(EmailAlreadyUsedException.class)
+    @ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
+    public ErrorResponse emailAlreadyUsedExceptionHandler() {
+        return new ErrorResponse(Errors.USER_WITH_THIS_EMAIL_ALREADY_CREATED);
+    }
+
+    @ExceptionHandler(DateTimeException.class)
+    @ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
+    public ErrorResponse dateTimeExceptionHandler() {
+        return new ErrorResponse(Errors.INCORRECT_TIME_ZONE_FORMAT);
+    }
+
+    @ExceptionHandler(AccountIsNotEnabledException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ErrorResponse accountIsNotEnabledExceptionHandler() {
+        return new ErrorResponse(Errors.ACCOUNT_IS_NOT_ENABLED);
+    }
+
+    @ExceptionHandler(AccountIsLockedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ErrorResponse accountIsLockedExceptionHandler() {
+        return new ErrorResponse(Errors.ACCOUNT_IS_LOCKED);
+    }
+
     @Operation(summary = "Регистрация")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "406",
@@ -60,23 +90,16 @@ public class AuthController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "200", description = "Пользователь успешно зарегестрирован")
+            @ApiResponse(responseCode = "200", description = "Пользователь успешно зарегистрирован")
     })
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterUserDTO registerUserDTO, BindingResult bindingResult) {
         if (!bindingResult.hasErrors()) {
-            try {
-                if (userService.saveUser(registerUserDTO).isPresent()) {
-                    return new ResponseEntity<>(HttpStatus.OK);
-                } else {
-                    return new ResponseEntity<>(
-                            new ErrorResponse(Errors.USER_WITH_THIS_LOGIN_ALREADY_CREATED), HttpStatus.NOT_ACCEPTABLE);
-                }
-            } catch (EmailAlreadyUsedException e) {
-                return new ResponseEntity<>(
-                        new ErrorResponse(Errors.USER_WITH_THIS_EMAIL_ALREADY_CREATED), HttpStatus.NOT_ACCEPTABLE);
-            } catch (MailException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_MAIL), HttpStatus.NOT_FOUND);
+            if (userService.saveUser(registerUserDTO).isPresent()) {
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(new ErrorResponse(Errors.USER_WITH_THIS_LOGIN_ALREADY_CREATED),
+                        HttpStatus.NOT_ACCEPTABLE);
             }
         } else {
             return entityConfigurator.createErrorResponse(bindingResult);
@@ -109,27 +132,14 @@ public class AuthController {
     })
     @PostMapping("/login")
     public ResponseEntity<?> auth(@RequestBody @Valid AuthDto request, BindingResult bindingResult) {
-        try {
-            if (bindingResult.hasErrors()) {
-                return entityConfigurator.createErrorResponse(bindingResult);
-            } else {
-                Optional<User> userEntity = userService.login(request);
-                if (userEntity.isPresent()) {
-                    AuthResponse authResponse = new AuthResponse();
-                    authResponse.setAccess(jwtProvider.generateToken(userEntity.get().getUsername()));
-                    authResponse.setRefresh(refreshTokenService.createToken(userEntity.get().getUsername()));
-                    return ResponseEntity.ok(authResponse);
-                } else {
-                    return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_LOGIN_OR_PASSWORD),
-                            HttpStatus.UNAUTHORIZED);
-                }
-            }
-        } catch (DateTimeException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_TIME_ZONE_FORMAT), HttpStatus.NOT_ACCEPTABLE);
-        } catch (IllegalActionException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.ACCOUNT_IS_NOT_ENABLED), HttpStatus.UNAUTHORIZED);
-        } catch (IncorrectStatusException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.ACCOUNT_IS_LOCKED), HttpStatus.FORBIDDEN);
+        if (bindingResult.hasErrors()) {
+            return entityConfigurator.createErrorResponse(bindingResult);
+        } else {
+            String username = userService.login(request);
+            AuthResponse authResponse = new AuthResponse();
+            authResponse.setAccess(jwtProvider.generateToken(username));
+            authResponse.setRefresh(refreshTokenService.createToken(username));
+            return ResponseEntity.ok(authResponse);
         }
     }
 
@@ -157,9 +167,9 @@ public class AuthController {
         } else {
             Optional<String> login = refreshTokenService.findLoginAndDropToken(tokenRequest.getRefresh());
             if (login.isPresent()) {
-                User user = userService.findByUsername(login.get()).orElseThrow();
+                UserDetailsDTO user = userService.findUserDetailsByUsername(login.get());
                 if (user.isAccountNonLocked()) {
-                    userService.updateLastVisitAndZone(user, tokenRequest.getZoneId());
+                    userService.updateLastVisitAndZone(user.getUsername(), tokenRequest.getZoneId());
                     AuthResponse authResponse = new AuthResponse();
                     authResponse.setRefresh(refreshTokenService.createToken(login.get()));
                     authResponse.setAccess(jwtProvider.generateToken(login.get()));
@@ -198,9 +208,9 @@ public class AuthController {
         } else {
             Optional<String> login = refreshTokenService.findLogin(tokenRequest.getRefresh());
             if (login.isPresent()) {
-                User user = userService.findByUsername(login.get()).orElseThrow();
+                UserDetailsDTO user = userService.findUserDetailsByUsername(login.get());
                 if (user.isAccountNonLocked()) {
-                    userService.updateLastVisitAndZone(user, tokenRequest.getZoneId());
+                    userService.updateLastVisitAndZone(user.getUsername(), tokenRequest.getZoneId());
                     AccessTokenResponse tokenResponse = new AccessTokenResponse(jwtProvider.generateToken(login.get()));
                     return ResponseEntity.ok(tokenResponse);
                 } else {

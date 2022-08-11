@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import ru.manager.ProgectManager.DTO.UserDetailsDTO;
 import ru.manager.ProgectManager.DTO.response.user.HasNewResponse;
 import ru.manager.ProgectManager.DTO.response.user.notification.NotificationsResponseList;
 import ru.manager.ProgectManager.entitys.user.User;
@@ -43,7 +44,7 @@ public class NotificationController {
     @GetMapping("/read")
     public NotificationsResponseList findAllNotifications(Principal principal) {
         String login = principal.getName();
-        User user = userService.findByUsername(login).orElseThrow();
+        UserDetailsDTO user = userService.findUserDetailsByUsername(login);
         NotificationsResponseList notificationsResponseList =
                 new NotificationsResponseList(user.getNotifications(), user.getZoneId());
         notificationService.readNotification(login);
