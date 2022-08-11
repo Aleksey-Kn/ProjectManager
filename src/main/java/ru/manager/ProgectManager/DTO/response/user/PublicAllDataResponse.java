@@ -24,15 +24,18 @@ public class PublicAllDataResponse {
             nullable = true)
     private final String lastVisit;
     @Schema(description = "Заметка о данном пользователе, составленная текущим пользователем", nullable = true)
-    private final String note;
+    private String note;
 
-    public PublicAllDataResponse(User user, int zoneId, Optional<Note> optionalNote){
+    public PublicAllDataResponse(User user, int zoneId){
         email = user.getEmail();
         nickname = user.getNickname();
         id = user.getUserId();
         photo = (user.getPhoto() == null? null: "https://api.veehark.xyz/photo/user?id=" + user.getUserId());
         lastVisit = (user.getLastVisit() == 0? null: LocalDateTime
                 .ofEpochSecond(user.getLastVisit(), 0, ZoneOffset.ofHours(zoneId)).toString());
-        note = optionalNote.map(Note::getText).orElse(null);
+    }
+
+    public void setNote(Optional<Note> noteObject) {
+        noteObject.ifPresent(value -> note = value.getText());
     }
 }

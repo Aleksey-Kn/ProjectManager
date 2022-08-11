@@ -10,6 +10,8 @@ import ru.manager.ProgectManager.DTO.request.user.AuthDto;
 import ru.manager.ProgectManager.DTO.request.user.LocaleRequest;
 import ru.manager.ProgectManager.DTO.request.user.RegisterUserDTO;
 import ru.manager.ProgectManager.DTO.response.PointerResource;
+import ru.manager.ProgectManager.DTO.response.user.MyselfUserDataResponse;
+import ru.manager.ProgectManager.DTO.response.user.PublicAllDataResponse;
 import ru.manager.ProgectManager.components.LocalisedMessages;
 import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.entitys.Project;
@@ -24,6 +26,8 @@ import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.EmailAlreadyUsedException;
 import ru.manager.ProgectManager.exception.IllegalActionException;
 import ru.manager.ProgectManager.exception.IncorrectStatusException;
+import ru.manager.ProgectManager.exception.user.IncorrectLoginOrPasswordException;
+import ru.manager.ProgectManager.exception.user.NoSuchUser;
 import ru.manager.ProgectManager.repositories.*;
 import ru.manager.ProgectManager.services.MailService;
 
@@ -130,12 +134,13 @@ public class UserService {
         }
     }
 
-    public Optional<User> findByUsername(String username) {
-        return Optional.ofNullable(userRepository.findByUsername(username));
+    public MyselfUserDataResponse findByUsername(String username) {
+        return new MyselfUserDataResponse(userRepository.findByUsername(username));
     }
 
-    public Optional<User> findById(long id) {
-        return userRepository.findById(id);
+    public PublicAllDataResponse findById(long id, String userLogin) {
+        return new PublicAllDataResponse(userRepository.findById(id).orElseThrow(NoSuchUser::new),
+                findZoneIdForThisUser(userLogin));
     }
 
     public Optional<User> login(AuthDto authDto) {
@@ -170,15 +175,14 @@ public class UserService {
     }
 
     @Transactional
-    public boolean updatePass(String oldPass, String newPass, String userLogin) {
+    public void updatePass(String oldPass, String newPass, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         if (passwordEncoder.matches(oldPass, user.getPassword())) {
             refreshTokenRepository.deleteAllByLogin(user.getUsername());
             user.setPassword(passwordEncoder.encode(newPass));
             userRepository.save(user);
-            return true;
         } else {
-            return false;
+            throw new IncorrectLoginOrPasswordException();
         }
     }
 

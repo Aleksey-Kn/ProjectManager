@@ -24,7 +24,6 @@ import ru.manager.ProgectManager.DTO.response.user.PublicAllDataResponse;
 import ru.manager.ProgectManager.DTO.response.user.VisitMarkListResponse;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.entitys.Project;
-import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.project.ProjectService;
 import ru.manager.ProgectManager.services.user.NoteService;
@@ -35,7 +34,6 @@ import java.io.IOException;
 import java.security.Principal;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -53,14 +51,13 @@ public class UserController {
                     schema = @Schema(implementation = MyselfUserDataResponse.class))
     })
     @GetMapping("/current")
-    public ResponseEntity<?> findMyselfAccountData(Principal principal) {
-        return ResponseEntity.ok(new MyselfUserDataResponse(userService.findByUsername(principal.getName())
-                .orElseThrow()));
+    public MyselfUserDataResponse findMyselfAccountData(Principal principal) {
+        return userService.findByUsername(principal.getName());
     }
 
     @Operation(summary = "Предоставление информации об указанном пользователе")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "404", description = "Обращение к неуществующему пользователю", content = {
+            @ApiResponse(responseCode = "404", description = "Обращение к несуществующему пользователю", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -71,17 +68,12 @@ public class UserController {
             })
     })
     @GetMapping("/other")
-    public ResponseEntity<?> findOtherAccountData(@RequestParam @Parameter(description = "Идентификатор искомого пользователя")
-                                                          long id, Principal principal) {
-        Optional<User> targetUser = userService.findById(id);
+    public PublicAllDataResponse findOtherAccountData(@RequestParam @Parameter(description = "Идентификатор искомого пользователя")
+                                                      long id, Principal principal) {
         String nowLogin = principal.getName();
-        if (targetUser.isPresent()) {
-            return ResponseEntity.ok(new PublicAllDataResponse(targetUser.get(),
-                    userService.findZoneIdForThisUser(nowLogin),
-                    noteService.findNote(id, nowLogin)));
-        } else {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER), HttpStatus.NOT_FOUND);
-        }
+        var targetUser = userService.findById(id, nowLogin);
+        targetUser.setNote(noteService.findNote(id, nowLogin));
+        return targetUser;
     }
 
     @Operation(summary = "Изменение отображаемого имени аккаунта")
@@ -125,11 +117,8 @@ public class UserController {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
-            if (userService.updatePass(request.getOldPass(), request.getNewPass(), principal.getName())) {
-                return new ResponseEntity<>(HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_LOGIN_OR_PASSWORD), HttpStatus.FORBIDDEN);
-            }
+            userService.updatePass(request.getOldPass(), request.getNewPass(), principal.getName());
+            return new ResponseEntity<>(HttpStatus.OK);
         }
     }
 
@@ -162,15 +151,11 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "Фотография успешно сжата и сохранена")
     })
     @PostMapping("/photo")
-    public ResponseEntity<?> setPhoto(@RequestParam("file") MultipartFile multipartFile, Principal principal) {
-        try {
-            userService.setPhoto(principal.getName(), multipartFile);
-            return new ResponseEntity<>(HttpStatus.OK);
-        } catch (IOException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.BAD_FILE), HttpStatus.BAD_REQUEST);
-        }
+    public void setPhoto(@RequestParam("file") MultipartFile multipartFile, Principal principal) throws IOException {
+        userService.setPhoto(principal.getName(), multipartFile);
     }
 
+    //TODO
     @Operation(summary = "Список проектов, доступных для данного пользователя")
     @ApiResponse(responseCode = "200", description = "Список проектов, доступных пользователю", content = {
             @Content(mediaType = "application/json",
