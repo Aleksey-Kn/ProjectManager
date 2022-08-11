@@ -20,13 +20,11 @@ import ru.manager.ProgectManager.DTO.response.kanban.KanbanListResponse;
 import ru.manager.ProgectManager.DTO.response.project.ProjectResponseWithFlag;
 import ru.manager.ProgectManager.DTO.response.user.MainUserDataListResponse;
 import ru.manager.ProgectManager.DTO.response.user.UserDataListResponse;
-import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.services.kanban.KanbanService;
-import ru.manager.ProgectManager.services.project.AccessProjectService;
 import ru.manager.ProgectManager.services.project.ProjectRoleService;
 import ru.manager.ProgectManager.services.project.ProjectService;
 import ru.manager.ProgectManager.services.user.UserService;
@@ -34,7 +32,6 @@ import ru.manager.ProgectManager.services.user.UserService;
 import javax.validation.Valid;
 import java.io.IOException;
 import java.security.Principal;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 
@@ -45,7 +42,6 @@ import java.util.Set;
 public class ProjectController {
     private final ProjectService projectService;
     private final KanbanService kanbanService;
-    private final AccessProjectService accessProjectService;
     private final UserService userService;
     private final ProjectRoleService roleService;
 
@@ -67,8 +63,7 @@ public class ProjectController {
             return new ResponseEntity<>(
                     new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS), HttpStatus.BAD_REQUEST);
         } else {
-            return ResponseEntity.ok(
-                    new IdResponse(projectService.addProject(request, principal.getName()).getId()));
+            return ResponseEntity.ok(projectService.addProject(request, principal.getName()));
         }
     }
 
@@ -85,21 +80,8 @@ public class ProjectController {
             })
     })
     @GetMapping("/project")
-    public ResponseEntity<?> findProject(@RequestParam long id, Principal principal) {
-        try {
-            String login = principal.getName();
-            Optional<Project> project = projectService.findProject(id, login);
-            if (project.isPresent()) {
-                return ResponseEntity.ok(new ProjectResponseWithFlag(project.get(),
-                        accessProjectService.findUserRoleName(login, project.get().getId()),
-                        projectService.canCreateOrDeleteResources(project.get(), login)));
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT),
-                    HttpStatus.NOT_FOUND);
-        }
+    public ProjectResponseWithFlag findProject(@RequestParam long id, Principal principal) {
+        return projectService.findProject(id, principal.getName());
     }
 
     @Operation(summary = "Изменение проекта", description = "Установление нового имени проекта")
@@ -122,15 +104,8 @@ public class ProjectController {
             return new ResponseEntity<>(
                     new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS), HttpStatus.BAD_REQUEST);
         } else {
-            try {
-                if (projectService.setData(id, request, principal.getName()))
-                    return new ResponseEntity<>(HttpStatus.OK);
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(
-                        new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT),
-                        HttpStatus.NOT_FOUND);
-            }
+            projectService.setData(id, request, principal.getName());
+            return new ResponseEntity<>(HttpStatus.OK);
         }
     }
 
@@ -148,18 +123,11 @@ public class ProjectController {
             @ApiResponse(responseCode = "200", description = "Картинка сжата и сохранена")
     })
     @PostMapping("/project/photo")
-    public ResponseEntity<?> setPhoto(@RequestParam long id, @ModelAttribute PhotoDTO photoDTO, Principal principal) {
-        try {
-            if (projectService.setPhoto(id, photoDTO.getFile(), principal.getName())) {
-                return new ResponseEntity<>(HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (IOException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.BAD_FILE), HttpStatus.BAD_REQUEST);
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
-        }
+    public ResponseEntity<Void> setPhoto(@RequestParam long id, @ModelAttribute PhotoDTO photoDTO, Principal principal)
+            throws IOException {
+        projectService.setPhoto(id, photoDTO.getFile(), principal.getName());
+        return new ResponseEntity<>(HttpStatus.OK);
+
     }
 
     @Operation(summary = "Получение списка канбанов проекта",
@@ -179,16 +147,12 @@ public class ProjectController {
     @GetMapping("/project/kanbans")
     public ResponseEntity<?> allKanbanOfThisUser(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
                                                  Principal principal) {
-        try {
-            String login = principal.getName();
-            Optional<Set<Kanban>> kanbans = kanbanService.findAllKanban(id, login);
-            if (kanbans.isPresent()) {
-                return ResponseEntity.ok(new KanbanListResponse(kanbans.get(), userService.findZoneIdForThisUser(login)));
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
+        String login = principal.getName();
+        Optional<Set<Kanban>> kanbans = kanbanService.findAllKanban(id, login);
+        if (kanbans.isPresent()) {
+            return ResponseEntity.ok(new KanbanListResponse(kanbans.get(), userService.findZoneIdForThisUser(login)));
+        } else {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
     }
 
@@ -209,17 +173,14 @@ public class ProjectController {
     @GetMapping("/project/kanbans_by_name")
     public ResponseEntity<?> allKanbanOfThisUser(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
                                                  @RequestParam String name, Principal principal) {
-        try {
-            String login = principal.getName();
-            Optional<Set<Kanban>> kanbans = kanbanService.findKanbansByName(id, name, login);
-            if (kanbans.isPresent()) {
-                return ResponseEntity.ok(new KanbanListResponse(kanbans.get(), userService.findZoneIdForThisUser(login)));
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
+        String login = principal.getName();
+        Optional<Set<Kanban>> kanbans = kanbanService.findKanbansByName(id, name, login);
+        if (kanbans.isPresent()) {
+            return ResponseEntity.ok(new KanbanListResponse(kanbans.get(), userService.findZoneIdForThisUser(login)));
+        } else {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
+
     }
 
     @Operation(summary = "Получение списка участников проекта")
@@ -235,19 +196,9 @@ public class ProjectController {
             })
     })
     @GetMapping("/project/users")
-    public ResponseEntity<?> allParticipants(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
-                                             Principal principal) {
-        try {
-            Optional<UserDataListResponse> response = projectService
-                    .findAllMembers(id, principal.getName());
-            if (response.isPresent()) {
-                return ResponseEntity.ok(response.get());
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
-        }
+    public UserDataListResponse allParticipants(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
+                                                Principal principal) {
+        return projectService.findAllMembers(id, principal.getName());
     }
 
     @Operation(summary = "Поиск участников проекта")
@@ -263,20 +214,10 @@ public class ProjectController {
             })
     })
     @GetMapping("/project/users/find")
-    public ResponseEntity<?> findMembers(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
-                                         @RequestParam @Parameter(description = "Имя или почта пользователя") String name,
-                                         Principal principal) {
-        try {
-            Optional<UserDataListResponse> response = projectService
-                    .findMembersByNicknameOrEmail(id, name, principal.getName());
-            if (response.isPresent()) {
-                return ResponseEntity.ok(response.get());
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
-        }
+    public UserDataListResponse findMembers(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
+                                            @RequestParam @Parameter(description = "Имя или почта пользователя") String name,
+                                            Principal principal) {
+        return projectService.findMembersByNicknameOrEmail(id, name, principal.getName());
     }
 
     @Operation(summary = "Получение списка участников проекта с указанной ролью")
@@ -296,19 +237,15 @@ public class ProjectController {
                                                     @RequestParam(required = false) long roleId,
                                                     @RequestParam
                                                     @Parameter(description = "Никнейм или почта искомого пользователя")
-                                                            String name,
+                                                    String name,
                                                     Principal principal) {
-        try {
-            String login = principal.getName();
-            int zoneId = userService.findZoneIdForThisUser(login);
-            Optional<Set<User>> response = roleService.findUsersOnRole(type, roleId, projectId, name, login);
-            if (response.isPresent()) {
-                return ResponseEntity.ok(new MainUserDataListResponse(response.get(), zoneId));
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
+        String login = principal.getName();
+        int zoneId = userService.findZoneIdForThisUser(login);
+        Optional<Set<User>> response = roleService.findUsersOnRole(type, roleId, projectId, name, login);
+        if (response.isPresent()) {
+            return ResponseEntity.ok(new MainUserDataListResponse(response.get(), zoneId));
+        } else {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
     }
 
@@ -323,14 +260,7 @@ public class ProjectController {
     })
     @DeleteMapping("/project")
     public ResponseEntity<?> deleteProject(@RequestParam long id, Principal principal) {
-        try {
-            if (projectService.deleteProject(id, principal.getName())) {
-                return new ResponseEntity<>(HttpStatus.OK);
-            }
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT),
-                    HttpStatus.NOT_FOUND);
-        }
+        projectService.deleteProject(id, principal.getName());
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 }

@@ -1,9 +1,13 @@
 package ru.manager.ProgectManager.DTO.response.project;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.experimental.SuperBuilder;
 import ru.manager.ProgectManager.entitys.Project;
 
+@EqualsAndHashCode
+@SuperBuilder
 @Getter
 @Schema(description = "Сущность проекта c показателем возможности создания и удаления ресурсов текущим пользователем")
 public class ProjectResponseWithFlag {

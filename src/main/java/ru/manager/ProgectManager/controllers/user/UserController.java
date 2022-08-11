@@ -26,7 +26,7 @@ import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.Errors;
-import ru.manager.ProgectManager.services.project.AccessProjectService;
+import ru.manager.ProgectManager.services.project.ProjectService;
 import ru.manager.ProgectManager.services.user.NoteService;
 import ru.manager.ProgectManager.services.user.UserService;
 
@@ -43,7 +43,7 @@ import java.util.Optional;
 @Tag(name = "Управление аккаунтом пользователя")
 public class UserController {
     private final UserService userService;
-    private final AccessProjectService accessProjectService;
+    private final ProjectService projectService;
     private final ErrorResponseEntityConfigurator entityConfigurator;
     private final NoteService noteService;
 
@@ -181,7 +181,7 @@ public class UserController {
         String login = principal.getName();
         List<Project> projectList = userService.allProjectOfThisUser(login);
         List<String> roles = new LinkedList<>();
-        projectList.forEach(p -> roles.add(accessProjectService.findUserRoleName(login, p.getId())));
+        projectList.forEach(p -> roles.add(projectService.findUserRoleName(login, p.getId())));
         return new ProjectListResponse(projectList, roles, userService.findZoneIdForThisUser(login));
     }
 
@@ -196,7 +196,7 @@ public class UserController {
         String login = principal.getName();
         List<Project> projects = userService.projectsByNameOfThisUser(name, login);
         List<String> roles = new LinkedList<>();
-        projects.forEach(p -> roles.add(accessProjectService.findUserRoleName(login, p.getId())));
+        projects.forEach(p -> roles.add(projectService.findUserRoleName(login, p.getId())));
         return new ProjectListResponse(projects, roles, userService.findZoneIdForThisUser(login));
     }
 

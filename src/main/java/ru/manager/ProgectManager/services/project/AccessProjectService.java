@@ -185,16 +185,6 @@ public class AccessProjectService {
                         .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))));
     }
 
-    public String findUserRoleName(String userLogin, long projectId) {
-        User user = userRepository.findByUsername(userLogin);
-        Project project = projectRepository.findById(projectId).orElseThrow();
-        UserWithProjectConnector connector = project.getConnectors().stream()
-                .filter(c -> c.getUser().equals(user))
-                .findAny().orElseThrow();
-        return (connector.getRoleType() == TypeRoleProject.CUSTOM_ROLE ? connector.getCustomProjectRole().getName() :
-                connector.getRoleType().name());
-    }
-
     private boolean isAdmin(Project project, User user) {
         return user.getUserWithProjectConnectors().stream()
                 .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)

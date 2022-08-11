@@ -2,7 +2,7 @@ package ru.manager.ProgectManager.support;
 
 import ru.manager.ProgectManager.DTO.request.ProjectDataRequest;
 import ru.manager.ProgectManager.DTO.request.user.RegisterUserDTO;
-import ru.manager.ProgectManager.entitys.Project;
+import ru.manager.ProgectManager.DTO.response.project.ProjectResponseWithFlag;
 import ru.manager.ProgectManager.enums.Locale;
 
 public class TestDataBuilder {
@@ -14,24 +14,32 @@ public class TestDataBuilder {
         return RegisterUserDTO.builder().locale(Locale.en).zoneId("+7").password("1234").url("url");
     }
 
-    public static ProjectDataRequest buildProjectDto() {
-        return prepareProjectRequest().status("Status").name("Project").build();
+    public static ProjectDataRequest buildProjectDataRequest() {
+        return prepareProjectDataRequest().status("Status").name("Project").build();
     }
 
-    public static ProjectDataRequest.ProjectDataRequestBuilder<?, ?> prepareProjectRequest() {
+    public static ProjectDataRequest.ProjectDataRequestBuilder<?, ?> prepareProjectDataRequest() {
         return ProjectDataRequest.builder().deadline("2020-12-30T01:01:30").description("Description")
                 .startDate("2000-12-30T01:01:30").statusColor("red");
     }
 
-    public static Project buildProject(final long id) {
-        Project project = new Project();
-        project.setDeadline("2020-12-30T01:01:30");
-        project.setDescription("Description");
-        project.setStartDate("2000-12-30T01:01:30");
-        project.setStatus("Status");
-        project.setName("Project");
-        project.setStatusColor("red");
-        project.setId(id);
-        return project;
+    public static ProjectResponseWithFlag buildProjectResponseWithFlag(final long id) {
+        return prepareProjectResponseWithFlag(id)
+                .status("Status")
+                .name("Project")
+                .roleName("ADMIN")
+                .canCreateOrDelete(true)
+                .build();
+    }
+
+    public static ProjectResponseWithFlag.ProjectResponseWithFlagBuilder<?, ?> prepareProjectResponseWithFlag(final long id) {
+        return ProjectResponseWithFlag.builder()
+                .deadline("2020-12-30T01:01:30")
+                .description("Description")
+                .startDate("2000-12-30T01:01:30")
+                .status("Status")
+                .name("Project")
+                .statusColor("red")
+                .id(id);
     }
 }
