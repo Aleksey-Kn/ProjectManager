@@ -20,7 +20,6 @@ import ru.manager.ProgectManager.DTO.response.kanban.KanbanListResponse;
 import ru.manager.ProgectManager.DTO.response.project.ProjectResponseWithFlag;
 import ru.manager.ProgectManager.DTO.response.user.MainUserDataListResponse;
 import ru.manager.ProgectManager.DTO.response.user.UserDataListResponse;
-import ru.manager.ProgectManager.DTO.response.user.UserDataWithProjectRoleResponse;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.Errors;
@@ -70,7 +69,7 @@ public class ProjectController {
 
     @Operation(summary = "Получение данных проекта")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "404", description = "Обращение к несуществующему проекту", content = {
+            @ApiResponse(responseCode = "404", description = "Обращание к несуществующему проекту", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -193,13 +192,13 @@ public class ProjectController {
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к указанному проекту"),
             @ApiResponse(responseCode = "200", description = "Список участников проекта", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = UserDataWithProjectRoleResponse[].class))
+                            schema = @Schema(implementation = UserDataListResponse.class))
             })
     })
     @GetMapping("/project/users")
-    public UserDataWithProjectRoleResponse[] allParticipants(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
-                                                           Principal principal) {
-        return projectService.findAllMembers(id, principal.getName()).toArray(UserDataWithProjectRoleResponse[]::new);
+    public UserDataListResponse allParticipants(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
+                                                Principal principal) {
+        return projectService.findAllMembers(id, principal.getName());
     }
 
     @Operation(summary = "Поиск участников проекта")
@@ -211,15 +210,14 @@ public class ProjectController {
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к указанному проекту"),
             @ApiResponse(responseCode = "200", description = "Список найденных участников проекта", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = UserDataWithProjectRoleResponse[].class))
+                            schema = @Schema(implementation = UserDataListResponse.class))
             })
     })
     @GetMapping("/project/users/find")
-    public UserDataWithProjectRoleResponse[] findMembers(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
+    public UserDataListResponse findMembers(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
                                             @RequestParam @Parameter(description = "Имя или почта пользователя") String name,
                                             Principal principal) {
-        return projectService.findMembersByNicknameOrEmail(id, name, principal.getName())
-                .toArray(UserDataWithProjectRoleResponse[]::new);
+        return projectService.findMembersByNicknameOrEmail(id, name, principal.getName());
     }
 
     @Operation(summary = "Получение списка участников проекта с указанной ролью")

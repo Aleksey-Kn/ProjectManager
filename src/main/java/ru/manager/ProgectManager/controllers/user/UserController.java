@@ -23,13 +23,19 @@ import ru.manager.ProgectManager.DTO.response.user.MyselfUserDataResponse;
 import ru.manager.ProgectManager.DTO.response.user.PublicAllDataResponse;
 import ru.manager.ProgectManager.DTO.response.user.VisitMarkListResponse;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
+import ru.manager.ProgectManager.entitys.Project;
+import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.Errors;
+import ru.manager.ProgectManager.services.project.ProjectService;
 import ru.manager.ProgectManager.services.user.NoteService;
 import ru.manager.ProgectManager.services.user.UserService;
 
 import javax.validation.Valid;
 import java.io.IOException;
 import java.security.Principal;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -37,6 +43,7 @@ import java.security.Principal;
 @Tag(name = "Управление аккаунтом пользователя")
 public class UserController {
     private final UserService userService;
+    private final ProjectService projectService;
     private final ErrorResponseEntityConfigurator entityConfigurator;
     private final NoteService noteService;
 
@@ -46,13 +53,14 @@ public class UserController {
                     schema = @Schema(implementation = MyselfUserDataResponse.class))
     })
     @GetMapping("/current")
-    public MyselfUserDataResponse findMyselfAccountData(Principal principal) {
-        return userService.findMyselfUserDataResponseByUsername(principal.getName());
+    public ResponseEntity<?> findMyselfAccountData(Principal principal) {
+        return ResponseEntity.ok(new MyselfUserDataResponse(userService.findByUsername(principal.getName())
+                .orElseThrow()));
     }
 
     @Operation(summary = "Предоставление информации об указанном пользователе")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "404", description = "Обращение к несуществующему пользователю", content = {
+            @ApiResponse(responseCode = "404", description = "Обращение к неуществующему пользователю", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -63,12 +71,17 @@ public class UserController {
             })
     })
     @GetMapping("/other")
-    public PublicAllDataResponse findOtherAccountData(@RequestParam @Parameter(description = "Идентификатор искомого пользователя")
-                                                      long id, Principal principal) {
+    public ResponseEntity<?> findOtherAccountData(@RequestParam @Parameter(description = "Идентификатор искомого пользователя")
+                                                          long id, Principal principal) {
+        Optional<User> targetUser = userService.findById(id);
         String nowLogin = principal.getName();
-        var targetUser = userService.findById(id, nowLogin);
-        targetUser.setNote(noteService.findNote(id, nowLogin));
-        return targetUser;
+        if (targetUser.isPresent()) {
+            return ResponseEntity.ok(new PublicAllDataResponse(targetUser.get(),
+                    userService.findZoneIdForThisUser(nowLogin),
+                    noteService.findNote(id, nowLogin)));
+        } else {
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER), HttpStatus.NOT_FOUND);
+        }
     }
 
     @Operation(summary = "Изменение отображаемого имени аккаунта")
@@ -112,8 +125,11 @@ public class UserController {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
-            userService.updatePass(request.getOldPass(), request.getNewPass(), principal.getName());
-            return new ResponseEntity<>(HttpStatus.OK);
+            if (userService.updatePass(request.getOldPass(), request.getNewPass(), principal.getName())) {
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_LOGIN_OR_PASSWORD), HttpStatus.FORBIDDEN);
+            }
         }
     }
 
@@ -146,8 +162,13 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "Фотография успешно сжата и сохранена")
     })
     @PostMapping("/photo")
-    public void setPhoto(@RequestParam("file") MultipartFile multipartFile, Principal principal) throws IOException {
-        userService.setPhoto(principal.getName(), multipartFile);
+    public ResponseEntity<?> setPhoto(@RequestParam("file") MultipartFile multipartFile, Principal principal) {
+        try {
+            userService.setPhoto(principal.getName(), multipartFile);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (IOException e) {
+            return new ResponseEntity<>(new ErrorResponse(Errors.BAD_FILE), HttpStatus.BAD_REQUEST);
+        }
     }
 
     @Operation(summary = "Список проектов, доступных для данного пользователя")
@@ -157,7 +178,11 @@ public class UserController {
     })
     @GetMapping("/projects")
     public ProjectListResponse getUserProjects(Principal principal) {
-        return userService.allProjectOfThisUser(principal.getName());
+        String login = principal.getName();
+        List<Project> projectList = userService.allProjectOfThisUser(login);
+        List<String> roles = new LinkedList<>();
+        projectList.forEach(p -> roles.add(projectService.findUserRoleName(login, p.getId())));
+        return new ProjectListResponse(projectList, roles, userService.findZoneIdForThisUser(login));
     }
 
     @Operation(summary = "Результат поиска проектов по имени")
@@ -168,7 +193,11 @@ public class UserController {
             })
     @GetMapping("/projects_by_name")
     public ProjectListResponse findProjectsByName(@RequestParam String name, Principal principal) {
-        return userService.projectsByNameOfThisUser(name, principal.getName());
+        String login = principal.getName();
+        List<Project> projects = userService.projectsByNameOfThisUser(name, login);
+        List<String> roles = new LinkedList<>();
+        projects.forEach(p -> roles.add(projectService.findUserRoleName(login, p.getId())));
+        return new ProjectListResponse(projects, roles, userService.findZoneIdForThisUser(login));
     }
 
     @Operation(summary = "Результат поиска ресурсов по имени")
@@ -179,7 +208,7 @@ public class UserController {
             })
     @GetMapping("/resources")
     public ListPointerResources findResourcesByName(@RequestParam String name, Principal principal) {
-        return userService.availableResourceByName(name, principal.getName());
+        return new ListPointerResources(userService.availableResourceByName(name, principal.getName()));
     }
 
     @Operation(summary = "Список последних посещённых ресурсов пользователем")
@@ -190,6 +219,6 @@ public class UserController {
             })
     @GetMapping("/lasts")
     public VisitMarkListResponse findLastSee(Principal principal) {
-        return userService.lastVisits(principal.getName());
+        return new VisitMarkListResponse(userService.lastVisits(principal.getName()));
     }
 }

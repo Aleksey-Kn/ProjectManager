@@ -25,7 +25,6 @@ import ru.manager.ProgectManager.repositories.UserWithProjectConnectorRepository
 import ru.manager.ProgectManager.services.user.VisitMarkUpdater;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -116,30 +115,30 @@ public class ProjectService {
         } else throw new ForbiddenException();
     }
 
-    public List<UserDataWithProjectRoleResponse> findAllMembers(long id, String userLogin) {
+    public UserDataListResponse findAllMembers(long id, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(id).orElseThrow(NoSuchProjectException::new);
         if (project.getConnectors().stream().map(UserWithProjectConnector::getUser).anyMatch(u -> u.equals(user))) {
             int zoneId = user.getZoneId();
-            return project.getConnectors().stream()
+            return new UserDataListResponse(project.getConnectors().stream()
                     .map(connector -> new UserDataWithProjectRoleResponse(connector.getUser(),
                             (connector.getRoleType() == TypeRoleProject.CUSTOM_ROLE
                                     ? connector.getCustomProjectRole().getName()
                                     : connector.getRoleType().name()),
                             zoneId))
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toList()));
         } else {
             throw new ForbiddenException();
         }
     }
 
-    public List<UserDataWithProjectRoleResponse> findMembersByNicknameOrEmail(long id, String nicknameOrEmail, String userLogin) {
+    public UserDataListResponse findMembersByNicknameOrEmail(long id, String nicknameOrEmail, String userLogin) {
         String name = nicknameOrEmail.toLowerCase().trim();
         User user = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(id).orElseThrow(NoSuchProjectException::new);
         if (project.getConnectors().stream().map(UserWithProjectConnector::getUser).anyMatch(u -> u.equals(user))) {
             int zoneId = user.getZoneId();
-            return project.getConnectors().stream()
+            return new UserDataListResponse(project.getConnectors().stream()
                     .filter(connector -> connector.getUser().getNickname().toLowerCase().contains(name)
                             || connector.getUser().getEmail().toLowerCase().contains(name))
                     .map(connector -> new UserDataWithProjectRoleResponse(connector.getUser(),
@@ -147,7 +146,7 @@ public class ProjectService {
                                     ? connector.getCustomProjectRole().getName()
                                     : connector.getRoleType().name()),
                             zoneId))
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toList()));
         } else {
             throw new ForbiddenException();
         }
