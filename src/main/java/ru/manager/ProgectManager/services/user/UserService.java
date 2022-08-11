@@ -96,6 +96,7 @@ public class UserService {
         }
     }
 
+    @Transactional
     public void updateLastVisitAndZone(String username, int zoneId) {
         User user = userRepository.findByUsername(username);
         user.setLastVisit(LocalDateTime.now()
@@ -104,6 +105,7 @@ public class UserService {
         userRepository.save(user);
     }
 
+    @Transactional
     public Optional<String> enabledUser(String token) {
         Optional<ApproveActionToken> approveEnabledUser = approveActionTokenRepository.findById(token);
         if (approveEnabledUser.isPresent() && approveEnabledUser.get().getActionType() == ActionType.APPROVE_ENABLE) {
@@ -155,6 +157,7 @@ public class UserService {
                 findZoneIdForThisUser(userLogin));
     }
 
+    @Transactional
     public String login(AuthDto authDto) {
         Optional<User> user = findLoginOrEmail(authDto.getLogin());
         if (user.isPresent() && passwordEncoder.matches(authDto.getPassword(), user.get().getPassword())) {
@@ -181,6 +184,7 @@ public class UserService {
         }
     }
 
+    @Transactional
     public void renameUser(String login, String newName) {
         User user = userRepository.findByUsername(login);
         user.setNickname(newName.trim());
@@ -199,12 +203,14 @@ public class UserService {
         }
     }
 
+    @Transactional
     public void updateLocale(LocaleRequest localeRequest, String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         user.setLocale(localeRequest.getLocale());
         userRepository.save(user);
     }
 
+    @Transactional
     public void setPhoto(String login, MultipartFile multipartFile) throws IOException {
         User user = userRepository.findByUsername(login);
         if (user != null) {
