@@ -39,7 +39,7 @@ public class AdviceController {
     }
 
     @ExceptionHandler(IncorrectLoginOrPasswordException.class)
-    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ErrorResponse incorrectLoginOrPasswordException() {
         return new ErrorResponse(Errors.INCORRECT_LOGIN_OR_PASSWORD);
     }

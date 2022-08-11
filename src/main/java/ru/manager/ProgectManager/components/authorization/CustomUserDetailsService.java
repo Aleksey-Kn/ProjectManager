@@ -21,6 +21,6 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Transactional(readOnly = true)
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return new UserDetailsDTO(userService.findByUsername(username).orElseThrow());
+        return userService.findUserDetailsByUsername(username);
     }
 }

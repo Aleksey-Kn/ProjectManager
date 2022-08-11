@@ -4,14 +4,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import ru.manager.ProgectManager.DTO.request.ProjectDataRequest;
 import ru.manager.ProgectManager.DTO.response.project.ProjectResponseWithFlag;
-import ru.manager.ProgectManager.DTO.response.user.UserDataListResponse;
 import ru.manager.ProgectManager.DTO.response.user.UserDataWithProjectRoleResponse;
 import ru.manager.ProgectManager.base.ProjectManagerTestBase;
-import ru.manager.ProgectManager.entitys.user.User;
-import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.support.TestDataBuilder;
-
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -21,7 +16,7 @@ class ProjectServiceTest extends ProjectManagerTestBase {
 
     @Test
     void findProject() {
-        String login = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow().getUsername();
+        String login = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow();
         long id = projectService.addProject(TestDataBuilder.buildProjectDataRequest(), login).getId();
 
         final var response = projectService.findProject(id, login);
@@ -32,7 +27,7 @@ class ProjectServiceTest extends ProjectManagerTestBase {
 
     @Test
     void addProject() {
-        String login = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow().getUsername();
+        String login = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow();
         assertThat(projectService.addProject(TestDataBuilder.buildProjectDataRequest(), login))
                 .usingRecursiveComparison()
                 .ignoringFields("id")
@@ -41,7 +36,7 @@ class ProjectServiceTest extends ProjectManagerTestBase {
 
     @Test
     void setData() {
-        String login = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow().getUsername();
+        String login = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow();
         long id = projectService.addProject(TestDataBuilder.buildProjectDataRequest(), login).getId();
         ProjectDataRequest updatedData = TestDataBuilder.buildProjectDataRequest();
         ProjectResponseWithFlag targetProject = TestDataBuilder.buildProjectResponseWithFlag(id);
@@ -52,7 +47,7 @@ class ProjectServiceTest extends ProjectManagerTestBase {
 
     @Test
     void deleteProject() {
-        String login = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow().getUsername();
+        String login = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow();
         long id = projectService.addProject(TestDataBuilder.buildProjectDataRequest(), login).getId();
 
         projectService.deleteProject(id, login);
@@ -62,29 +57,27 @@ class ProjectServiceTest extends ProjectManagerTestBase {
 
     @Test
     void findAllMembers() {
-        User first = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow();
-        UserDataWithProjectRoleResponse response =
-                new UserDataWithProjectRoleResponse(first, TypeRoleProject.ADMIN.name(), 7);
-        long id = projectService.addProject(TestDataBuilder.buildProjectDataRequest(), first.getUsername()).getId();
+        String first = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow();
+        long id = projectService.addProject(TestDataBuilder.buildProjectDataRequest(), first).getId();
 
-        assertThat(projectService.findAllMembers(id, first.getUsername()))
-                .isEqualTo(new UserDataListResponse(List.of(response)));
+        assertThat(projectService.findAllMembers(id, first))
+                .extracting(UserDataWithProjectRoleResponse::getNickname)
+                .isEqualTo(first);
     }
 
     @Test
     void findMembersByNicknameOrEmail() {
-        User first = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow();
-        UserDataWithProjectRoleResponse response =
-                new UserDataWithProjectRoleResponse(first, TypeRoleProject.ADMIN.name(), 7);
-        long id = projectService.addProject(TestDataBuilder.buildProjectDataRequest(), first.getUsername()).getId();
+        String first = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow();
+        long id = projectService.addProject(TestDataBuilder.buildProjectDataRequest(), first).getId();
 
-        assertThat(projectService.findMembersByNicknameOrEmail(id, "User", first.getUsername()))
-                .isEqualTo(new UserDataListResponse(List.of(response)));
+        assertThat(projectService.findMembersByNicknameOrEmail(id, "User", first))
+                .extracting(UserDataWithProjectRoleResponse::getNickname)
+                .isEqualTo(first);
     }
 
     @Test
     void canCreateOrDeleteResources() {
-        String login = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow().getUsername();
+        String login = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow();
         long id = projectService.addProject(TestDataBuilder.buildProjectDataRequest(), login).getId();
 
         assertThat(projectService.canCreateOrDeleteResources(id, login))

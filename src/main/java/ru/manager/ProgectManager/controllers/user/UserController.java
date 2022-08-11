@@ -23,17 +23,13 @@ import ru.manager.ProgectManager.DTO.response.user.MyselfUserDataResponse;
 import ru.manager.ProgectManager.DTO.response.user.PublicAllDataResponse;
 import ru.manager.ProgectManager.DTO.response.user.VisitMarkListResponse;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
-import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.enums.Errors;
-import ru.manager.ProgectManager.services.project.ProjectService;
 import ru.manager.ProgectManager.services.user.NoteService;
 import ru.manager.ProgectManager.services.user.UserService;
 
 import javax.validation.Valid;
 import java.io.IOException;
 import java.security.Principal;
-import java.util.LinkedList;
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -41,7 +37,6 @@ import java.util.List;
 @Tag(name = "Управление аккаунтом пользователя")
 public class UserController {
     private final UserService userService;
-    private final ProjectService projectService;
     private final ErrorResponseEntityConfigurator entityConfigurator;
     private final NoteService noteService;
 
@@ -52,7 +47,7 @@ public class UserController {
     })
     @GetMapping("/current")
     public MyselfUserDataResponse findMyselfAccountData(Principal principal) {
-        return userService.findByUsername(principal.getName());
+        return userService.findMyselfUserDataResponseByUsername(principal.getName());
     }
 
     @Operation(summary = "Предоставление информации об указанном пользователе")
@@ -155,7 +150,6 @@ public class UserController {
         userService.setPhoto(principal.getName(), multipartFile);
     }
 
-    //TODO
     @Operation(summary = "Список проектов, доступных для данного пользователя")
     @ApiResponse(responseCode = "200", description = "Список проектов, доступных пользователю", content = {
             @Content(mediaType = "application/json",
@@ -163,11 +157,7 @@ public class UserController {
     })
     @GetMapping("/projects")
     public ProjectListResponse getUserProjects(Principal principal) {
-        String login = principal.getName();
-        List<Project> projectList = userService.allProjectOfThisUser(login);
-        List<String> roles = new LinkedList<>();
-        projectList.forEach(p -> roles.add(projectService.findUserRoleName(login, p.getId())));
-        return new ProjectListResponse(projectList, roles, userService.findZoneIdForThisUser(login));
+        return userService.allProjectOfThisUser(principal.getName());
     }
 
     @Operation(summary = "Результат поиска проектов по имени")
@@ -178,11 +168,7 @@ public class UserController {
             })
     @GetMapping("/projects_by_name")
     public ProjectListResponse findProjectsByName(@RequestParam String name, Principal principal) {
-        String login = principal.getName();
-        List<Project> projects = userService.projectsByNameOfThisUser(name, login);
-        List<String> roles = new LinkedList<>();
-        projects.forEach(p -> roles.add(projectService.findUserRoleName(login, p.getId())));
-        return new ProjectListResponse(projects, roles, userService.findZoneIdForThisUser(login));
+        return userService.projectsByNameOfThisUser(name, principal.getName());
     }
 
     @Operation(summary = "Результат поиска ресурсов по имени")
@@ -193,7 +179,7 @@ public class UserController {
             })
     @GetMapping("/resources")
     public ListPointerResources findResourcesByName(@RequestParam String name, Principal principal) {
-        return new ListPointerResources(userService.availableResourceByName(name, principal.getName()));
+        return userService.availableResourceByName(name, principal.getName());
     }
 
     @Operation(summary = "Список последних посещённых ресурсов пользователем")
@@ -204,6 +190,6 @@ public class UserController {
             })
     @GetMapping("/lasts")
     public VisitMarkListResponse findLastSee(Principal principal) {
-        return new VisitMarkListResponse(userService.lastVisits(principal.getName()));
+        return userService.lastVisits(principal.getName());
     }
 }
