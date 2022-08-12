@@ -8,8 +8,6 @@ import ru.manager.ProgectManager.DTO.response.user.UserDataWithProjectRoleRespon
 import ru.manager.ProgectManager.base.ProjectManagerTestBase;
 import ru.manager.ProgectManager.support.TestDataBuilder;
 
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ProjectServiceTest extends ProjectManagerTestBase {
@@ -64,7 +62,7 @@ class ProjectServiceTest extends ProjectManagerTestBase {
 
         assertThat(projectService.findAllMembers(id, first))
                 .extracting(UserDataWithProjectRoleResponse::getNickname)
-                .containsOnly("MasterOfTheGym");
+                .containsOnly(TestDataBuilder.buildMasterUserDto().getNickname());
     }
 
     @Test
@@ -74,7 +72,7 @@ class ProjectServiceTest extends ProjectManagerTestBase {
 
         assertThat(projectService.findMembersByNicknameOrEmail(id, "User", first))
                 .extracting(UserDataWithProjectRoleResponse::getNickname)
-                .containsOnly("MasterOfTheGym");
+                .containsOnly(TestDataBuilder.buildMasterUserDto().getNickname());
     }
 
     @Test
