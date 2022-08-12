@@ -6,6 +6,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import ru.manager.ProgectManager.init.MySqlInitializer;
 import ru.manager.ProgectManager.repositories.ApproveActionTokenRepository;
@@ -26,9 +27,19 @@ public abstract class ProjectManagerTestBase {
     @Autowired
     protected JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    private TransactionTemplate transactionTemplate;
+
     @AfterEach
     void removeUser(@Autowired ApproveActionTokenRepository approveActionTokenRepository) {
         approveActionTokenRepository.deleteAll();
         userRepository.deleteAll();
+    }
+
+    protected void assertInTransaction(Runnable check) {
+        transactionTemplate.execute(ts -> {
+            check.run();
+            return null;
+        });
     }
 }
