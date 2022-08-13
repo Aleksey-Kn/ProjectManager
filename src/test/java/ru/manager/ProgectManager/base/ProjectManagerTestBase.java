@@ -18,7 +18,7 @@ import ru.manager.ProgectManager.repositories.ApproveActionTokenRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
 import ru.manager.ProgectManager.services.user.UserService;
 
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
 @ActiveProfiles("test")
 @ContextConfiguration(initializers = MySqlInitializer.class)
