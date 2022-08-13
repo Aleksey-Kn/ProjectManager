@@ -32,20 +32,4 @@ public class ProjectManagerApplication {
 	public PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
 	}
-
-//	@Bean
-//	public JavaMailSender javaMailSender() {
-//		JavaMailSenderImpl javaMailSender = new JavaMailSenderImpl();
-//		javaMailSender.setHost("smtp.gmail.com");
-//		javaMailSender.setPort(587);
-//		javaMailSender.setUsername("veeharkserver@gmail.com");
-//		javaMailSender.setPassword("pvqu kxwl axyo dfkc");
-//
-//		Properties properties = javaMailSender.getJavaMailProperties();
-//		properties.put("mail.transport.protocol", "smtp");
-//		properties.put("mail.smtp.auth", "true");
-//		properties.put("mail.smtp.starttls.enable", "true");
-//		properties.put("mail.debug", "false");
-//		return javaMailSender;
-//	}
 }

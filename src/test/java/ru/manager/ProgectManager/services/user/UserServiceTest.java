@@ -1,21 +1,21 @@
 package ru.manager.ProgectManager.services.user;
 
-import com.icegreen.greenmail.util.GreenMailUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import ru.manager.ProgectManager.DTO.UserDetailsDTO;
+import ru.manager.ProgectManager.DTO.request.user.LocaleRequest;
 import ru.manager.ProgectManager.DTO.request.user.RegisterUserDTO;
 import ru.manager.ProgectManager.DTO.response.user.MyselfUserDataResponse;
 import ru.manager.ProgectManager.DTO.response.user.PublicAllDataResponse;
 import ru.manager.ProgectManager.base.ProjectManagerTestBase;
 import ru.manager.ProgectManager.entitys.user.ApproveActionToken;
+import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.ActionType;
 import ru.manager.ProgectManager.enums.Locale;
 import ru.manager.ProgectManager.exception.user.IncorrectLoginOrPasswordException;
 import ru.manager.ProgectManager.repositories.ApproveActionTokenRepository;
 import ru.manager.ProgectManager.support.TestDataBuilder;
 
-import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
@@ -55,12 +55,10 @@ class UserServiceTest extends ProjectManagerTestBase {
     }
 
     @Test
-    void attemptDropPass() throws MessagingException {
+    void attemptDropPass() {
         final var registerDto = TestDataBuilder.buildMasterUserDto();
         final String login = userService.saveUser(registerDto).orElseThrow();
         assertThat(userService.attemptDropPass(login, "url")).isTrue();
-//        MimeMessage receivedMessage = GREEN_MAIL.getReceivedMessages()[0];
-//        assertThat(receivedMessage.getAllRecipients()).hasSize(1);
         assertThat(GREEN_MAIL.getReceivedMessagesForDomain(registerDto.getEmail()))
                 .extracting(MimeMessage::getSubject)
                 .contains(localisedMessages.buildSubjectForResetPassword(Locale.en));
@@ -143,6 +141,10 @@ class UserServiceTest extends ProjectManagerTestBase {
 
     @Test
     void updateLocale() {
+        final String login = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow();
+        userService.updateLocale(new LocaleRequest(Locale.ru), login);
+        assertInTransaction(() -> assertThat(userRepository.findByUsername(login)).extracting(User::getLocale)
+                .isEqualTo(Locale.ru));
     }
 
     @Test
