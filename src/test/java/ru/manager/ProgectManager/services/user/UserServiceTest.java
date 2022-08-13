@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import ru.manager.ProgectManager.DTO.UserDetailsDTO;
 import ru.manager.ProgectManager.DTO.request.user.RegisterUserDTO;
 import ru.manager.ProgectManager.DTO.response.user.MyselfUserDataResponse;
+import ru.manager.ProgectManager.DTO.response.user.PublicAllDataResponse;
 import ru.manager.ProgectManager.base.ProjectManagerTestBase;
 import ru.manager.ProgectManager.entitys.user.ApproveActionToken;
 import ru.manager.ProgectManager.enums.ActionType;
@@ -93,6 +94,11 @@ class UserServiceTest extends ProjectManagerTestBase {
 
     @Test
     void findById() {
+        RegisterUserDTO registerUserDTO = TestDataBuilder.buildMasterUserDto();
+        String login = userService.saveUser(registerUserDTO).orElseThrow();
+        long id = userRepository.findByUsername(login).getUserId();
+        assertThat(userService.findById(id, login)).extracting(PublicAllDataResponse::getNickname)
+                .isEqualTo(registerUserDTO.getNickname());
     }
 
     @Test
