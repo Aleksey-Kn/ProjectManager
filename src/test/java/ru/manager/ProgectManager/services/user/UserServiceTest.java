@@ -117,6 +117,7 @@ class UserServiceTest extends ProjectManagerTestBase {
     void login() {
         final var registerUserDTO = TestDataBuilder.buildMasterUserDto();
         userService.saveUser(registerUserDTO);
+        jdbcTemplate.update("update project_manager.user set enabled = 1");
         assertThat(userService.login(TestDataBuilder.buildAuthDto())).isEqualTo(registerUserDTO.getLogin());
         assertThat(GREEN_MAIL.getReceivedMessagesForDomain(registerUserDTO.getEmail()))
                 .extracting(MimeMessage::getSubject)
