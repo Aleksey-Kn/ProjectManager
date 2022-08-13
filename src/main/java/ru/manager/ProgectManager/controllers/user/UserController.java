@@ -18,7 +18,7 @@ import ru.manager.ProgectManager.DTO.request.user.LocaleRequest;
 import ru.manager.ProgectManager.DTO.request.user.UpdatePassRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.ListPointerResources;
-import ru.manager.ProgectManager.DTO.response.project.ProjectListResponse;
+import ru.manager.ProgectManager.DTO.response.project.ProjectResponse;
 import ru.manager.ProgectManager.DTO.response.user.MyselfUserDataResponse;
 import ru.manager.ProgectManager.DTO.response.user.PublicAllDataResponse;
 import ru.manager.ProgectManager.DTO.response.user.VisitMarkListResponse;
@@ -153,22 +153,22 @@ public class UserController {
     @Operation(summary = "Список проектов, доступных для данного пользователя")
     @ApiResponse(responseCode = "200", description = "Список проектов, доступных пользователю", content = {
             @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = ProjectListResponse.class))
+                    schema = @Schema(implementation = ProjectResponse[].class))
     })
     @GetMapping("/projects")
-    public ProjectListResponse getUserProjects(Principal principal) {
-        return userService.allProjectOfThisUser(principal.getName());
+    public ProjectResponse[] getUserProjects(Principal principal) {
+        return userService.allProjectOfThisUser(principal.getName()).toArray(ProjectResponse[]::new);
     }
 
     @Operation(summary = "Результат поиска проектов по имени")
     @ApiResponse(responseCode = "200", description = "Список проектов, доступных пользователю, с фильтрацией по имени",
             content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ProjectListResponse.class))
+                            schema = @Schema(implementation = ProjectResponse[].class))
             })
     @GetMapping("/projects_by_name")
-    public ProjectListResponse findProjectsByName(@RequestParam String name, Principal principal) {
-        return userService.projectsByNameOfThisUser(name, principal.getName());
+    public ProjectResponse[] findProjectsByName(@RequestParam String name, Principal principal) {
+        return userService.projectsByNameOfThisUser(name, principal.getName()).toArray(ProjectResponse[]::new);
     }
 
     @Operation(summary = "Результат поиска ресурсов по имени")

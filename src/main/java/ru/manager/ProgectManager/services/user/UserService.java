@@ -12,7 +12,7 @@ import ru.manager.ProgectManager.DTO.request.user.LocaleRequest;
 import ru.manager.ProgectManager.DTO.request.user.RegisterUserDTO;
 import ru.manager.ProgectManager.DTO.response.ListPointerResources;
 import ru.manager.ProgectManager.DTO.response.PointerResource;
-import ru.manager.ProgectManager.DTO.response.project.ProjectListResponse;
+import ru.manager.ProgectManager.DTO.response.project.ProjectResponse;
 import ru.manager.ProgectManager.DTO.response.user.MyselfUserDataResponse;
 import ru.manager.ProgectManager.DTO.response.user.PublicAllDataResponse;
 import ru.manager.ProgectManager.DTO.response.user.VisitMarkListResponse;
@@ -223,24 +223,32 @@ public class UserService {
         return userRepository.findById(id).orElseThrow().getPhoto();
     }
 
-    public ProjectListResponse allProjectOfThisUser(String login) {
+    public List<ProjectResponse> allProjectOfThisUser(String login) {
         List<Project> projectList = userRepository.findByUsername(login).getUserWithProjectConnectors().stream()
                 .map(UserWithProjectConnector::getProject)
                 .collect(Collectors.toList());
-        List<String> roles = new LinkedList<>();
-        projectList.forEach(p -> roles.add(projectService.findUserRoleName(login, p.getId())));
-        return new ProjectListResponse(projectList, roles, findZoneIdForThisUser(login));
+        List<String> roles = new ArrayList<>();
+        return createProjectResponseList(login, projectList, roles);
     }
 
-    public ProjectListResponse projectsByNameOfThisUser(String inputName, String userLogin) {
+    public List<ProjectResponse> projectsByNameOfThisUser(String inputName, String userLogin) {
         String name = inputName.trim().toLowerCase();
         List<Project> projectList = userRepository.findByUsername(userLogin).getUserWithProjectConnectors().stream()
                 .map(UserWithProjectConnector::getProject)
                 .filter(p -> p.getName().toLowerCase().contains(name))
                 .collect(Collectors.toList());
         List<String> roles = new LinkedList<>();
+        return createProjectResponseList(userLogin, projectList, roles);
+    }
+
+    private List<ProjectResponse> createProjectResponseList(String userLogin, List<Project> projectList, List<String> roles) {
         projectList.forEach(p -> roles.add(projectService.findUserRoleName(userLogin, p.getId())));
-        return new ProjectListResponse(projectList, roles, findZoneIdForThisUser(userLogin));
+        List<ProjectResponse> responses = new LinkedList<>();
+        final int zoneId = findZoneIdForThisUser(userLogin);
+        for(int i = 0; i < projectList.size(); i++){
+            responses.add(new ProjectResponse(projectList.get(i), roles.get(i), zoneId));
+        }
+        return responses;
     }
 
     public ListPointerResources availableResourceByName(String inputName, String userLogin) {

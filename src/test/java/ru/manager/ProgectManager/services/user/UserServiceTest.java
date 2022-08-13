@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import ru.manager.ProgectManager.DTO.UserDetailsDTO;
 import ru.manager.ProgectManager.DTO.request.user.LocaleRequest;
 import ru.manager.ProgectManager.DTO.request.user.RegisterUserDTO;
+import ru.manager.ProgectManager.DTO.response.project.ProjectResponse;
 import ru.manager.ProgectManager.DTO.response.user.MyselfUserDataResponse;
 import ru.manager.ProgectManager.DTO.response.user.PublicAllDataResponse;
 import ru.manager.ProgectManager.base.ProjectManagerTestBase;
@@ -14,6 +15,7 @@ import ru.manager.ProgectManager.enums.ActionType;
 import ru.manager.ProgectManager.enums.Locale;
 import ru.manager.ProgectManager.exception.user.IncorrectLoginOrPasswordException;
 import ru.manager.ProgectManager.repositories.ApproveActionTokenRepository;
+import ru.manager.ProgectManager.services.project.ProjectService;
 import ru.manager.ProgectManager.support.TestDataBuilder;
 
 import javax.mail.internet.MimeMessage;
@@ -27,6 +29,9 @@ class UserServiceTest extends ProjectManagerTestBase {
 
     @Autowired
     ApproveActionTokenRepository approveActionTokenRepository;
+
+    @Autowired
+    ProjectService projectService;
 
     @Test
     void saveUser() {
@@ -149,6 +154,17 @@ class UserServiceTest extends ProjectManagerTestBase {
 
     @Test
     void allProjectOfThisUser() {
+        final String login = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow();
+        final var firstProject = TestDataBuilder.prepareProjectDataRequest()
+                .status("firstStatus").name("firstName").build();
+        final var secondProject = TestDataBuilder.prepareProjectDataRequest()
+                        .status("secondStatus").name("secondName").build();
+        projectService.addProject(firstProject, login);
+        projectService.addProject(secondProject, login);
+        assertThat(userService.allProjectOfThisUser(login)).satisfies(c -> {
+            assertThat(c).extracting(ProjectResponse::getName).contains("firstName", "secondName");
+            assertThat(c).extracting(ProjectResponse::getStatus).contains("firstStatus", "secondStatus");
+        });
     }
 
     @Test
