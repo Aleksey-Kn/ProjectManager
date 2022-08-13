@@ -2,12 +2,14 @@ package ru.manager.ProgectManager.DTO.request.user;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.experimental.SuperBuilder;
 import org.springframework.validation.annotation.Validated;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
+@SuperBuilder
 @Data
 @Validated
 @Schema(description = "Даннные для авторизации пользователя в системе")

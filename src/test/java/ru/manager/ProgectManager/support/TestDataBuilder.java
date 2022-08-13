@@ -1,6 +1,7 @@
 package ru.manager.ProgectManager.support;
 
 import ru.manager.ProgectManager.DTO.request.ProjectDataRequest;
+import ru.manager.ProgectManager.DTO.request.user.AuthDto;
 import ru.manager.ProgectManager.DTO.request.user.RegisterUserDTO;
 import ru.manager.ProgectManager.DTO.response.project.ProjectResponseWithFlag;
 import ru.manager.ProgectManager.enums.Locale;
@@ -41,5 +42,10 @@ public class TestDataBuilder {
                 .name("Project")
                 .statusColor("red")
                 .id(id);
+    }
+
+    public static AuthDto buildAuthDto() {
+        return AuthDto.builder().browser("Chrome").city("Novosibirsk").ip("10.10.10.10").country("Russia")
+                .login("masterUser").password("1234").zoneId("+7").build();
     }
 }
