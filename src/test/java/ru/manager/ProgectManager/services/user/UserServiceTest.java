@@ -8,6 +8,7 @@ import ru.manager.ProgectManager.DTO.request.user.RegisterUserDTO;
 import ru.manager.ProgectManager.DTO.response.project.ProjectResponse;
 import ru.manager.ProgectManager.DTO.response.user.MyselfUserDataResponse;
 import ru.manager.ProgectManager.DTO.response.user.PublicAllDataResponse;
+import ru.manager.ProgectManager.DTO.response.user.VisitMarkResponse;
 import ru.manager.ProgectManager.base.ProjectManagerTestBase;
 import ru.manager.ProgectManager.entitys.user.ApproveActionToken;
 import ru.manager.ProgectManager.entitys.user.User;
@@ -169,49 +170,47 @@ class UserServiceTest extends ProjectManagerTestBase {
 
     @Test
     void projectsByNameOfThisUser() {
+        final String login = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow();
+        final var firstProject = TestDataBuilder.prepareProjectDataRequest()
+                .status("firstStatus").name("firstName").build();
+        final var secondProject = TestDataBuilder.prepareProjectDataRequest()
+                .status("secondStatus").name("secondName").build();
+        projectService.addProject(firstProject, login);
+        projectService.addProject(secondProject, login);
+        assertThat(userService.projectsByNameOfThisUser("second", login))
+                .extracting(ProjectResponse::getStatus)
+                .containsOnly("secondStatus");
     }
 
     @Test
     void availableResourceByName() {
+        final String login = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow();
+        final var firstProject = TestDataBuilder.prepareProjectDataRequest()
+                .status("firstStatus").name("firstName").build();
+        final var secondProject = TestDataBuilder.prepareProjectDataRequest()
+                .status("secondStatus").name("secondName").build();
+        projectService.addProject(firstProject, login);
+        projectService.addProject(secondProject, login);
+        assertThat(userService.projectsByNameOfThisUser("first", login))
+                .extracting(ProjectResponse::getName)
+                .containsOnly("firstName");
     }
 
     @Test
     void lastVisits() {
+        final String login = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow();
+        final var project = TestDataBuilder.buildProjectDataRequest();
+        final var projectId = projectService.addProject(project, login).getId();
+        projectService.findProject(projectId, login);
+        assertThat(userService.lastVisits(login)).hasSize(1).satisfies(v -> {
+            assertThat(v).extracting(VisitMarkResponse::getType).contains("project");
+            assertThat(v).extracting(VisitMarkResponse::getName).contains(project.getName());
+        });
     }
 
     @Test
     void findZoneIdForThisUser() {
-    }
-
-    @Test
-    void setMailService() {
-    }
-
-    @Test
-    void setApproveEnabledUserRepository() {
-    }
-
-    @Test
-    void setUsedAddressRepository() {
-    }
-
-    @Test
-    void setNotificationService() {
-    }
-
-    @Test
-    void setCompressor() {
-    }
-
-    @Test
-    void setRefreshTokenRepository() {
-    }
-
-    @Test
-    void setLocalisedMessages() {
-    }
-
-    @Test
-    void setMailInfoRepository() {
+        final String login = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow();
+        assertThat(userService.findZoneIdForThisUser(login)).isEqualTo(7);
     }
 }

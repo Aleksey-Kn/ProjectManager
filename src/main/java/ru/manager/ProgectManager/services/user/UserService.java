@@ -15,7 +15,7 @@ import ru.manager.ProgectManager.DTO.response.PointerResource;
 import ru.manager.ProgectManager.DTO.response.project.ProjectResponse;
 import ru.manager.ProgectManager.DTO.response.user.MyselfUserDataResponse;
 import ru.manager.ProgectManager.DTO.response.user.PublicAllDataResponse;
-import ru.manager.ProgectManager.DTO.response.user.VisitMarkListResponse;
+import ru.manager.ProgectManager.DTO.response.user.VisitMarkResponse;
 import ru.manager.ProgectManager.components.LocalisedMessages;
 import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.entitys.Project;
@@ -281,11 +281,12 @@ public class UserService {
         return new ListPointerResources(result);
     }
 
-    public VisitMarkListResponse lastVisits(String userLogin) {
-        return new VisitMarkListResponse(userRepository.findByUsername(userLogin).getVisitMarks().stream()
+    public List<VisitMarkResponse> lastVisits(String userLogin) {
+        return userRepository.findByUsername(userLogin).getVisitMarks().stream()
                 .sorted(Comparator.comparing(VisitMark::getSerialNumber))
                 .limit(20)
-                .collect(Collectors.toList()));
+                .map(VisitMarkResponse::new)
+                .collect(Collectors.toList());
     }
 
     public int findZoneIdForThisUser(String userLogin) {

@@ -21,7 +21,7 @@ import ru.manager.ProgectManager.DTO.response.ListPointerResources;
 import ru.manager.ProgectManager.DTO.response.project.ProjectResponse;
 import ru.manager.ProgectManager.DTO.response.user.MyselfUserDataResponse;
 import ru.manager.ProgectManager.DTO.response.user.PublicAllDataResponse;
-import ru.manager.ProgectManager.DTO.response.user.VisitMarkListResponse;
+import ru.manager.ProgectManager.DTO.response.user.VisitMarkResponse;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.services.user.NoteService;
@@ -186,10 +186,10 @@ public class UserController {
     @ApiResponse(responseCode = "200", description = "Список ресурсов с сортировкой по времени поледнего посещения",
             content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = VisitMarkListResponse.class))
+                            schema = @Schema(implementation = VisitMarkResponse[].class))
             })
     @GetMapping("/lasts")
-    public VisitMarkListResponse findLastSee(Principal principal) {
-        return userService.lastVisits(principal.getName());
+    public VisitMarkResponse[] findLastSee(Principal principal) {
+        return userService.lastVisits(principal.getName()).toArray(VisitMarkResponse[]::new);
     }
 }
