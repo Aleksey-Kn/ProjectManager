@@ -50,15 +50,8 @@ public class AdminController {
             return new ResponseEntity<>(new ErrorResponse(Errors.LOGIN_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
                     HttpStatus.BAD_REQUEST);
         } else {
-            try {
-                if (adminService.lockAccount(lockRequest)) {
-                    return new ResponseEntity<>(HttpStatus.OK);
-                } else {
-                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-                }
-            } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER), HttpStatus.NOT_FOUND);
-            }
+            adminService.lockAccount(lockRequest);
+            return new ResponseEntity<>(HttpStatus.OK);
         }
     }
 
@@ -71,13 +64,9 @@ public class AdminController {
             })
     })
     @PostMapping("/unlock")
-    public ResponseEntity<?> unlock(@RequestParam @Parameter(description = "Идентификатор разблокируемого пользователя")
-                                            String idOrLogin) {
-        if (adminService.unlockAccount(idOrLogin)) {
-            return new ResponseEntity<>(HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER), HttpStatus.NOT_FOUND);
-        }
+    public void unlock(@RequestParam @Parameter(description = "Идентификатор разблокируемого пользователя")
+                                    String idOrLogin) {
+        adminService.unlockAccount(idOrLogin);
     }
 
     @Operation(summary = "Получение данных всех пользователей системы")

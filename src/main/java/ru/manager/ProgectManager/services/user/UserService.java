@@ -31,7 +31,7 @@ import ru.manager.ProgectManager.exception.EmailAlreadyUsedException;
 import ru.manager.ProgectManager.exception.user.AccountIsLockedException;
 import ru.manager.ProgectManager.exception.user.AccountIsNotEnabledException;
 import ru.manager.ProgectManager.exception.user.IncorrectLoginOrPasswordException;
-import ru.manager.ProgectManager.exception.user.NoSuchUser;
+import ru.manager.ProgectManager.exception.user.NoSuchUserException;
 import ru.manager.ProgectManager.repositories.*;
 import ru.manager.ProgectManager.services.MailService;
 import ru.manager.ProgectManager.services.project.ProjectService;
@@ -153,7 +153,7 @@ public class UserService {
     }
 
     public PublicAllDataResponse findById(long id, String userLogin) {
-        return new PublicAllDataResponse(userRepository.findById(id).orElseThrow(NoSuchUser::new),
+        return new PublicAllDataResponse(userRepository.findById(id).orElseThrow(NoSuchUserException::new),
                 findZoneIdForThisUser(userLogin));
     }
 
