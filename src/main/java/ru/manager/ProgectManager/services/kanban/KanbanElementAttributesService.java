@@ -2,27 +2,28 @@ package ru.manager.ProgectManager.services.kanban;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import ru.manager.ProgectManager.DTO.request.kanban.CheckboxRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.KanbanCommentRequest;
+import ru.manager.ProgectManager.DTO.response.IdResponse;
+import ru.manager.ProgectManager.DTO.response.kanban.AttachAllDataResponse;
+import ru.manager.ProgectManager.DTO.response.kanban.KanbanElementCommentResponse;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
 import ru.manager.ProgectManager.entitys.kanban.*;
 import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.ElementStatus;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.ForbiddenException;
-import ru.manager.ProgectManager.exception.kanban.IncorrectElementStatusException;
-import ru.manager.ProgectManager.exception.kanban.NoSuchKanbanElementException;
-import ru.manager.ProgectManager.exception.kanban.NoSuchTagException;
+import ru.manager.ProgectManager.exception.kanban.*;
 import ru.manager.ProgectManager.repositories.*;
 
 import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.NoSuchElementException;
-import java.util.Optional;
 
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class KanbanElementAttributesService {
@@ -32,10 +33,12 @@ public class KanbanElementAttributesService {
     private final KanbanAttachmentRepository attachmentRepository;
     private final CheckboxRepository checkboxRepository;
 
-    public Optional<KanbanElementComment> addComment(KanbanCommentRequest request, String userLogin)
-            throws IncorrectElementStatusException, NoSuchKanbanElementException {
+    @Transactional
+    public IdResponse addComment(KanbanCommentRequest request, String userLogin)
+            throws IncorrectElementStatusException, NoSuchKanbanElementException, ForbiddenException {
         User user = userRepository.findByUsername(userLogin);
-        KanbanElement element = elementRepository.findById(request.getId()).orElseThrow();
+        KanbanElement element = elementRepository.findById(request.getId())
+                .orElseThrow(NoSuchKanbanElementException::new);
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (canSeeKanban(kanban, user)) {
             checkElement(element);
@@ -50,16 +53,17 @@ public class KanbanElementAttributesService {
             element.setTimeOfUpdate(getEpochSeconds());
             element.getComments().add(comment);
             elementRepository.save(element);
-            return Optional.of(comment);
+            return new IdResponse(comment.getId());
         } else {
-            return Optional.empty();
+            throw new ForbiddenException();
         }
     }
 
-    public Optional<KanbanElement> deleteComment(long id, String userLogin)
-            throws IncorrectElementStatusException, NoSuchKanbanElementException {
+    @Transactional
+    public void deleteComment(long id, String userLogin)
+            throws IncorrectElementStatusException, NoSuchKanbanElementException, ForbiddenException, NoSuchCommentException {
         User user = userRepository.findByUsername(userLogin);
-        KanbanElementComment comment = commentRepository.findById(id).orElseThrow();
+        KanbanElementComment comment = commentRepository.findById(id).orElseThrow(NoSuchCommentException::new);
         if (comment.getOwner().equals(user)
                 || comment.getKanbanElement().getKanbanColumn().getKanban().getProject().getConnectors().stream()
                 .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
@@ -69,17 +73,20 @@ public class KanbanElementAttributesService {
             element.setTimeOfUpdate(getEpochSeconds());
             element.setLastRedactor(user);
             element.getComments().remove(comment);
-            element = elementRepository.save(element);
-            return Optional.of(element);
+            elementRepository.save(element);
         } else {
-            return Optional.empty();
+            throw new ForbiddenException();
         }
     }
 
-    public Optional<KanbanElementComment> updateComment(KanbanCommentRequest request, String userLogin) throws IncorrectElementStatusException, NoSuchKanbanElementException {
+    @Transactional
+    public KanbanElementCommentResponse updateComment(KanbanCommentRequest request, String userLogin)
+            throws IncorrectElementStatusException, NoSuchKanbanElementException, ForbiddenException, NoSuchCommentException {
         User user = userRepository.findByUsername(userLogin);
-        KanbanElementComment comment = commentRepository.findById(request.getId()).orElseThrow();
+        KanbanElementComment comment = commentRepository.findById(request.getId())
+                .orElseThrow(NoSuchCommentException::new);
         if (comment.getOwner().equals(user)) {
+            int zoneId = user.getZoneId();
             KanbanElement element = comment.getKanbanElement();
             checkElement(element);
             element.setTimeOfUpdate(getEpochSeconds());
@@ -89,16 +96,17 @@ public class KanbanElementAttributesService {
             comment.setText(request.getText());
             comment.setDateTime(getEpochSeconds());
             comment.setRedacted(true);
-            return Optional.of(commentRepository.save(comment));
+            return new KanbanElementCommentResponse(commentRepository.save(comment), zoneId);
         } else {
-            return Optional.empty();
+            throw new ForbiddenException();
         }
     }
 
-    public Optional<KanbanAttachment> addAttachment(long id, String userLogin, MultipartFile file)
-            throws IOException, IncorrectElementStatusException, NoSuchKanbanElementException {
+    @Transactional
+    public IdResponse addAttachment(long id, String userLogin, MultipartFile file)
+            throws IOException, IncorrectElementStatusException, NoSuchKanbanElementException, ForbiddenException {
         User user = userRepository.findByUsername(userLogin);
-        KanbanElement element = elementRepository.findById(id).orElseThrow();
+        KanbanElement element = elementRepository.findById(id).orElseThrow(NoSuchKanbanElementException::new);
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
             checkElement(element);
@@ -112,28 +120,31 @@ public class KanbanElementAttributesService {
             element.setTimeOfUpdate(getEpochSeconds());
             element.getKanbanAttachments().add(attachment);
             elementRepository.save(element);
-            return Optional.of(attachment);
+            return new IdResponse(attachment.getId());
         } else {
-            return Optional.empty();
+            throw new ForbiddenException();
         }
     }
 
-    public Optional<KanbanAttachment> getAttachment(long id, String userLogin) {
+    public AttachAllDataResponse getAttachment(long id, String userLogin)
+            throws ForbiddenException, NoSuchAttachmentException, NoSuchKanbanElementException {
         User user = userRepository.findByUsername(userLogin);
-        KanbanAttachment attachment = attachmentRepository.findById(id).orElseThrow();
+        KanbanAttachment attachment = attachmentRepository.findById(id).orElseThrow(NoSuchAttachmentException::new);
         Kanban kanban = attachment.getElement().getKanbanColumn().getKanban();
         if(attachment.getElement().getStatus() == ElementStatus.DELETED)
-            throw new NoSuchElementException();
+            throw new NoSuchKanbanElementException();
         if (canSeeKanban(kanban, user)) {
-            return Optional.of(attachment);
+            return new AttachAllDataResponse(attachment);
         } else {
-            return Optional.empty();
+            throw new ForbiddenException();
         }
     }
 
-    public Optional<KanbanElement> deleteAttachment(long id, String userLogin) throws IncorrectElementStatusException, NoSuchKanbanElementException {
+    @Transactional
+    public void deleteAttachment(long id, String userLogin)
+            throws IncorrectElementStatusException, NoSuchKanbanElementException, NoSuchAttachmentException, ForbiddenException {
         User user = userRepository.findByUsername(userLogin);
-        KanbanAttachment attachment = attachmentRepository.findById(id).orElseThrow();
+        KanbanAttachment attachment = attachmentRepository.findById(id).orElseThrow(NoSuchAttachmentException::new);
         Kanban kanban = attachment.getElement().getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
             KanbanElement element = attachment.getElement();
@@ -142,12 +153,13 @@ public class KanbanElementAttributesService {
             element.setLastRedactor(user);
 
             element.getKanbanAttachments().remove(attachment);
-            return Optional.of(elementRepository.save(element));
+            elementRepository.save(element);
         } else {
-            return Optional.empty();
+            throw new ForbiddenException();
         }
     }
 
+    @Transactional
     public void addTag(long elementId, long tagId, String userLogin)
             throws ForbiddenException, NoSuchTagException, NoSuchKanbanElementException, IncorrectElementStatusException {
         KanbanElement element = elementRepository.findById(elementId).orElseThrow(NoSuchKanbanElementException::new);
@@ -167,6 +179,7 @@ public class KanbanElementAttributesService {
         }
     }
 
+    @Transactional
     public void removeTag(long elementId, long tagId, String userLogin)
             throws IncorrectElementStatusException, NoSuchKanbanElementException, ForbiddenException {
         KanbanElement element = elementRepository.findById(elementId).orElseThrow(NoSuchKanbanElementException::new);
@@ -184,8 +197,10 @@ public class KanbanElementAttributesService {
         }
     }
 
-    public Optional<CheckBox> addCheckbox(CheckboxRequest request, String userLogin) throws IncorrectElementStatusException, NoSuchKanbanElementException {
-        KanbanElement element = elementRepository.findById(request.getElementId()).orElseThrow();
+    @Transactional
+    public IdResponse addCheckbox(CheckboxRequest request, String userLogin) throws IncorrectElementStatusException, NoSuchKanbanElementException, ForbiddenException {
+        KanbanElement element = elementRepository.findById(request.getElementId())
+                .orElseThrow(NoSuchKanbanElementException::new);
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
@@ -200,15 +215,16 @@ public class KanbanElementAttributesService {
             checkBox = checkboxRepository.save(checkBox);
             element.getCheckBoxes().add(checkBox);
             elementRepository.save(element);
-            return Optional.of(checkBox);
+            return new IdResponse(checkBox.getId());
         } else{
-            return Optional.empty();
+            throw new ForbiddenException();
         }
     }
 
-    public boolean deleteCheckbox(long id, String userLogin)
-            throws IncorrectElementStatusException, NoSuchKanbanElementException {
-        CheckBox checkBox = checkboxRepository.findById(id).orElseThrow();
+    @Transactional
+    public void deleteCheckbox(long id, String userLogin)
+            throws IncorrectElementStatusException, NoSuchKanbanElementException, NoSuchCheckboxException, ForbiddenException {
+        CheckBox checkBox = checkboxRepository.findById(id).orElseThrow(NoSuchCheckboxException::new);
         KanbanElement element = checkBox.getElement();
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = element.getKanbanColumn().getKanban();
@@ -219,15 +235,15 @@ public class KanbanElementAttributesService {
 
             element.getCheckBoxes().remove(checkBox);
             elementRepository.save(element);
-            return true;
         } else {
-            return false;
+            throw new ForbiddenException();
         }
     }
 
-    public boolean tapCheckbox(long id, String userLogin)
-            throws IncorrectElementStatusException, NoSuchKanbanElementException {
-        CheckBox checkBox = checkboxRepository.findById(id).orElseThrow();
+    @Transactional
+    public void tapCheckbox(long id, String userLogin)
+            throws IncorrectElementStatusException, NoSuchKanbanElementException, NoSuchCheckboxException, ForbiddenException {
+        CheckBox checkBox = checkboxRepository.findById(id).orElseThrow(NoSuchCheckboxException::new);
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = checkBox.getElement().getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
@@ -239,15 +255,15 @@ public class KanbanElementAttributesService {
 
             checkBox.setCheck(!checkBox.isCheck());
             checkboxRepository.save(checkBox);
-            return true;
         } else {
-            return false;
+            throw new ForbiddenException();
         }
     }
 
-    public boolean editCheckbox(long id, String newText, String userLogin)
-            throws IncorrectElementStatusException, NoSuchKanbanElementException {
-        CheckBox checkBox = checkboxRepository.findById(id).orElseThrow();
+    @Transactional
+    public void editCheckbox(long id, String newText, String userLogin)
+            throws IncorrectElementStatusException, NoSuchKanbanElementException, ForbiddenException, NoSuchCheckboxException {
+        CheckBox checkBox = checkboxRepository.findById(id).orElseThrow(NoSuchCheckboxException::new);
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = checkBox.getElement().getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
@@ -259,9 +275,8 @@ public class KanbanElementAttributesService {
 
             checkBox.setText(newText);
             checkboxRepository.save(checkBox);
-            return true;
         } else{
-            return false;
+            throw new ForbiddenException();
         }
     }
 

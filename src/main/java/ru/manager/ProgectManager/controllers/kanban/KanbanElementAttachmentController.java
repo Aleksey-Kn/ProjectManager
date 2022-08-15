@@ -7,23 +7,20 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.PhotoDTO;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.AttachAllDataResponse;
 import ru.manager.ProgectManager.entitys.kanban.KanbanAttachment;
-import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
-import ru.manager.ProgectManager.enums.Errors;
-import ru.manager.ProgectManager.exception.runtime.IncorrectStatusException;
+import ru.manager.ProgectManager.exception.ForbiddenException;
+import ru.manager.ProgectManager.exception.kanban.IncorrectElementStatusException;
+import ru.manager.ProgectManager.exception.kanban.NoSuchAttachmentException;
+import ru.manager.ProgectManager.exception.kanban.NoSuchKanbanElementException;
 import ru.manager.ProgectManager.services.kanban.KanbanElementAttributesService;
 
 import java.io.IOException;
 import java.security.Principal;
-import java.util.NoSuchElementException;
-import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -54,24 +51,10 @@ public class KanbanElementAttachmentController {
             })
     })
     @PostMapping()
-    public ResponseEntity<?> addAttachment(@RequestParam long id, @ModelAttribute PhotoDTO photoDTO,
-                                           Principal principal) {
-        try {
-            Optional<KanbanAttachment> attachment =
-                    attributesService.addAttachment(id, principal.getName(), photoDTO.getFile());
-            if (attachment.isPresent()) {
-                return ResponseEntity.ok(new IdResponse(attachment.get().getId()));
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
-        } catch (IOException | NullPointerException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.BAD_FILE), HttpStatus.BAD_REQUEST);
-        } catch (IncorrectStatusException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
-                    HttpStatus.GONE);
-        }
+    public IdResponse addAttachment(@RequestParam long id, @ModelAttribute PhotoDTO photoDTO,
+                                    Principal principal)
+            throws ForbiddenException, IncorrectElementStatusException, NoSuchKanbanElementException, IOException {
+        return attributesService.addAttachment(id, principal.getName(), photoDTO.getFile());
     }
 
     @Operation(summary = "Получение вложения")
@@ -87,17 +70,9 @@ public class KanbanElementAttachmentController {
             })
     })
     @GetMapping()
-    public ResponseEntity<?> getAttachment(@RequestParam long id, Principal principal) {
-        try {
-            Optional<KanbanAttachment> attachment = attributesService.getAttachment(id, principal.getName());
-            if (attachment.isPresent()) {
-                return ResponseEntity.ok(new AttachAllDataResponse(attachment.get()));
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ATTACHMENT), HttpStatus.NOT_FOUND);
-        }
+    public AttachAllDataResponse getAttachment(@RequestParam long id, Principal principal)
+            throws ForbiddenException, NoSuchKanbanElementException, NoSuchAttachmentException {
+        return attributesService.getAttachment(id, principal.getName());
     }
 
     @Operation(summary = "Удаление вложения")
@@ -115,19 +90,8 @@ public class KanbanElementAttachmentController {
             })
     })
     @DeleteMapping()
-    public ResponseEntity<?> deleteAttachment(@RequestParam long id, Principal principal) {
-        try {
-            Optional<KanbanElement> element = attributesService.deleteAttachment(id, principal.getName());
-            if (element.isPresent()) {
-                return new ResponseEntity<>(HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ATTACHMENT), HttpStatus.NOT_FOUND);
-        } catch (IncorrectStatusException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
-                    HttpStatus.GONE);
-        }
+    public void deleteAttachment(@RequestParam long id, Principal principal)
+            throws ForbiddenException, IncorrectElementStatusException, NoSuchKanbanElementException, NoSuchAttachmentException {
+        attributesService.deleteAttachment(id, principal.getName());
     }
 }

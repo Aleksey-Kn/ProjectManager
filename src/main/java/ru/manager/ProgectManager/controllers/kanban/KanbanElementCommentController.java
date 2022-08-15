@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -16,16 +15,14 @@ import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanElementCommentResponse;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
-import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
-import ru.manager.ProgectManager.entitys.kanban.KanbanElementComment;
-import ru.manager.ProgectManager.enums.Errors;
-import ru.manager.ProgectManager.exception.runtime.IncorrectStatusException;
+import ru.manager.ProgectManager.exception.ForbiddenException;
+import ru.manager.ProgectManager.exception.kanban.IncorrectElementStatusException;
+import ru.manager.ProgectManager.exception.kanban.NoSuchCommentException;
+import ru.manager.ProgectManager.exception.kanban.NoSuchKanbanElementException;
 import ru.manager.ProgectManager.services.kanban.KanbanElementAttributesService;
 
 import javax.validation.Valid;
 import java.security.Principal;
-import java.util.NoSuchElementException;
-import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -43,9 +40,9 @@ public class KanbanElementCommentController {
             }),
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к проекту"),
             @ApiResponse(responseCode = "400", description = "Неподходящие текстовые данные", content = {
-                            @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ErrorResponse.class))
-                    }),
+                    @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))
+            }),
             @ApiResponse(responseCode = "200", description = "Полная информация о добавленном комментарии", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = IdResponse.class))
@@ -58,23 +55,12 @@ public class KanbanElementCommentController {
     })
     @PostMapping()
     public ResponseEntity<?> addComment(@RequestBody @Valid KanbanCommentRequest request, BindingResult bindingResult,
-                                        Principal principal) {
+                                        Principal principal)
+            throws IncorrectElementStatusException, NoSuchKanbanElementException, ForbiddenException {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
-            try {
-                Optional<KanbanElementComment> comment = attributesService.addComment(request, principal.getName());
-                if (comment.isPresent()) {
-                    return ResponseEntity.ok(new IdResponse(comment.get().getId()));
-                } else {
-                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-                }
-            } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
-            } catch (IncorrectStatusException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
-                        HttpStatus.GONE);
-            }
+            return ResponseEntity.ok(attributesService.addComment(request, principal.getName()));
         }
     }
 
@@ -102,23 +88,12 @@ public class KanbanElementCommentController {
     })
     @PutMapping()
     public ResponseEntity<?> updateComment(@RequestBody @Valid KanbanCommentRequest request, BindingResult bindingResult,
-                                           Principal principal) {
+                                           Principal principal)
+            throws IncorrectElementStatusException, NoSuchKanbanElementException, ForbiddenException, NoSuchCommentException {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
-            try {
-                Optional<KanbanElementComment> comment = attributesService.updateComment(request, principal.getName());
-                if (comment.isPresent()) {
-                    return ResponseEntity.ok(new KanbanElementCommentResponse(comment.get(), request.getZone()));
-                } else {
-                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-                }
-            } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COMMENT), HttpStatus.NOT_FOUND);
-            } catch (IncorrectStatusException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
-                        HttpStatus.GONE);
-            }
+            return ResponseEntity.ok(attributesService.updateComment(request, principal.getName()));
         }
     }
 
@@ -137,19 +112,8 @@ public class KanbanElementCommentController {
             })
     })
     @DeleteMapping()
-    public ResponseEntity<?> removeComment(@RequestParam long id, Principal principal) {
-        try {
-            Optional<KanbanElement> element = attributesService.deleteComment(id, principal.getName());
-            if (element.isPresent()) {
-                return new ResponseEntity<>(HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COMMENT), HttpStatus.NOT_FOUND);
-        } catch (IncorrectStatusException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
-                    HttpStatus.GONE);
-        }
+    public void removeComment(@RequestParam long id, Principal principal)
+            throws IncorrectElementStatusException, NoSuchKanbanElementException, ForbiddenException, NoSuchCommentException {
+            attributesService.deleteComment(id, principal.getName());
     }
 }

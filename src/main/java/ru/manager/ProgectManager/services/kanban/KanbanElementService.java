@@ -2,6 +2,7 @@ package ru.manager.ProgectManager.services.kanban;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.manager.ProgectManager.DTO.request.kanban.CreateKanbanElementRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.TransportElementRequest;
 import ru.manager.ProgectManager.DTO.response.IdResponse;
@@ -30,6 +31,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 @Service
 public class KanbanElementService {
@@ -39,6 +41,7 @@ public class KanbanElementService {
     private final TimeRemoverRepository timeRemoverRepository;
     private final KanbanRepository kanbanRepository;
 
+    @Transactional
     public IdResponse addElement(CreateKanbanElementRequest request, String userLogin)
             throws ForbiddenException, NoSuchColumn {
         KanbanColumn column = columnRepository.findById(request.getColumnId()).orElseThrow(NoSuchColumn::new);
@@ -66,6 +69,7 @@ public class KanbanElementService {
         } else throw new ForbiddenException();
     }
 
+    @Transactional
     public void rename(long id, String name, String userLogin)
             throws ForbiddenException, IncorrectElementStatusException, NoSuchKanbanElementException {
         KanbanElement element = elementRepository.findById(id).orElseThrow(NoSuchKanbanElementException::new);
@@ -82,6 +86,7 @@ public class KanbanElementService {
         }
     }
 
+    @Transactional
     public void editContent(long id, String content, String userLogin)
             throws IncorrectElementStatusException, NoSuchKanbanElementException, ForbiddenException {
         KanbanElement element = elementRepository.findById(id).orElseThrow(NoSuchKanbanElementException::new);
@@ -98,6 +103,7 @@ public class KanbanElementService {
         }
     }
 
+    @Transactional
     public void editDate(long id, String date, String userLogin)
             throws IncorrectElementStatusException, NoSuchKanbanElementException, ForbiddenException {
         KanbanElement element = elementRepository.findById(id).orElseThrow(NoSuchKanbanElementException::new);
@@ -114,6 +120,7 @@ public class KanbanElementService {
         }
     }
 
+    @Transactional
     public void dropDate(long id, String userLogin)
             throws IncorrectElementStatusException, NoSuchKanbanElementException, ForbiddenException {
         KanbanElement element = elementRepository.findById(id).orElseThrow(NoSuchKanbanElementException::new);
@@ -130,6 +137,7 @@ public class KanbanElementService {
         }
     }
 
+    @Transactional
     public boolean transportElement(TransportElementRequest request, String userLogin) throws NoSuchKanbanElementException, ForbiddenException, IncorrectElementStatusException {
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(request.getId())
@@ -190,6 +198,7 @@ public class KanbanElementService {
         } else throw new ForbiddenException();
     }
 
+    @Transactional
     public void utilizeElementFromUser(long id, String userLogin)
             throws ForbiddenException, NoSuchKanbanElementException, IncorrectElementStatusException {
         User user = userRepository.findByUsername(userLogin);
@@ -215,6 +224,7 @@ public class KanbanElementService {
         }
     }
 
+    @Transactional
     public void utiliseElementFromSystem(long id) throws IncorrectElementStatusException, NoSuchKanbanElementException {
         // при автоматическом перемещении элемента в корзину не происходит удаления timeRemover, поэтому подтягиваем его и только меняем данные
         TimeRemover timeRemover = timeRemoverRepository.findById(id)

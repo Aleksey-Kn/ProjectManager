@@ -81,4 +81,22 @@ public class AdviceController {
     public ErrorResponse noSuchTagExceptionHandler() {
         return new ErrorResponse(Errors.NO_SUCH_SPECIFIED_TAG);
     }
+
+    @ExceptionHandler(NoSuchCommentException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse noSuchCommentExceptionHandler() {
+        return new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COMMENT);
+    }
+
+    @ExceptionHandler(NoSuchCheckboxException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse noSuchCheckboxException() {
+        return new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CHECKBOX);
+    }
+
+    @ExceptionHandler(NoSuchAttachmentException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse noSuchAttachmentExceptionHandler() {
+        return new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ATTACHMENT);
+    }
 }

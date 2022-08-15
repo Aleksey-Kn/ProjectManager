@@ -16,15 +16,15 @@ import ru.manager.ProgectManager.DTO.request.NameRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.CheckboxRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.IdResponse;
-import ru.manager.ProgectManager.entitys.kanban.CheckBox;
 import ru.manager.ProgectManager.enums.Errors;
-import ru.manager.ProgectManager.exception.runtime.IncorrectStatusException;
+import ru.manager.ProgectManager.exception.ForbiddenException;
+import ru.manager.ProgectManager.exception.kanban.IncorrectElementStatusException;
+import ru.manager.ProgectManager.exception.kanban.NoSuchCheckboxException;
+import ru.manager.ProgectManager.exception.kanban.NoSuchKanbanElementException;
 import ru.manager.ProgectManager.services.kanban.KanbanElementAttributesService;
 
 import javax.validation.Valid;
 import java.security.Principal;
-import java.util.NoSuchElementException;
-import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -57,24 +57,13 @@ public class ElementCheckboxController {
     })
     @PostMapping()
     public ResponseEntity<?> addCheckbox(@RequestBody @Valid CheckboxRequest request, BindingResult bindingResult,
-                                         Principal principal){
+                                         Principal principal)
+            throws ForbiddenException, IncorrectElementStatusException, NoSuchKanbanElementException {
         if(bindingResult.hasErrors()){
             return new ResponseEntity<>(new ErrorResponse(Errors.TEXT_MUST_BE_CONTAINS_VISIBLE_SYMBOL),
                     HttpStatus.BAD_REQUEST);
         } else{
-            try{
-                Optional<CheckBox> checkBox = attributesService.addCheckbox(request, principal.getName());
-                if(checkBox.isPresent()){
-                    return ResponseEntity.ok(new IdResponse(checkBox.get().getId()));
-                } else {
-                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-                }
-            } catch (NoSuchElementException e){
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
-            } catch (IncorrectStatusException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
-                        HttpStatus.GONE);
-            }
+            return ResponseEntity.ok(attributesService.addCheckbox(request, principal.getName()));
         }
     }
 
@@ -94,20 +83,10 @@ public class ElementCheckboxController {
                     })
     })
     @DeleteMapping()
-    public ResponseEntity<?> removeCheckbox(@RequestParam @Parameter(description = "Идентификатор чекбокса") long id,
-                                            Principal principal){
-        try{
-            if(attributesService.deleteCheckbox(id, principal.getName())){
-                return new ResponseEntity<>(HttpStatus.OK);
-            } else{
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e){
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CHECKBOX), HttpStatus.NOT_FOUND);
-        } catch (IncorrectStatusException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
-                    HttpStatus.GONE);
-        }
+    public void removeCheckbox(@RequestParam @Parameter(description = "Идентификатор чекбокса") long id,
+                                            Principal principal)
+            throws ForbiddenException, IncorrectElementStatusException, NoSuchKanbanElementException, NoSuchCheckboxException {
+        attributesService.deleteCheckbox(id, principal.getName());
     }
 
     @Operation(summary = "Изменение значения чекбокса на противоположное")
@@ -126,20 +105,10 @@ public class ElementCheckboxController {
                     })
     })
     @PutMapping("/select")
-    public ResponseEntity<?> click(@RequestParam @Parameter(description = "Идентификатор чекбокса") long id,
-                                   Principal principal){
-        try{
-            if(attributesService.tapCheckbox(id, principal.getName())){
-                return new ResponseEntity<>(HttpStatus.OK);
-            } else{
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e){
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CHECKBOX), HttpStatus.NOT_FOUND);
-        } catch (IncorrectStatusException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
-                    HttpStatus.GONE);
-        }
+    public void click(@RequestParam @Parameter(description = "Идентификатор чекбокса") long id,
+                                   Principal principal)
+             throws ForbiddenException, IncorrectElementStatusException, NoSuchKanbanElementException, NoSuchCheckboxException {
+        attributesService.tapCheckbox(id, principal.getName());
     }
 
     @Operation(summary = "Изменение текстового поля чекбокса")
@@ -158,19 +127,9 @@ public class ElementCheckboxController {
                     })
     })
     @PutMapping("/rename")
-    public ResponseEntity<?> rename(@RequestParam @Parameter(description = "Идентификатор чекбокса") long id,
-                                    @RequestBody @Valid NameRequest nameRequest, Principal principal){
-        try{
-            if(attributesService.editCheckbox(id, nameRequest.getName(), principal.getName())){
-                return new ResponseEntity<>(HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e){
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CHECKBOX), HttpStatus.NOT_FOUND);
-        } catch (IncorrectStatusException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
-                    HttpStatus.GONE);
-        }
+    public void rename(@RequestParam @Parameter(description = "Идентификатор чекбокса") long id,
+                                    @RequestBody @Valid NameRequest nameRequest, Principal principal)
+            throws IncorrectElementStatusException, NoSuchKanbanElementException, ForbiddenException, NoSuchCheckboxException {
+        attributesService.editCheckbox(id, nameRequest.getName(), principal.getName());
     }
 }
