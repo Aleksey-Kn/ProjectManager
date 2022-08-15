@@ -138,6 +138,7 @@ public class AccessProjectService {
         }
     }
 
+    @Transactional
     public void leave(long projectId, String userLogin) throws ForbiddenException, NoSuchProjectException {
         Project project = projectRepository.findById(projectId).orElseThrow(NoSuchProjectException::new);
         User user = userRepository.findByUsername(userLogin);
@@ -156,6 +157,7 @@ public class AccessProjectService {
         }
     }
 
+    @Transactional
     public void kick(long projectId, long userId, String adminLogin) throws NoSuchProjectException, NoSuchUserException, ForbiddenException {
         User admin = userRepository.findByUsername(adminLogin);
         Project project = projectRepository.findById(projectId).orElseThrow(NoSuchProjectException::new);
@@ -171,8 +173,7 @@ public class AccessProjectService {
         }
     }
 
-    @Transactional
-    void removeConnector(UserWithProjectConnector c, Project project) {
+    private void removeConnector(UserWithProjectConnector c, Project project) {
         c.getUser().getUserWithProjectConnectors().remove(c);
         userRepository.save(c.getUser());
         project.getConnectors().remove(c);
