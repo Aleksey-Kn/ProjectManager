@@ -8,6 +8,7 @@ import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.exception.ForbiddenException;
 import ru.manager.ProgectManager.exception.kanban.NoSuchKanbanException;
+import ru.manager.ProgectManager.exception.project.NoSuchCustomRoleException;
 import ru.manager.ProgectManager.exception.user.IncorrectLoginOrPasswordException;
 import ru.manager.ProgectManager.exception.user.NoSuchUserException;
 import ru.manager.ProgectManager.exception.project.NoSuchProjectException;
@@ -49,5 +50,11 @@ public class AdviceController {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse noSuchKanbanExceptionHandler() {
         return new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN);
+    }
+
+    @ExceptionHandler(NoSuchCustomRoleException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse noSuchCustomRoleExceptionHandler() {
+        return new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CUSTOM_ROLE);
     }
 }

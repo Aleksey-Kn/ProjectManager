@@ -8,18 +8,18 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.calendar.CalendarResponseList;
 import ru.manager.ProgectManager.DTO.response.calendar.ShortKanbanElementInfoList;
 import ru.manager.ProgectManager.enums.Errors;
+import ru.manager.ProgectManager.exception.ForbiddenException;
+import ru.manager.ProgectManager.exception.kanban.NoSuchKanbanException;
+import ru.manager.ProgectManager.exception.project.NoSuchProjectException;
 import ru.manager.ProgectManager.services.CalendarService;
 
 import java.security.Principal;
 import java.time.format.DateTimeParseException;
-import java.util.NoSuchElementException;
-import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -48,7 +48,8 @@ public class CalendarController {
     })
     @GetMapping
     public CalendarResponseList findCalendar(@RequestParam long projectId, @RequestParam int year,
-                                             @RequestParam int month, Principal principal) {
+                                             @RequestParam int month, Principal principal)
+            throws ForbiddenException, NoSuchProjectException {
         return calendarService.findCalendar(projectId, year, month, principal.getName());
     }
 
@@ -66,7 +67,8 @@ public class CalendarController {
     })
     @GetMapping("/kanban")
     public CalendarResponseList findCalendarFromKanban(@RequestParam long id, @RequestParam int year,
-                                                       @RequestParam int month, Principal principal) {
+                                                       @RequestParam int month, Principal principal)
+            throws ForbiddenException, NoSuchKanbanException {
         return calendarService.findCalendarOnKanban(id, year, month, principal.getName());
     }
 

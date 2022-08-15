@@ -1,4 +1,4 @@
 package ru.manager.ProgectManager.exception.user;
 
-public class NoSuchUserException extends RuntimeException{
+public class NoSuchUserException extends Exception{
 }

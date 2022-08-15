@@ -36,7 +36,7 @@ public class CalendarService {
     private final ProjectRepository projectRepository;
     private final KanbanRepository kanbanRepository;
 
-    public CalendarResponseList findCalendar(long projectId, int year, int month, String userLogin) {
+    public CalendarResponseList findCalendar(long projectId, int year, int month, String userLogin) throws ForbiddenException, NoSuchProjectException {
         Project project = projectRepository.findById(projectId).orElseThrow(NoSuchProjectException::new);
         User user = userRepository.findByUsername(userLogin);
         Optional<UserWithProjectConnector> connector = user.getUserWithProjectConnectors()
@@ -63,7 +63,7 @@ public class CalendarService {
         }
     }
 
-    public CalendarResponseList findCalendarOnKanban(long id, int year, int month, String userLogin) {
+    public CalendarResponseList findCalendarOnKanban(long id, int year, int month, String userLogin) throws ForbiddenException, NoSuchKanbanException {
         Kanban kanban = kanbanRepository.findById(id).orElseThrow(NoSuchKanbanException::new);
         User user = userRepository.findByUsername(userLogin);
         Project project = kanban.getProject();

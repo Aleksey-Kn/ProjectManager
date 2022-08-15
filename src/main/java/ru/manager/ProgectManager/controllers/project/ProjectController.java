@@ -19,12 +19,13 @@ import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanListResponse;
 import ru.manager.ProgectManager.DTO.response.project.ProjectResponseWithFlag;
 import ru.manager.ProgectManager.DTO.response.user.MainUserDataListResponse;
-import ru.manager.ProgectManager.DTO.response.user.UserDataListResponse;
 import ru.manager.ProgectManager.DTO.response.user.UserDataWithProjectRoleResponse;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
+import ru.manager.ProgectManager.exception.ForbiddenException;
+import ru.manager.ProgectManager.exception.project.NoSuchProjectException;
 import ru.manager.ProgectManager.services.kanban.KanbanService;
 import ru.manager.ProgectManager.services.project.ProjectRoleService;
 import ru.manager.ProgectManager.services.project.ProjectService;
@@ -81,7 +82,7 @@ public class ProjectController {
             })
     })
     @GetMapping("/project")
-    public ProjectResponseWithFlag findProject(@RequestParam long id, Principal principal) {
+    public ProjectResponseWithFlag findProject(@RequestParam long id, Principal principal) throws ForbiddenException, NoSuchProjectException {
         return projectService.findProject(id, principal.getName());
     }
 
@@ -100,7 +101,7 @@ public class ProjectController {
     })
     @PutMapping("/project")
     public ResponseEntity<?> setData(@RequestParam long id, @RequestBody @Valid ProjectDataRequest request,
-                                     BindingResult bindingResult, Principal principal) {
+                                     BindingResult bindingResult, Principal principal) throws ForbiddenException, NoSuchProjectException {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(
                     new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS), HttpStatus.BAD_REQUEST);
@@ -125,7 +126,7 @@ public class ProjectController {
     })
     @PostMapping("/project/photo")
     public ResponseEntity<Void> setPhoto(@RequestParam long id, @ModelAttribute PhotoDTO photoDTO, Principal principal)
-            throws IOException {
+            throws IOException, ForbiddenException, NoSuchProjectException {
         projectService.setPhoto(id, photoDTO.getFile(), principal.getName());
         return new ResponseEntity<>(HttpStatus.OK);
 
@@ -198,7 +199,7 @@ public class ProjectController {
     })
     @GetMapping("/project/users")
     public UserDataWithProjectRoleResponse[] allParticipants(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
-                                                           Principal principal) {
+                                                           Principal principal) throws ForbiddenException, NoSuchProjectException {
         return projectService.findAllMembers(id, principal.getName()).toArray(UserDataWithProjectRoleResponse[]::new);
     }
 
@@ -217,7 +218,7 @@ public class ProjectController {
     @GetMapping("/project/users/find")
     public UserDataWithProjectRoleResponse[] findMembers(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
                                             @RequestParam @Parameter(description = "Имя или почта пользователя") String name,
-                                            Principal principal) {
+                                            Principal principal) throws ForbiddenException, NoSuchProjectException {
         return projectService.findMembersByNicknameOrEmail(id, name, principal.getName())
                 .toArray(UserDataWithProjectRoleResponse[]::new);
     }
@@ -261,7 +262,7 @@ public class ProjectController {
             @ApiResponse(responseCode = "200", description = "Удаление прошло успешно")
     })
     @DeleteMapping("/project")
-    public ResponseEntity<?> deleteProject(@RequestParam long id, Principal principal) {
+    public ResponseEntity<?> deleteProject(@RequestParam long id, Principal principal) throws ForbiddenException, NoSuchProjectException {
         projectService.deleteProject(id, principal.getName());
         return new ResponseEntity<>(HttpStatus.OK);
     }

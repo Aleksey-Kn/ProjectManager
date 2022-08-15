@@ -12,15 +12,10 @@ import java.util.UUID;
 
 @Service
 public class PhotoService {
-    public ResponseEntity<?> sendFile(HttpServletResponse response, byte[] photo) {
-        try {
-            response.setContentType("image/jpeg");
-            response.setHeader("Content-Disposition", "inline; filename=\"" + UUID.randomUUID() + ".jpg\"");
-            response.setContentLength(photo.length);
-            FileCopyUtils.copy(new ByteArrayInputStream(photo), response.getOutputStream());
-            return new ResponseEntity<>(HttpStatus.OK);
-        } catch (IOException e) {
-            return new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
-        }
+    public void sendFile(HttpServletResponse response, byte[] photo) throws IOException {
+        response.setContentType("image/jpeg");
+        response.setHeader("Content-Disposition", "inline; filename=\"" + UUID.randomUUID() + ".jpg\"");
+        response.setContentLength(photo.length);
+        FileCopyUtils.copy(new ByteArrayInputStream(photo), response.getOutputStream());
     }
 }

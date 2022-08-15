@@ -3,7 +3,9 @@ package ru.manager.ProgectManager.services.project;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.manager.ProgectManager.DTO.request.accessProject.AccessProjectTroughMailRequest;
+import ru.manager.ProgectManager.DTO.response.accessProject.AccessProjectResponse;
 import ru.manager.ProgectManager.DTO.response.project.ProjectResponse;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.accessProject.AccessProject;
@@ -13,8 +15,12 @@ import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.Locale;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
-import ru.manager.ProgectManager.exception.IllegalActionException;
-import ru.manager.ProgectManager.exception.NoSuchResourceException;
+import ru.manager.ProgectManager.exception.ForbiddenException;
+import ru.manager.ProgectManager.exception.project.AccessTokenInvalidException;
+import ru.manager.ProgectManager.exception.project.NoSuchCustomRoleException;
+import ru.manager.ProgectManager.exception.project.NoSuchProjectException;
+import ru.manager.ProgectManager.exception.runtime.IllegalActionException;
+import ru.manager.ProgectManager.exception.user.NoSuchUserException;
 import ru.manager.ProgectManager.repositories.*;
 import ru.manager.ProgectManager.services.MailService;
 import ru.manager.ProgectManager.services.user.NotificationService;
@@ -24,7 +30,7 @@ import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
-
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 @Log
@@ -39,26 +45,27 @@ public class AccessProjectService {
     private final ProjectService projectService;
     private final VisitMarkUpdater visitMarkUpdater;
 
-    public Optional<AccessProject> generateTokenForAccessProject(String fromUser,
-                                                                 long projectId,
-                                                                 TypeRoleProject typeRoleProject,
-                                                                 long customProjectRoleId,
-                                                                 boolean disposable,
-                                                                 int liveTime) {
+    @Transactional
+    public Optional<AccessProjectResponse> generateTokenForAccessProject(String fromUser,
+                                                                         long projectId,
+                                                                         TypeRoleProject typeRoleProject,
+                                                                         long customProjectRoleId,
+                                                                         boolean disposable,
+                                                                         int liveTime) throws ForbiddenException, NoSuchProjectException, NoSuchCustomRoleException {
         User user = userRepository.findByUsername(fromUser);
-        Project project = projectRepository.findById(projectId).orElseThrow();
+        Project project = projectRepository.findById(projectId).orElseThrow(NoSuchProjectException::new);
         if (typeRoleProject == TypeRoleProject.ADMIN)
-            throw new IllegalArgumentException();
+            return Optional.empty();
         if (isAdmin(project, user)) {
-            return Optional.of(accessProjectRepository.save(createAccessProject(UUID.randomUUID().toString(), project,
-                    typeRoleProject, customProjectRoleId, disposable, liveTime)));
-        }
-        return Optional.empty();
+            return Optional.of(new AccessProjectResponse(accessProjectRepository.save(createAccessProject(
+                    UUID.randomUUID().toString(), project, typeRoleProject, customProjectRoleId, disposable, liveTime))));
+        } else throw new ForbiddenException();
     }
 
-    public boolean sendInvitationToMail(AccessProjectTroughMailRequest request, String adminLogin) {
+    @Transactional
+    public void sendInvitationToMail(AccessProjectTroughMailRequest request, String adminLogin) throws NoSuchCustomRoleException, NoSuchProjectException, ForbiddenException {
         User admin = userRepository.findByUsername(adminLogin);
-        Project project = projectRepository.findById(request.getProjectId()).orElseThrow();
+        Project project = projectRepository.findById(request.getProjectId()).orElseThrow(NoSuchProjectException::new);
         if (isAdmin(project, admin)) {
             String token = UUID.randomUUID().toString();
             AccessProject accessProject = createAccessProject(token, project, request.getTypeRoleProject(),
@@ -71,14 +78,13 @@ public class AccessProjectService {
             }, () -> mailService.sendInvitationToProject(request.getEmail(), Locale.en, project.getName(),
                     request.getUrl(), token));
             accessProjectRepository.save(accessProject);
-            return true;
         } else {
-            return false;
+            throw new ForbiddenException();
         }
     }
 
     private AccessProject createAccessProject(String token, Project project, TypeRoleProject typeRoleProject,
-                                              long customProjectRoleId, boolean disposable, int liveTime) {
+                                              long customProjectRoleId, boolean disposable, int liveTime) throws NoSuchCustomRoleException {
         AccessProject accessProject = new AccessProject();
         accessProject.setProject(project);
         accessProject.setTypeRoleProject(typeRoleProject);
@@ -86,7 +92,7 @@ public class AccessProjectService {
             accessProject.setProjectRole(project.getAvailableRole().stream()
                     .filter(r -> r.getId() == customProjectRoleId)
                     .findAny()
-                    .orElseThrow(NoSuchResourceException::new));
+                    .orElseThrow(NoSuchCustomRoleException::new));
         }
         accessProject.setDisposable(disposable);
         accessProject.setCode(token);
@@ -94,8 +100,10 @@ public class AccessProjectService {
         return accessProject;
     }
 
-    public Optional<ProjectResponse> findInfoOfProjectFromAccessToken(String token, int zoneId) {
-        AccessProject accessProject = accessProjectRepository.findById(token).orElseThrow();
+    public Optional<ProjectResponse> findInfoOfProjectFromAccessToken(String token, int zoneId)
+            throws AccessTokenInvalidException {
+        AccessProject accessProject = accessProjectRepository.findById(token)
+                .orElseThrow(AccessTokenInvalidException::new);
         if (LocalDate.ofEpochDay(accessProject.getTimeForDie()).isAfter(LocalDate.now())) {
             return Optional.of(new ProjectResponse(accessProject.getProject(),
                     (accessProject.getTypeRoleProject() == TypeRoleProject.CUSTOM_ROLE
@@ -106,8 +114,10 @@ public class AccessProjectService {
         }
     }
 
-    public boolean createAccessForUser(String token, String toUser) {
-        AccessProject accessProject = accessProjectRepository.findById(token).orElseThrow();
+    @Transactional
+    public boolean createAccessForUser(String token, String toUser) throws AccessTokenInvalidException {
+        AccessProject accessProject = accessProjectRepository.findById(token)
+                .orElseThrow(AccessTokenInvalidException::new);
         if (accessProject.isDisposable() || LocalDate.ofEpochDay(accessProject.getTimeForDie()).isBefore(LocalDate.now())) {
             accessProjectRepository.delete(accessProject);
         }
@@ -128,46 +138,41 @@ public class AccessProjectService {
         }
     }
 
-    public boolean leave(long projectId, String userLogin) {
-        Optional<Project> project = projectRepository.findById(projectId);
+    public void leave(long projectId, String userLogin) throws ForbiddenException, NoSuchProjectException {
+        Project project = projectRepository.findById(projectId).orElseThrow(NoSuchProjectException::new);
         User user = userRepository.findByUsername(userLogin);
-        if (project.isPresent()) {
-            visitMarkUpdater.deleteVisitMarkIfLeaveFromProject(projectId, user);
-            if (project.get().getConnectors().size() == 1) {
-                projectService.deleteProject(projectId, userLogin);
-            } else {
-                user.getUserWithProjectConnectors().parallelStream()
-                        .filter(c -> c.getProject().equals(project.get()))
-                        .findAny().ifPresent(connector -> {
-                            if (connector.getRoleType() != TypeRoleProject.ADMIN || project.get().getConnectors().stream()
-                                    .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN).count() > 1) {
-                                removeConnector(connector, project.get());
-                            } else throw new IllegalActionException();
-                        });
-            }
-            return true;
+        visitMarkUpdater.deleteVisitMarkIfLeaveFromProject(projectId, user);
+        if (project.getConnectors().size() == 1) {
+            projectService.deleteProject(projectId, userLogin);
         } else {
-            return false;
+            user.getUserWithProjectConnectors().parallelStream()
+                    .filter(c -> c.getProject().equals(project))
+                    .findAny().ifPresent(connector -> {
+                        if (connector.getRoleType() != TypeRoleProject.ADMIN || project.getConnectors().stream()
+                                .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN).count() > 1) {
+                            removeConnector(connector, project);
+                        } else throw new IllegalActionException();
+                    });
         }
     }
 
-    public boolean kick(long projectId, long userId, String adminLogin) {
+    public void kick(long projectId, long userId, String adminLogin) throws NoSuchProjectException, NoSuchUserException, ForbiddenException {
         User admin = userRepository.findByUsername(adminLogin);
-        Project project = projectRepository.findById(projectId).orElseThrow();
-        User user = userRepository.findById(userId).orElseThrow(NoSuchResourceException::new);
+        Project project = projectRepository.findById(projectId).orElseThrow(NoSuchProjectException::new);
+        User user = userRepository.findById(userId).orElseThrow(NoSuchUserException::new);
         if (isAdmin(project, admin) && !isAdmin(project, user)) {
             visitMarkUpdater.deleteVisitMarkIfLeaveFromProject(projectId, user);
             notificationService.addNotificationAboutDeleteFromProject(project.getName(), user);
             user.getUserWithProjectConnectors().parallelStream()
                     .filter(c -> c.getProject().equals(project))
                     .forEach(c -> removeConnector(c, project));
-            return true;
         } else {
-            return false;
+            throw new ForbiddenException();
         }
     }
 
-    private void removeConnector(UserWithProjectConnector c, Project project) {
+    @Transactional
+    void removeConnector(UserWithProjectConnector c, Project project) {
         c.getUser().getUserWithProjectConnectors().remove(c);
         userRepository.save(c.getUser());
         project.getConnectors().remove(c);

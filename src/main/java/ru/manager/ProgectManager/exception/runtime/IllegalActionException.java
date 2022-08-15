@@ -1,4 +1,4 @@
-package ru.manager.ProgectManager.exception;
+package ru.manager.ProgectManager.exception.runtime;
 
 public class IllegalActionException extends RuntimeException {
     public IllegalActionException() {

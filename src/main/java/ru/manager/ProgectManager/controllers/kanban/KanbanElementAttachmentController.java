@@ -17,7 +17,7 @@ import ru.manager.ProgectManager.DTO.response.kanban.AttachAllDataResponse;
 import ru.manager.ProgectManager.entitys.kanban.KanbanAttachment;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
 import ru.manager.ProgectManager.enums.Errors;
-import ru.manager.ProgectManager.exception.IncorrectStatusException;
+import ru.manager.ProgectManager.exception.runtime.IncorrectStatusException;
 import ru.manager.ProgectManager.services.kanban.KanbanElementAttributesService;
 
 import java.io.IOException;

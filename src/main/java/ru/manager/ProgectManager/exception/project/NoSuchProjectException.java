@@ -1,4 +1,4 @@
 package ru.manager.ProgectManager.exception.project;
 
-public class NoSuchProjectException extends RuntimeException{
+public class NoSuchProjectException extends Exception{
 }

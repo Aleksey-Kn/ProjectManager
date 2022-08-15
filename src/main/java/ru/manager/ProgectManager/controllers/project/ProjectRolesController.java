@@ -22,7 +22,7 @@ import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.DTO.response.accessProject.CustomProjectRoleResponseList;
 import ru.manager.ProgectManager.entitys.accessProject.CustomProjectRole;
 import ru.manager.ProgectManager.enums.Errors;
-import ru.manager.ProgectManager.exception.NoSuchResourceException;
+import ru.manager.ProgectManager.exception.runtime.NoSuchResourceException;
 import ru.manager.ProgectManager.services.project.ProjectRoleService;
 
 import javax.validation.Valid;

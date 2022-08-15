@@ -25,7 +25,7 @@ public class StatisticsController {
     @Operation(summary = "Сбор информации о целях использования приложения пользователем")
     @ApiResponses(value = @ApiResponse(responseCode = "200", description = "Статистика успешно добавлена"))
     @PostMapping("/users/statistics")
-    public ResponseEntity<?> setStatistics(@RequestBody List<String> answers){
+    public void setStatistics(@RequestBody List<String> answers){
         for(String answer: answers) {
             Optional<StatisticsUsing> statisticsUsing = Optional.
                     ofNullable(statisticsRepository.findByType(answer));
@@ -39,6 +39,5 @@ public class StatisticsController {
                 statisticsRepository.save(su);
             });
         }
-        return new ResponseEntity<>(HttpStatus.OK);
     }
 }

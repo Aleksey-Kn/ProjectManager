@@ -24,9 +24,10 @@ import ru.manager.ProgectManager.DTO.response.user.AuthResponse;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.components.authorization.JwtProvider;
 import ru.manager.ProgectManager.enums.Errors;
-import ru.manager.ProgectManager.exception.EmailAlreadyUsedException;
+import ru.manager.ProgectManager.exception.runtime.EmailAlreadyUsedException;
 import ru.manager.ProgectManager.exception.user.AccountIsLockedException;
 import ru.manager.ProgectManager.exception.user.AccountIsNotEnabledException;
+import ru.manager.ProgectManager.exception.user.IncorrectLoginOrPasswordException;
 import ru.manager.ProgectManager.services.RefreshTokenService;
 import ru.manager.ProgectManager.services.user.UserService;
 
@@ -131,7 +132,8 @@ public class AuthController {
             })
     })
     @PostMapping("/login")
-    public ResponseEntity<?> auth(@RequestBody @Valid AuthDto request, BindingResult bindingResult) {
+    public ResponseEntity<?> auth(@RequestBody @Valid AuthDto request, BindingResult bindingResult)
+            throws IncorrectLoginOrPasswordException, AccountIsNotEnabledException, AccountIsLockedException {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {

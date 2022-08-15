@@ -27,7 +27,7 @@ import ru.manager.ProgectManager.entitys.user.*;
 import ru.manager.ProgectManager.enums.ActionType;
 import ru.manager.ProgectManager.enums.Size;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
-import ru.manager.ProgectManager.exception.EmailAlreadyUsedException;
+import ru.manager.ProgectManager.exception.runtime.EmailAlreadyUsedException;
 import ru.manager.ProgectManager.exception.user.AccountIsLockedException;
 import ru.manager.ProgectManager.exception.user.AccountIsNotEnabledException;
 import ru.manager.ProgectManager.exception.user.IncorrectLoginOrPasswordException;
@@ -152,13 +152,13 @@ public class UserService {
         return new UserDetailsDTO(userRepository.findByUsername(username));
     }
 
-    public PublicAllDataResponse findById(long id, String userLogin) {
+    public PublicAllDataResponse findById(long id, String userLogin) throws NoSuchUserException {
         return new PublicAllDataResponse(userRepository.findById(id).orElseThrow(NoSuchUserException::new),
                 findZoneIdForThisUser(userLogin));
     }
 
     @Transactional
-    public String login(AuthDto authDto) {
+    public String login(AuthDto authDto) throws AccountIsNotEnabledException, AccountIsLockedException, IncorrectLoginOrPasswordException {
         Optional<User> user = findLoginOrEmail(authDto.getLogin());
         if (user.isPresent() && passwordEncoder.matches(authDto.getPassword(), user.get().getPassword())) {
             if(!user.get().isEnabled())
@@ -192,7 +192,7 @@ public class UserService {
     }
 
     @Transactional
-    public void updatePass(String oldPass, String newPass, String userLogin) {
+    public void updatePass(String oldPass, String newPass, String userLogin) throws IncorrectLoginOrPasswordException {
         User user = userRepository.findByUsername(userLogin);
         if (passwordEncoder.matches(oldPass, user.getPassword())) {
             refreshTokenRepository.deleteAllByLogin(user.getUsername());

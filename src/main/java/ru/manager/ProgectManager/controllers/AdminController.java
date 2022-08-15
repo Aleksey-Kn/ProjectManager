@@ -16,12 +16,13 @@ import ru.manager.ProgectManager.DTO.request.adminAction.LockRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.user.UserDataForAdminList;
 import ru.manager.ProgectManager.enums.Errors;
+import ru.manager.ProgectManager.exception.ForbiddenException;
+import ru.manager.ProgectManager.exception.user.NoSuchUserException;
 import ru.manager.ProgectManager.services.AdminService;
 import ru.manager.ProgectManager.services.user.UserService;
 
 import javax.validation.Valid;
 import java.security.Principal;
-import java.util.NoSuchElementException;
 
 @RestController
 @RequiredArgsConstructor
@@ -45,7 +46,7 @@ public class AdminController {
             })
     })
     @PostMapping("/lock")
-    public ResponseEntity<?> lock(@RequestBody @Valid LockRequest lockRequest, BindingResult bindingResult) {
+    public ResponseEntity<?> lock(@RequestBody @Valid LockRequest lockRequest, BindingResult bindingResult) throws ForbiddenException, NoSuchUserException {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.LOGIN_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
                     HttpStatus.BAD_REQUEST);
@@ -65,7 +66,7 @@ public class AdminController {
     })
     @PostMapping("/unlock")
     public void unlock(@RequestParam @Parameter(description = "Идентификатор разблокируемого пользователя")
-                                    String idOrLogin) {
+                                    String idOrLogin) throws NoSuchUserException {
         adminService.unlockAccount(idOrLogin);
     }
 

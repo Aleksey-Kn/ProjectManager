@@ -8,7 +8,6 @@ import org.springframework.web.multipart.MultipartFile;
 import ru.manager.ProgectManager.DTO.request.ProjectDataRequest;
 import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.DTO.response.project.ProjectResponseWithFlag;
-import ru.manager.ProgectManager.DTO.response.user.UserDataListResponse;
 import ru.manager.ProgectManager.DTO.response.user.UserDataWithProjectRoleResponse;
 import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.entitys.Project;
@@ -40,7 +39,7 @@ public class ProjectService {
     private final VisitMarkUpdater visitMarkUpdater;
 
     @Transactional
-    public ProjectResponseWithFlag findProject(long id, String login) {
+    public ProjectResponseWithFlag findProject(long id, String login) throws ForbiddenException, NoSuchProjectException {
         User user = userRepository.findByUsername(login);
         Project project = projectRepository.findById(id).orElseThrow(NoSuchProjectException::new);
         if (project.getConnectors().stream().anyMatch(c -> c.getUser().equals(user))) {
@@ -72,7 +71,7 @@ public class ProjectService {
     }
 
     @Transactional
-    public void setPhoto(long id, MultipartFile photo, String userLogin) throws IOException {
+    public void setPhoto(long id, MultipartFile photo, String userLogin) throws IOException, ForbiddenException, NoSuchProjectException {
         User admin = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(id).orElseThrow(NoSuchProjectException::new);
         if (isAdmin(project, admin)) {
@@ -86,7 +85,7 @@ public class ProjectService {
     }
 
     @Transactional
-    public void setData(long id, ProjectDataRequest request, String userLogin) {
+    public void setData(long id, ProjectDataRequest request, String userLogin) throws NoSuchProjectException, ForbiddenException {
         Project project = projectRepository.findById(id).orElseThrow(NoSuchProjectException::new);
         User admin = userRepository.findByUsername(userLogin);
         if (isAdmin(project, admin)) {
@@ -102,7 +101,7 @@ public class ProjectService {
     }
 
     @Transactional
-    public void deleteProject(long id, String adminLogin) {
+    public void deleteProject(long id, String adminLogin) throws NoSuchProjectException, ForbiddenException {
         User admin = userRepository.findByUsername(adminLogin);
         Project project = projectRepository.findById(id).orElseThrow(NoSuchProjectException::new);
         if (isAdmin(project, admin)) {
@@ -116,7 +115,7 @@ public class ProjectService {
         } else throw new ForbiddenException();
     }
 
-    public List<UserDataWithProjectRoleResponse> findAllMembers(long id, String userLogin) {
+    public List<UserDataWithProjectRoleResponse> findAllMembers(long id, String userLogin) throws NoSuchProjectException, ForbiddenException {
         User user = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(id).orElseThrow(NoSuchProjectException::new);
         if (project.getConnectors().stream().map(UserWithProjectConnector::getUser).anyMatch(u -> u.equals(user))) {
@@ -133,7 +132,7 @@ public class ProjectService {
         }
     }
 
-    public List<UserDataWithProjectRoleResponse> findMembersByNicknameOrEmail(long id, String nicknameOrEmail, String userLogin) {
+    public List<UserDataWithProjectRoleResponse> findMembersByNicknameOrEmail(long id, String nicknameOrEmail, String userLogin) throws ForbiddenException, NoSuchProjectException {
         String name = nicknameOrEmail.toLowerCase().trim();
         User user = userRepository.findByUsername(userLogin);
         Project project = projectRepository.findById(id).orElseThrow(NoSuchProjectException::new);
@@ -153,7 +152,7 @@ public class ProjectService {
         }
     }
 
-    public boolean canCreateOrDeleteResources(long projectId, String userLogin) {
+    public boolean canCreateOrDeleteResources(long projectId, String userLogin) throws NoSuchProjectException {
         return projectRepository.findById(projectId).orElseThrow(NoSuchProjectException::new).getConnectors()
                 .parallelStream()
                 .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN

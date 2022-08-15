@@ -14,7 +14,7 @@ import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.entitys.user.WorkTrack;
 import ru.manager.ProgectManager.enums.ElementStatus;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
-import ru.manager.ProgectManager.exception.IncorrectStatusException;
+import ru.manager.ProgectManager.exception.runtime.IncorrectStatusException;
 import ru.manager.ProgectManager.repositories.KanbanElementRepository;
 import ru.manager.ProgectManager.repositories.ProjectRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;

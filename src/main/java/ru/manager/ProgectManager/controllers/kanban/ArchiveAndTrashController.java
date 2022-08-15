@@ -15,7 +15,7 @@ import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanElements;
 import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
 import ru.manager.ProgectManager.enums.Errors;
-import ru.manager.ProgectManager.exception.IncorrectStatusException;
+import ru.manager.ProgectManager.exception.runtime.IncorrectStatusException;
 import ru.manager.ProgectManager.services.kanban.ArchiveAndTrashService;
 import ru.manager.ProgectManager.services.user.UserService;
 

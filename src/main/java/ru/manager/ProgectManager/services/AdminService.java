@@ -23,7 +23,7 @@ public class AdminService {
     private final MailService mailService;
 
     @Transactional
-    public void lockAccount(LockRequest lockRequest) {
+    public void lockAccount(LockRequest lockRequest) throws ForbiddenException, NoSuchUserException {
         User blockingUser = findOnIdOrLogin(lockRequest.getIdOrLogin()).orElseThrow(NoSuchUserException::new);
         if(blockingUser.getUserWithRoleConnectors().parallelStream().noneMatch(r -> r.getName().equals("ROLE_ADMIN"))) {
             blockingUser.setAccountNonLocked(false);
@@ -37,7 +37,7 @@ public class AdminService {
     }
 
     @Transactional
-    public void unlockAccount(String idOrLogin) {
+    public void unlockAccount(String idOrLogin) throws NoSuchUserException {
         Optional<User> user = findOnIdOrLogin(idOrLogin);
         if(user.isPresent()) {
             user.get().setAccountNonLocked(true);

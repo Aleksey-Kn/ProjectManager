@@ -1,4 +1,4 @@
-package ru.manager.ProgectManager.exception;
+package ru.manager.ProgectManager.exception.runtime;
 
 public class NoSuchResourceException extends RuntimeException{
     public NoSuchResourceException(String resourceName){

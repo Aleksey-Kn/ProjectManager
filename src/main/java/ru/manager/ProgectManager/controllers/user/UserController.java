@@ -24,6 +24,8 @@ import ru.manager.ProgectManager.DTO.response.user.PublicAllDataResponse;
 import ru.manager.ProgectManager.DTO.response.user.VisitMarkResponse;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.enums.Errors;
+import ru.manager.ProgectManager.exception.user.IncorrectLoginOrPasswordException;
+import ru.manager.ProgectManager.exception.user.NoSuchUserException;
 import ru.manager.ProgectManager.services.user.NoteService;
 import ru.manager.ProgectManager.services.user.UserService;
 
@@ -64,7 +66,7 @@ public class UserController {
     })
     @GetMapping("/other")
     public PublicAllDataResponse findOtherAccountData(@RequestParam @Parameter(description = "Идентификатор искомого пользователя")
-                                                      long id, Principal principal) {
+                                                      long id, Principal principal) throws NoSuchUserException {
         String nowLogin = principal.getName();
         var targetUser = userService.findById(id, nowLogin);
         targetUser.setNote(noteService.findNote(id, nowLogin));
@@ -108,7 +110,7 @@ public class UserController {
     })
     @PutMapping("/pass")
     public ResponseEntity<?> updatePass(@RequestBody @Valid UpdatePassRequest request, BindingResult bindingResult,
-                                        Principal principal) {
+                                        Principal principal) throws IncorrectLoginOrPasswordException {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
@@ -183,7 +185,7 @@ public class UserController {
     }
 
     @Operation(summary = "Список последних посещённых ресурсов пользователем")
-    @ApiResponse(responseCode = "200", description = "Список ресурсов с сортировкой по времени поледнего посещения",
+    @ApiResponse(responseCode = "200", description = "Список ресурсов с сортировкой по времени последнего посещения",
             content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = VisitMarkResponse[].class))

@@ -13,7 +13,7 @@ import ru.manager.ProgectManager.entitys.documents.Page;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
-import ru.manager.ProgectManager.exception.NoSuchResourceException;
+import ru.manager.ProgectManager.exception.runtime.NoSuchResourceException;
 import ru.manager.ProgectManager.repositories.*;
 
 import java.util.Optional;
