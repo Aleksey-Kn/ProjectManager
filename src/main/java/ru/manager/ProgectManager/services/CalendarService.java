@@ -2,6 +2,7 @@ package ru.manager.ProgectManager.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.manager.ProgectManager.DTO.response.calendar.CalendarResponse;
 import ru.manager.ProgectManager.DTO.response.calendar.CalendarResponseList;
 import ru.manager.ProgectManager.DTO.response.calendar.ShortKanbanElementInfo;
@@ -14,6 +15,9 @@ import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
 import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.ElementStatus;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
+import ru.manager.ProgectManager.exception.ForbiddenException;
+import ru.manager.ProgectManager.exception.kanban.NoSuchKanbanException;
+import ru.manager.ProgectManager.exception.project.NoSuchProjectException;
 import ru.manager.ProgectManager.repositories.KanbanRepository;
 import ru.manager.ProgectManager.repositories.ProjectRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
@@ -24,6 +28,7 @@ import java.time.ZoneOffset;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class CalendarService {
@@ -31,8 +36,8 @@ public class CalendarService {
     private final ProjectRepository projectRepository;
     private final KanbanRepository kanbanRepository;
 
-    public Optional<CalendarResponseList> findCalendar(long projectId, int year, int month, String userLogin) {
-        Project project = projectRepository.findById(projectId).orElseThrow();
+    public CalendarResponseList findCalendar(long projectId, int year, int month, String userLogin) {
+        Project project = projectRepository.findById(projectId).orElseThrow(NoSuchProjectException::new);
         User user = userRepository.findByUsername(userLogin);
         Optional<UserWithProjectConnector> connector = user.getUserWithProjectConnectors()
                 .stream()
@@ -54,12 +59,12 @@ public class CalendarService {
                     .collect(Collectors.toSet());
             return groupByDay(elements, user);
         } else {
-            return Optional.empty();
+            throw new ForbiddenException();
         }
     }
 
-    public Optional<CalendarResponseList> findCalendarOnKanban(long id, int year, int month, String userLogin) {
-        Kanban kanban = kanbanRepository.findById(id).orElseThrow();
+    public CalendarResponseList findCalendarOnKanban(long id, int year, int month, String userLogin) {
+        Kanban kanban = kanbanRepository.findById(id).orElseThrow(NoSuchKanbanException::new);
         User user = userRepository.findByUsername(userLogin);
         Project project = kanban.getProject();
         if (user.getUserWithProjectConnectors().parallelStream().anyMatch(connector ->
@@ -76,7 +81,7 @@ public class CalendarService {
                     .collect(Collectors.toSet());
             return groupByDay(elements, user);
         } else {
-            return Optional.empty();
+            throw new ForbiddenException();
         }
     }
 
@@ -106,7 +111,7 @@ public class CalendarService {
         return localDateTime.getYear() == year && localDateTime.getMonthValue() == month;
     }
 
-    private Optional<CalendarResponseList> groupByDay(Set<KanbanElement> elements, User user) {
+    private CalendarResponseList groupByDay(Set<KanbanElement> elements, User user) {
         int zoneId = user.getZoneId();
         Map<Long, Set<ShortKanbanElementInfo>> groups = new HashMap<>();
         for (KanbanElement element : elements) {
@@ -119,9 +124,9 @@ public class CalendarService {
                     ZoneOffset.ofHours(zoneId)).toLocalDate().toEpochDay())
                     .add(new ShortKanbanElementInfo(element, canEditElement(element, user)));
         }
-        return Optional.of(new CalendarResponseList(groups.entrySet().stream()
+        return new CalendarResponseList(groups.entrySet().stream()
                 .map(entry -> new CalendarResponse(LocalDate.ofEpochDay(entry.getKey()).toString(), entry.getValue()))
-                .collect(Collectors.toSet())));
+                .collect(Collectors.toSet()));
     }
 
     private boolean canEditElement(KanbanElement element, User user) {

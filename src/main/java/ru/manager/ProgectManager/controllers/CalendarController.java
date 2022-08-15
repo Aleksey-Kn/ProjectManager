@@ -9,10 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.calendar.CalendarResponseList;
 import ru.manager.ProgectManager.DTO.response.calendar.ShortKanbanElementInfoList;
@@ -31,6 +28,12 @@ import java.util.Optional;
 public class CalendarController {
     private final CalendarService calendarService;
 
+    @ExceptionHandler(DateTimeParseException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse dateTimeParseExceptionHandler() {
+        return new ErrorResponse(Errors.WRONG_DATE_FORMAT);
+    }
+
     @Operation(summary = "Получение карточек канбана из указанного проекта, принадлежащих к указанному месяцу")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Карточки, принадлежащие к указанному месяцу", content = {
@@ -44,19 +47,9 @@ public class CalendarController {
             })
     })
     @GetMapping
-    public ResponseEntity<?> findCalendar(@RequestParam long projectId, @RequestParam int year, @RequestParam int month,
-                                          Principal principal) {
-        try {
-            Optional<CalendarResponseList> response =
-                    calendarService.findCalendar(projectId, year, month, principal.getName());
-            if (response.isPresent()) {
-                return ResponseEntity.ok(response.get());
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
-        }
+    public CalendarResponseList findCalendar(@RequestParam long projectId, @RequestParam int year,
+                                             @RequestParam int month, Principal principal) {
+        return calendarService.findCalendar(projectId, year, month, principal.getName());
     }
 
     @Operation(summary = "Получение карточек указанного канбана, принадлежащих к указанному месяцу")
@@ -72,19 +65,9 @@ public class CalendarController {
             })
     })
     @GetMapping("/kanban")
-    public ResponseEntity<?> findCalendarFromKanban(@RequestParam long id, @RequestParam int year,
-                                                    @RequestParam int month, Principal principal) {
-        try {
-            Optional<CalendarResponseList> response =
-                    calendarService.findCalendarOnKanban(id, year, month, principal.getName());
-            if (response.isPresent()) {
-                return ResponseEntity.ok(response.get());
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.NOT_FOUND);
-        }
+    public CalendarResponseList findCalendarFromKanban(@RequestParam long id, @RequestParam int year,
+                                                       @RequestParam int month, Principal principal) {
+        return calendarService.findCalendarOnKanban(id, year, month, principal.getName());
     }
 
     @Operation(summary = "Получение карточек из всех доступных канбанов, выбранная дата которых равна указанному дню")
@@ -99,11 +82,7 @@ public class CalendarController {
             })
     })
     @GetMapping("/by_day")
-    public ResponseEntity<?> findAllCardsByDay(@RequestParam String date, Principal principal) {
-        try {
-            return ResponseEntity.ok(calendarService.findTaskOnDay(date, principal.getName()));
-        } catch (DateTimeParseException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.WRONG_DATE_FORMAT), HttpStatus.BAD_REQUEST);
-        }
+    public ShortKanbanElementInfoList findAllCardsByDay(@RequestParam String date, Principal principal) {
+        return calendarService.findTaskOnDay(date, principal.getName());
     }
 }
