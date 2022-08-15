@@ -7,11 +7,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.exception.ForbiddenException;
-import ru.manager.ProgectManager.exception.kanban.NoSuchKanbanException;
+import ru.manager.ProgectManager.exception.kanban.*;
 import ru.manager.ProgectManager.exception.project.NoSuchCustomRoleException;
+import ru.manager.ProgectManager.exception.project.NoSuchProjectException;
 import ru.manager.ProgectManager.exception.user.IncorrectLoginOrPasswordException;
 import ru.manager.ProgectManager.exception.user.NoSuchUserException;
-import ru.manager.ProgectManager.exception.project.NoSuchProjectException;
 
 import java.io.IOException;
 
@@ -56,5 +56,29 @@ public class AdviceController {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse noSuchCustomRoleExceptionHandler() {
         return new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CUSTOM_ROLE);
+    }
+
+    @ExceptionHandler(IncorrectElementStatusException.class)
+    @ResponseStatus(HttpStatus.GONE)
+    public ErrorResponse incorrectElementStatusExceptionHandler() {
+        return new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION);
+    }
+
+    @ExceptionHandler(NoSuchKanbanElementException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse noSuchElementExceptionHandler() {
+        return new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT);
+    }
+
+    @ExceptionHandler(NoSuchColumn.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse noSuchColumnExceptionHandler() {
+        return new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN);
+    }
+
+    @ExceptionHandler(NoSuchTagException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse noSuchTagExceptionHandler() {
+        return new ErrorResponse(Errors.NO_SUCH_SPECIFIED_TAG);
     }
 }

@@ -4,14 +4,20 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.manager.ProgectManager.DTO.request.kanban.CreateKanbanElementRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.TransportElementRequest;
+import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanElementContentResponse;
+import ru.manager.ProgectManager.DTO.response.kanban.KanbanElementMainDataResponse;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
 import ru.manager.ProgectManager.entitys.kanban.*;
 import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.ElementStatus;
 import ru.manager.ProgectManager.enums.SearchElementType;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
-import ru.manager.ProgectManager.exception.runtime.IncorrectStatusException;
+import ru.manager.ProgectManager.exception.ForbiddenException;
+import ru.manager.ProgectManager.exception.kanban.IncorrectElementStatusException;
+import ru.manager.ProgectManager.exception.kanban.NoSuchColumn;
+import ru.manager.ProgectManager.exception.kanban.NoSuchKanbanElementException;
+import ru.manager.ProgectManager.exception.kanban.NoSuchKanbanException;
 import ru.manager.ProgectManager.exception.runtime.NoSuchResourceException;
 import ru.manager.ProgectManager.repositories.*;
 
@@ -19,7 +25,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.*;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -31,8 +39,9 @@ public class KanbanElementService {
     private final TimeRemoverRepository timeRemoverRepository;
     private final KanbanRepository kanbanRepository;
 
-    public Optional<KanbanElement> addElement(CreateKanbanElementRequest request, String userLogin) {
-        KanbanColumn column = columnRepository.findById(request.getColumnId()).orElseThrow();
+    public IdResponse addElement(CreateKanbanElementRequest request, String userLogin)
+            throws ForbiddenException, NoSuchColumn {
+        KanbanColumn column = columnRepository.findById(request.getColumnId()).orElseThrow(NoSuchColumn::new);
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = column.getKanban();
         if (canEditKanban(kanban, user)) {
@@ -53,13 +62,13 @@ public class KanbanElementService {
             column.getElements().add(element);
             KanbanElement kanbanElement = elementRepository.save(element);
             columnRepository.save(column);
-            return Optional.of(kanbanElement);
-        }
-        return Optional.empty();
+            return new IdResponse(kanbanElement.getId());
+        } else throw new ForbiddenException();
     }
 
-    public boolean rename(long id, String name, String userLogin) {
-        KanbanElement element = elementRepository.findById(id).orElseThrow();
+    public void rename(long id, String name, String userLogin)
+            throws ForbiddenException, IncorrectElementStatusException, NoSuchKanbanElementException {
+        KanbanElement element = elementRepository.findById(id).orElseThrow(NoSuchKanbanElementException::new);
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
@@ -68,14 +77,14 @@ public class KanbanElementService {
             element.setTimeOfUpdate(getEpochSeconds());
             element.setLastRedactor(user);
             elementRepository.save(element);
-            return true;
         } else {
-            return false;
+            throw new ForbiddenException();
         }
     }
 
-    public boolean editContent(long id, String content, String userLogin) {
-        KanbanElement element = elementRepository.findById(id).orElseThrow();
+    public void editContent(long id, String content, String userLogin)
+            throws IncorrectElementStatusException, NoSuchKanbanElementException, ForbiddenException {
+        KanbanElement element = elementRepository.findById(id).orElseThrow(NoSuchKanbanElementException::new);
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
@@ -84,14 +93,14 @@ public class KanbanElementService {
             element.setTimeOfUpdate(getEpochSeconds());
             element.setLastRedactor(user);
             elementRepository.save(element);
-            return true;
         } else {
-            return false;
+            throw new ForbiddenException();
         }
     }
 
-    public boolean editDate(long id, String date, String userLogin) {
-        KanbanElement element = elementRepository.findById(id).orElseThrow();
+    public void editDate(long id, String date, String userLogin)
+            throws IncorrectElementStatusException, NoSuchKanbanElementException, ForbiddenException {
+        KanbanElement element = elementRepository.findById(id).orElseThrow(NoSuchKanbanElementException::new);
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
@@ -100,14 +109,14 @@ public class KanbanElementService {
             element.setTimeOfUpdate(getEpochSeconds());
             element.setLastRedactor(user);
             elementRepository.save(element);
-            return true;
         } else {
-            return false;
+            throw new ForbiddenException();
         }
     }
 
-    public boolean dropDate(long id, String userLogin) {
-        KanbanElement element = elementRepository.findById(id).orElseThrow();
+    public void dropDate(long id, String userLogin)
+            throws IncorrectElementStatusException, NoSuchKanbanElementException, ForbiddenException {
+        KanbanElement element = elementRepository.findById(id).orElseThrow(NoSuchKanbanElementException::new);
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
@@ -116,15 +125,15 @@ public class KanbanElementService {
             element.setTimeOfUpdate(getEpochSeconds());
             element.setLastRedactor(user);
             elementRepository.save(element);
-            return true;
         } else {
-            return false;
+            throw new ForbiddenException();
         }
     }
 
-    public boolean transportElement(TransportElementRequest request, String userLogin) {
+    public boolean transportElement(TransportElementRequest request, String userLogin) throws NoSuchKanbanElementException, ForbiddenException, IncorrectElementStatusException {
         User user = userRepository.findByUsername(userLogin);
-        KanbanElement element = elementRepository.findById(request.getId()).orElseThrow();
+        KanbanElement element = elementRepository.findById(request.getId())
+                .orElseThrow(NoSuchKanbanElementException::new);
         int from = element.getSerialNumber();
         KanbanColumn fromColumn = element.getKanbanColumn();
         Kanban kanban = fromColumn.getKanban();
@@ -133,7 +142,7 @@ public class KanbanElementService {
                 if (fromColumn.getId() == request.getToColumn()) {
                     Set<KanbanElement> allElements = fromColumn.getElements();
                     if (request.getToIndex() >= allElements.size())
-                        throw new IllegalArgumentException();
+                        return false;
                     if (request.getToIndex() > from) {
                         allElements.stream()
                                 .filter(kanbanElement -> kanbanElement.getSerialNumber() > from)
@@ -177,21 +186,21 @@ public class KanbanElementService {
                     columnRepository.save(toColumn);
                 }
                 return true;
-            } else throw new IncorrectStatusException();
-        }
-        return false;
+            } else throw new IncorrectElementStatusException();
+        } else throw new ForbiddenException();
     }
 
-    public Optional<KanbanColumn> utilizeElementFromUser(long id, String userLogin) {
+    public void utilizeElementFromUser(long id, String userLogin)
+            throws ForbiddenException, NoSuchKanbanElementException, IncorrectElementStatusException {
         User user = userRepository.findByUsername(userLogin);
-        KanbanElement element = elementRepository.findById(id).orElseThrow();
+        KanbanElement element = elementRepository.findById(id).orElseThrow(NoSuchKanbanElementException::new);
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
             TimeRemover timeRemover;
             if (element.getKanbanColumn().getDelayedDays() == 0) {
                 timeRemover = new TimeRemover();
                 timeRemover.setRemoverId(element.getId());
-            } else { // если пользователь улаляет элемент из колонки с регулярным удалением вручную, то удалитель уже есть
+            } else { // если пользователь удаляет элемент из колонки с регулярным удалением вручную, то удалитель уже есть
                 timeRemover = timeRemoverRepository.findById(element.getId())
                         .orElseThrow(() -> new NoSuchResourceException("Remover " + element.getId()));
             }
@@ -201,13 +210,12 @@ public class KanbanElementService {
 
             element.setLastRedactor(user);
             utiliseElement(element);
-            return Optional.of(element.getKanbanColumn());
         } else {
-            return Optional.empty();
+            throw new ForbiddenException();
         }
     }
 
-    public void utiliseElementFromSystem(long id) {
+    public void utiliseElementFromSystem(long id) throws IncorrectElementStatusException, NoSuchKanbanElementException {
         // при автоматическом перемещении элемента в корзину не происходит удаления timeRemover, поэтому подтягиваем его и только меняем данные
         TimeRemover timeRemover = timeRemoverRepository.findById(id)
                 .orElse(new TimeRemover());
@@ -217,7 +225,8 @@ public class KanbanElementService {
         utiliseElement(elementRepository.findById(id).orElseThrow());
     }
 
-    private void utiliseElement(KanbanElement element) {
+    private void utiliseElement(KanbanElement element)
+            throws IncorrectElementStatusException, NoSuchKanbanElementException {
         checkElement(element);
 
         element.setTimeOfUpdate(getEpochSeconds());
@@ -230,35 +239,43 @@ public class KanbanElementService {
         elementRepository.saveAll(column.getElements());
     }
 
-    public Optional<KanbanElementContentResponse> getContentFromElement(long id, String userLogin) {
-        KanbanElement kanbanElement = elementRepository.findById(id).orElseThrow();
+    public KanbanElementContentResponse getContentFromElement(long id, String userLogin)
+            throws NoSuchKanbanElementException, ForbiddenException {
+        KanbanElement kanbanElement = elementRepository.findById(id).orElseThrow(NoSuchKanbanElementException::new);
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = kanbanElement.getKanbanColumn().getKanban();
         if (canSeeKanban(kanban, user)) {
-            return Optional.of(new KanbanElementContentResponse(kanbanElement, user.getZoneId(),
-                    canEditKanban(kanban, user)));
-        }
-        return Optional.empty();
+            return new KanbanElementContentResponse(kanbanElement, user.getZoneId(),
+                    canEditKanban(kanban, user));
+        } else throw new ForbiddenException();
     }
 
-    public Optional<Set<KanbanElement>> findElements(long kanbanId, SearchElementType type, String inputName,
-                                                     ElementStatus from, String userLogin){
-        Kanban kanban = kanbanRepository.findById(kanbanId).orElseThrow();
+    public Set<KanbanElementMainDataResponse> findElements(long kanbanId, SearchElementType type, String inputName,
+                                                     ElementStatus from, String userLogin)
+            throws NoSuchKanbanException, ForbiddenException {
+        Kanban kanban = kanbanRepository.findById(kanbanId).orElseThrow(NoSuchKanbanException::new);
         User user = userRepository.findByUsername(userLogin);
         String name = inputName.trim().toLowerCase();
         if(canSeeKanban(kanban, user)){
+            int zoneId = user.getZoneId();
             if(type == SearchElementType.NAME){
-                return Optional.of(findByName(kanban, name, from));
+                return findByName(kanban, name, from).stream()
+                        .map(e -> new KanbanElementMainDataResponse(e, zoneId))
+                        .collect(Collectors.toSet());
             } else if(type == SearchElementType.TAG){
-                return Optional.of(findByTag(kanban, name, from));
+                return findByTag(kanban, name, from).stream()
+                        .map(e -> new KanbanElementMainDataResponse(e, zoneId))
+                        .collect(Collectors.toSet());
             } else {
                 Set<KanbanElement> set = new HashSet<>();
                 set.addAll(findByName(kanban, name, from));
                 set.addAll(findByTag(kanban, name, from));
-                return Optional.of(set);
+                return set.stream()
+                        .map(e -> new KanbanElementMainDataResponse(e, zoneId))
+                        .collect(Collectors.toSet());
             }
         } else{
-            return Optional.empty();
+            throw new ForbiddenException();
         }
     }
 
@@ -308,10 +325,10 @@ public class KanbanElementService {
                 .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))));
     }
 
-    private void checkElement(KanbanElement element) {
+    private void checkElement(KanbanElement element) throws IncorrectElementStatusException, NoSuchKanbanElementException {
         if(element.getStatus() == ElementStatus.UTILISE)
-            throw new IncorrectStatusException();
+            throw new IncorrectElementStatusException();
         if(element.getStatus() == ElementStatus.DELETED)
-            throw new NoSuchElementException();
+            throw new NoSuchKanbanElementException();
     }
 }

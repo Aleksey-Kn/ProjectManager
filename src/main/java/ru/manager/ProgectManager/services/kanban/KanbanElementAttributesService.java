@@ -10,7 +10,10 @@ import ru.manager.ProgectManager.entitys.kanban.*;
 import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.ElementStatus;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
-import ru.manager.ProgectManager.exception.runtime.IncorrectStatusException;
+import ru.manager.ProgectManager.exception.ForbiddenException;
+import ru.manager.ProgectManager.exception.kanban.IncorrectElementStatusException;
+import ru.manager.ProgectManager.exception.kanban.NoSuchKanbanElementException;
+import ru.manager.ProgectManager.exception.kanban.NoSuchTagException;
 import ru.manager.ProgectManager.repositories.*;
 
 import java.io.IOException;
@@ -29,7 +32,8 @@ public class KanbanElementAttributesService {
     private final KanbanAttachmentRepository attachmentRepository;
     private final CheckboxRepository checkboxRepository;
 
-    public Optional<KanbanElementComment> addComment(KanbanCommentRequest request, String userLogin) {
+    public Optional<KanbanElementComment> addComment(KanbanCommentRequest request, String userLogin)
+            throws IncorrectElementStatusException, NoSuchKanbanElementException {
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(request.getId()).orElseThrow();
         Kanban kanban = element.getKanbanColumn().getKanban();
@@ -52,7 +56,8 @@ public class KanbanElementAttributesService {
         }
     }
 
-    public Optional<KanbanElement> deleteComment(long id, String userLogin) {
+    public Optional<KanbanElement> deleteComment(long id, String userLogin)
+            throws IncorrectElementStatusException, NoSuchKanbanElementException {
         User user = userRepository.findByUsername(userLogin);
         KanbanElementComment comment = commentRepository.findById(id).orElseThrow();
         if (comment.getOwner().equals(user)
@@ -71,7 +76,7 @@ public class KanbanElementAttributesService {
         }
     }
 
-    public Optional<KanbanElementComment> updateComment(KanbanCommentRequest request, String userLogin) {
+    public Optional<KanbanElementComment> updateComment(KanbanCommentRequest request, String userLogin) throws IncorrectElementStatusException, NoSuchKanbanElementException {
         User user = userRepository.findByUsername(userLogin);
         KanbanElementComment comment = commentRepository.findById(request.getId()).orElseThrow();
         if (comment.getOwner().equals(user)) {
@@ -90,7 +95,8 @@ public class KanbanElementAttributesService {
         }
     }
 
-    public Optional<KanbanAttachment> addAttachment(long id, String userLogin, MultipartFile file) throws IOException {
+    public Optional<KanbanAttachment> addAttachment(long id, String userLogin, MultipartFile file)
+            throws IOException, IncorrectElementStatusException, NoSuchKanbanElementException {
         User user = userRepository.findByUsername(userLogin);
         KanbanElement element = elementRepository.findById(id).orElseThrow();
         Kanban kanban = element.getKanbanColumn().getKanban();
@@ -125,7 +131,7 @@ public class KanbanElementAttributesService {
         }
     }
 
-    public Optional<KanbanElement> deleteAttachment(long id, String userLogin) {
+    public Optional<KanbanElement> deleteAttachment(long id, String userLogin) throws IncorrectElementStatusException, NoSuchKanbanElementException {
         User user = userRepository.findByUsername(userLogin);
         KanbanAttachment attachment = attachmentRepository.findById(id).orElseThrow();
         Kanban kanban = attachment.getElement().getKanbanColumn().getKanban();
@@ -142,8 +148,9 @@ public class KanbanElementAttributesService {
         }
     }
 
-    public boolean addTag(long elementId, long tagId, String userLogin){
-        KanbanElement element = elementRepository.findById(elementId).orElseThrow();
+    public void addTag(long elementId, long tagId, String userLogin)
+            throws ForbiddenException, NoSuchTagException, NoSuchKanbanElementException, IncorrectElementStatusException {
+        KanbanElement element = elementRepository.findById(elementId).orElseThrow(NoSuchKanbanElementException::new);
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
@@ -153,16 +160,16 @@ public class KanbanElementAttributesService {
 
             element.getTags().add(element.getKanbanColumn().getKanban().getAvailableTags().stream()
                     .filter(t -> t.getId() == tagId)
-                    .findAny().orElseThrow(IllegalArgumentException::new));
+                    .findAny().orElseThrow(NoSuchTagException::new));
             elementRepository.save(element);
-            return true;
         } else{
-            return false;
+            throw new ForbiddenException();
         }
     }
 
-    public boolean removeTag(long elementId, long tagId, String userLogin){
-        KanbanElement element = elementRepository.findById(elementId).orElseThrow();
+    public void removeTag(long elementId, long tagId, String userLogin)
+            throws IncorrectElementStatusException, NoSuchKanbanElementException, ForbiddenException {
+        KanbanElement element = elementRepository.findById(elementId).orElseThrow(NoSuchKanbanElementException::new);
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (canEditKanban(kanban, user)) {
@@ -172,13 +179,12 @@ public class KanbanElementAttributesService {
 
             element.getTags().removeIf(tag -> tag.getId() == tagId);
             elementRepository.save(element);
-            return true;
         } else {
-            return false;
+            throw new ForbiddenException();
         }
     }
 
-    public Optional<CheckBox> addCheckbox(CheckboxRequest request, String userLogin){
+    public Optional<CheckBox> addCheckbox(CheckboxRequest request, String userLogin) throws IncorrectElementStatusException, NoSuchKanbanElementException {
         KanbanElement element = elementRepository.findById(request.getElementId()).orElseThrow();
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = element.getKanbanColumn().getKanban();
@@ -200,7 +206,8 @@ public class KanbanElementAttributesService {
         }
     }
 
-    public boolean deleteCheckbox(long id, String userLogin){
+    public boolean deleteCheckbox(long id, String userLogin)
+            throws IncorrectElementStatusException, NoSuchKanbanElementException {
         CheckBox checkBox = checkboxRepository.findById(id).orElseThrow();
         KanbanElement element = checkBox.getElement();
         User user = userRepository.findByUsername(userLogin);
@@ -218,7 +225,8 @@ public class KanbanElementAttributesService {
         }
     }
 
-    public boolean tapCheckbox(long id, String userLogin){
+    public boolean tapCheckbox(long id, String userLogin)
+            throws IncorrectElementStatusException, NoSuchKanbanElementException {
         CheckBox checkBox = checkboxRepository.findById(id).orElseThrow();
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = checkBox.getElement().getKanbanColumn().getKanban();
@@ -237,7 +245,8 @@ public class KanbanElementAttributesService {
         }
     }
 
-    public boolean editCheckbox(long id, String newText, String userLogin){
+    public boolean editCheckbox(long id, String newText, String userLogin)
+            throws IncorrectElementStatusException, NoSuchKanbanElementException {
         CheckBox checkBox = checkboxRepository.findById(id).orElseThrow();
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = checkBox.getElement().getKanbanColumn().getKanban();
@@ -275,10 +284,11 @@ public class KanbanElementAttributesService {
                 .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))));
     }
 
-    private void checkElement(KanbanElement element) {
+    private void checkElement(KanbanElement element)
+            throws IncorrectElementStatusException, NoSuchKanbanElementException {
         if(element.getStatus() == ElementStatus.UTILISE)
-            throw new IncorrectStatusException();
+            throw new IncorrectElementStatusException();
         if(element.getStatus() == ElementStatus.DELETED)
-            throw new NoSuchElementException();
+            throw new NoSuchKanbanElementException();
     }
 }

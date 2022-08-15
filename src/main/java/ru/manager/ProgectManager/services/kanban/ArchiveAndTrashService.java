@@ -2,6 +2,8 @@ package ru.manager.ProgectManager.services.kanban;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.manager.ProgectManager.DTO.response.kanban.KanbanElementMainDataResponse;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.entitys.kanban.KanbanColumn;
@@ -9,6 +11,10 @@ import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
 import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.ElementStatus;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
+import ru.manager.ProgectManager.exception.ForbiddenException;
+import ru.manager.ProgectManager.exception.kanban.IncorrectElementStatusException;
+import ru.manager.ProgectManager.exception.kanban.NoSuchKanbanElementException;
+import ru.manager.ProgectManager.exception.kanban.NoSuchKanbanException;
 import ru.manager.ProgectManager.exception.runtime.IncorrectStatusException;
 import ru.manager.ProgectManager.repositories.*;
 
@@ -16,10 +22,9 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class ArchiveAndTrashService {
@@ -29,6 +34,7 @@ public class ArchiveAndTrashService {
     private final TimeRemoverRepository timeRemoverRepository;
     private final KanbanRepository kanbanRepository;
 
+    @Transactional
     public void finalDeleteElementFromTrash(long id) {
         KanbanElement element = elementRepository.findById(id).orElseThrow();
         if (element.getStatus() != ElementStatus.UTILISE)
@@ -44,15 +50,17 @@ public class ArchiveAndTrashService {
         }
     }
 
-    public boolean archive(long id, String userLogin) {
+    @Transactional
+    public void archive(long id, String userLogin)
+            throws NoSuchKanbanElementException, IncorrectElementStatusException, ForbiddenException {
         User user = userRepository.findByUsername(userLogin);
-        KanbanElement element = elementRepository.findById(id).orElseThrow();
+        KanbanElement element = elementRepository.findById(id).orElseThrow(NoSuchKanbanElementException::new);
         if (element.getStatus() == ElementStatus.DELETED)
-            throw new NoSuchElementException();
+            throw new NoSuchKanbanElementException();
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (canEditResource(kanban, user)) {
             if (element.getStatus() == ElementStatus.ARCHIVED)
-                throw new IncorrectStatusException();
+                throw new IncorrectElementStatusException();
 
             timeRemoverRepository.findById(id).ifPresent(timeRemoverRepository::delete);
 
@@ -64,21 +72,21 @@ public class ArchiveAndTrashService {
                     .filter(e -> e.getSerialNumber() > element.getSerialNumber())
                     .forEach(e -> e.setSerialNumber(e.getSerialNumber() - 1));
             columnRepository.save(column);
-            return true;
         } else {
-            return false;
+            throw new ForbiddenException();
         }
     }
 
-    public boolean reestablish(long id, String userLogin) {
+    @Transactional
+    public void reestablish(long id, String userLogin) throws ForbiddenException, NoSuchKanbanElementException, IncorrectElementStatusException {
         User user = userRepository.findByUsername(userLogin);
-        KanbanElement element = elementRepository.findById(id).orElseThrow();
+        KanbanElement element = elementRepository.findById(id).orElseThrow(NoSuchKanbanElementException::new);
         if (element.getStatus() == ElementStatus.DELETED)
-            throw new NoSuchElementException();
+            throw new NoSuchKanbanElementException();
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (canEditResource(kanban, user)) {
             if (element.getStatus() == ElementStatus.ALIVE)
-                throw new IncorrectStatusException();
+                throw new IncorrectElementStatusException();
 
             timeRemoverRepository.findById(id).ifPresent(timeRemoverRepository::delete);
 
@@ -90,35 +98,39 @@ public class ArchiveAndTrashService {
                     .mapToInt(KanbanElement::getSerialNumber)
                     .max().orElse(-1) + 1);
             elementRepository.save(element);
-            return true;
         } else {
-            return false;
+            throw new ForbiddenException();
         }
     }
 
-    public Optional<List<KanbanElement>> findArchive(long kanbanId, String userLogin) {
+    public List<KanbanElementMainDataResponse> findArchive(long kanbanId, String userLogin)
+            throws ForbiddenException, NoSuchKanbanException {
         User user = userRepository.findByUsername(userLogin);
-        Kanban kanban = kanbanRepository.findById(kanbanId).orElseThrow();
+        Kanban kanban = kanbanRepository.findById(kanbanId).orElseThrow(NoSuchKanbanException::new);
         if (canSeeResource(kanban, user)) {
-            return Optional.of(kanban.getKanbanColumns().stream()
+            int zoneId = user.getZoneId();
+            return kanban.getKanbanColumns().stream()
                     .flatMap(c -> c.getElements().stream())
                     .filter(e -> e.getStatus() == ElementStatus.ARCHIVED)
-                    .collect(Collectors.toList()));
+                    .map(e -> new KanbanElementMainDataResponse(e, zoneId))
+                    .collect(Collectors.toList());
         } else {
-            return Optional.empty();
+            throw new ForbiddenException();
         }
     }
 
-    public Optional<List<KanbanElement>> findTrash(long kanbanId, String userLogin) {
+    public List<KanbanElementMainDataResponse> findTrash(long kanbanId, String userLogin) throws NoSuchKanbanException, ForbiddenException {
         User user = userRepository.findByUsername(userLogin);
-        Kanban kanban = kanbanRepository.findById(kanbanId).orElseThrow();
+        Kanban kanban = kanbanRepository.findById(kanbanId).orElseThrow(NoSuchKanbanException::new);
         if (canSeeResource(kanban, user)) {
-            return Optional.of(kanban.getKanbanColumns().stream()
+            int zoneId = user.getZoneId();
+            return kanban.getKanbanColumns().stream()
                     .flatMap(c -> c.getElements().stream())
                     .filter(e -> e.getStatus() == ElementStatus.UTILISE)
-                    .collect(Collectors.toList()));
+                    .map(e -> new KanbanElementMainDataResponse(e, zoneId))
+                    .collect(Collectors.toList());
         } else {
-            return Optional.empty();
+            throw new ForbiddenException();
         }
     }
 

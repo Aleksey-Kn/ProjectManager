@@ -208,7 +208,9 @@ public class DocumentController {
     public PageResponse[] findRootPages(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
                                         @RequestParam int pageIndex, @RequestParam int rowCount,
                                         Principal principal) throws ForbiddenException, NoSuchProjectException {
-        return pageService.findAllRoot(id, principal.getName()).stream().skip(pageIndex).limit(rowCount)
+        return pageService.findAllRoot(id, principal.getName()).stream()
+                .skip(pageIndex)
+                .limit(rowCount)
                 .toArray(PageResponse[]::new);
     }
 
@@ -295,7 +297,9 @@ public class DocumentController {
     @GetMapping("/children")
     public PageResponse[] findChildren(@RequestParam long id, @RequestParam int pageIndex, @RequestParam int rowCount,
                                        Principal principal) throws ForbiddenException, NoSuchPageException {
-        return pageService.findSubpages(id, principal.getName()).stream().skip(pageIndex).limit(rowCount)
+        return pageService.findSubpages(id, principal.getName()).stream()
+                .skip(pageIndex)
+                .limit(rowCount)
                 .toArray(PageResponse[]::new);
     }
 

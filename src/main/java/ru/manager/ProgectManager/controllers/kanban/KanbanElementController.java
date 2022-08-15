@@ -18,24 +18,19 @@ import ru.manager.ProgectManager.DTO.request.kanban.TransportElementRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanElementContentResponse;
-import ru.manager.ProgectManager.DTO.response.kanban.KanbanElements;
+import ru.manager.ProgectManager.DTO.response.kanban.KanbanElementMainDataResponse;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
-import ru.manager.ProgectManager.entitys.kanban.KanbanColumn;
-import ru.manager.ProgectManager.entitys.kanban.KanbanElement;
 import ru.manager.ProgectManager.enums.ElementStatus;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.enums.SearchElementType;
-import ru.manager.ProgectManager.exception.runtime.IncorrectStatusException;
+import ru.manager.ProgectManager.exception.ForbiddenException;
+import ru.manager.ProgectManager.exception.kanban.*;
 import ru.manager.ProgectManager.services.kanban.KanbanElementAttributesService;
 import ru.manager.ProgectManager.services.kanban.KanbanElementService;
-import ru.manager.ProgectManager.services.user.UserService;
 
 import javax.validation.Valid;
 import java.security.Principal;
 import java.time.format.DateTimeParseException;
-import java.util.NoSuchElementException;
-import java.util.Optional;
-import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
@@ -45,7 +40,12 @@ public class KanbanElementController {
     private final KanbanElementService kanbanElementService;
     private final KanbanElementAttributesService attributesService;
     private final ErrorResponseEntityConfigurator entityConfigurator;
-    private final UserService userService;
+
+    @ExceptionHandler(DateTimeParseException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse dateTimeParseExceptionHandler() {
+        return new ErrorResponse(Errors.WRONG_DATE_FORMAT);
+    }
 
     @Operation(summary = "Получение элемента канбана", description = "Получение полной информации об элементе канбана")
     @ApiResponses(value = {
@@ -64,19 +64,9 @@ public class KanbanElementController {
             })
     })
     @GetMapping()
-    public ResponseEntity<?> getContent(@RequestParam long elementId, Principal principal) {
-        try {
-            String login = principal.getName();
-            Optional<KanbanElementContentResponse> content = kanbanElementService
-                    .getContentFromElement(elementId, login);
-            if (content.isPresent()) {
-                return ResponseEntity.ok(content.get());
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
-        }
+    public KanbanElementContentResponse getContent(@RequestParam long elementId, Principal principal)
+            throws ForbiddenException, NoSuchKanbanElementException {
+        return kanbanElementService.getContentFromElement(elementId, principal.getName());
     }
 
     @Operation(summary = "Добавление элемента")
@@ -97,21 +87,12 @@ public class KanbanElementController {
     })
     @PostMapping
     public ResponseEntity<?> addElement(@RequestBody @Valid CreateKanbanElementRequest request,
-                                        BindingResult bindingResult, Principal principal) {
+                                        BindingResult bindingResult, Principal principal)
+            throws ForbiddenException, NoSuchColumn {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
-            try {
-                String login = principal.getName();
-                Optional<KanbanElement> element = kanbanElementService.addElement(request, login);
-                if (element.isPresent()) {
-                    return ResponseEntity.ok(new IdResponse(element.get().getId()));
-                } else {
-                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-                }
-            } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.NOT_FOUND);
-            }
+            return ResponseEntity.ok(kanbanElementService.addElement(request, principal.getName()));
         }
     }
 
@@ -124,27 +105,21 @@ public class KanbanElementController {
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к ресурсу"),
             @ApiResponse(responseCode = "200", description = "Список найденных элементов", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = KanbanElements.class))
+                            schema = @Schema(implementation = KanbanElementMainDataResponse[].class))
             })
     })
     @GetMapping("/find")
-    public ResponseEntity<?> findElementsByName(@RequestParam @Parameter(description = "Идентиикатор канбана") long id,
-                                                @RequestParam SearchElementType type,
-                                                @RequestParam ElementStatus status, @RequestParam String name,
-                                                @RequestParam int pageIndex, @RequestParam int rowCount,
-                                                Principal principal) {
-        try {
-            String login = principal.getName();
-            Optional<Set<KanbanElement>> elements = kanbanElementService.findElements(id, type, name, status, login);
-            if (elements.isPresent()) {
-                return ResponseEntity.ok(new KanbanElements(elements.get(), pageIndex, rowCount,
-                        userService.findZoneIdForThisUser(login)));
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.NOT_FOUND);
-        }
+    public KanbanElementMainDataResponse[] findElementsByName(@RequestParam @Parameter(description = "Идентиикатор канбана") long id,
+                                                              @RequestParam SearchElementType type,
+                                                              @RequestParam ElementStatus status,
+                                                              @RequestParam String name,
+                                                              @RequestParam int pageIndex, @RequestParam int rowCount,
+                                                              Principal principal)
+            throws ForbiddenException, NoSuchKanbanException {
+        return kanbanElementService.findElements(id, type, name, status, principal.getName()).stream()
+                .skip(pageIndex)
+                .limit(rowCount)
+                .toArray(KanbanElementMainDataResponse[]::new);
     }
 
     @Operation(summary = "Переименование элемента")
@@ -167,23 +142,14 @@ public class KanbanElementController {
     })
     @PutMapping("/rename")
     public ResponseEntity<?> rename(@RequestParam long id, @RequestBody @Valid NameRequest request,
-                                         BindingResult bindingResult, Principal principal) {
+                                    BindingResult bindingResult, Principal principal)
+            throws ForbiddenException, IncorrectElementStatusException, NoSuchKanbanElementException {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
                     HttpStatus.BAD_REQUEST);
         } else {
-            try {
-                if (kanbanElementService.rename(id, request.getName(), principal.getName())) {
-                    return new ResponseEntity<>(HttpStatus.OK);
-                } else {
-                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-                }
-            } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
-            } catch (IncorrectStatusException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
-                        HttpStatus.GONE);
-            }
+            kanbanElementService.rename(id, request.getName(), principal.getName());
+            return new ResponseEntity<>(HttpStatus.OK);
         }
     }
 
@@ -206,21 +172,9 @@ public class KanbanElementController {
             })
     })
     @PutMapping("/date")
-    public ResponseEntity<?> editDate(@RequestParam long id, @RequestParam String date, Principal principal) {
-        try {
-            if (kanbanElementService.editDate(id, date, principal.getName())) {
-                return new ResponseEntity<>(HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
-        } catch (IncorrectStatusException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
-                    HttpStatus.GONE);
-        } catch (DateTimeParseException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.WRONG_DATE_FORMAT), HttpStatus.BAD_REQUEST);
-        }
+    public void editDate(@RequestParam long id, @RequestParam String date, Principal principal)
+            throws ForbiddenException, IncorrectElementStatusException, NoSuchKanbanElementException {
+        kanbanElementService.editDate(id, date, principal.getName());
     }
 
     @Operation(summary = "Удаление даты, прикреплённой к элементу")
@@ -238,19 +192,9 @@ public class KanbanElementController {
             })
     })
     @DeleteMapping("/date")
-    public ResponseEntity<?> dropDate(@RequestParam long id, Principal principal) {
-        try {
-            if (kanbanElementService.dropDate(id, principal.getName())) {
-                return new ResponseEntity<>(HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
-        } catch (IncorrectStatusException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
-                    HttpStatus.GONE);
-        }
+    public void dropDate(@RequestParam long id, Principal principal)
+            throws ForbiddenException, IncorrectElementStatusException, NoSuchKanbanElementException {
+        kanbanElementService.dropDate(id, principal.getName());
     }
 
     @Operation(summary = "Изменение контента элемента")
@@ -268,19 +212,9 @@ public class KanbanElementController {
             })
     })
     @PutMapping("/content")
-    public ResponseEntity<?> editContent(@RequestParam long id, @RequestParam String content, Principal principal) {
-        try {
-            if (kanbanElementService.editContent(id, content, principal.getName())) {
-                return new ResponseEntity<>(HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
-        } catch (IncorrectStatusException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
-                    HttpStatus.GONE);
-        }
+    public void editContent(@RequestParam long id, @RequestParam String content, Principal principal)
+            throws ForbiddenException, IncorrectElementStatusException, NoSuchKanbanElementException {
+        kanbanElementService.editContent(id, content, principal.getName());
     }
 
     @Operation(summary = "Удаление элемента")
@@ -298,21 +232,9 @@ public class KanbanElementController {
             })
     })
     @DeleteMapping()
-    public ResponseEntity<?> removeElement(@RequestParam long id, Principal principal) {
-        try {
-            String login = principal.getName();
-            Optional<KanbanColumn> column = kanbanElementService.utilizeElementFromUser(id, login);
-            if (column.isPresent()) {
-                return new ResponseEntity<>(HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
-        } catch (IncorrectStatusException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
-                    HttpStatus.GONE);
-        }
+    public void removeElement(@RequestParam long id, Principal principal)
+            throws ForbiddenException, IncorrectElementStatusException, NoSuchKanbanElementException {
+        kanbanElementService.utilizeElementFromUser(id, principal.getName());
     }
 
     @Operation(summary = "Перемещение элемента канбана",
@@ -337,24 +259,16 @@ public class KanbanElementController {
     })
     @PutMapping("/transport")
     public ResponseEntity<?> transportElement(@RequestBody @Valid TransportElementRequest transportElementRequest,
-                                              BindingResult bindingResult, Principal principal) {
+                                              BindingResult bindingResult, Principal principal)
+            throws ForbiddenException, IncorrectElementStatusException, NoSuchKanbanElementException {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
-            try {
-                if (kanbanElementService.transportElement(transportElementRequest, principal.getName())) {
-                    return new ResponseEntity<>(HttpStatus.OK);
-                }
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT_OR_COLUMN),
-                        HttpStatus.NOT_FOUND);
-            } catch (IllegalArgumentException e) {
+            if (kanbanElementService.transportElement(transportElementRequest, principal.getName())) {
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else {
                 return new ResponseEntity<>(new ErrorResponse(Errors.INDEX_MORE_COLLECTION_SIZE),
                         HttpStatus.BAD_REQUEST);
-            } catch (IncorrectStatusException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
-                        HttpStatus.GONE);
             }
         }
     }
@@ -375,21 +289,9 @@ public class KanbanElementController {
             @ApiResponse(responseCode = "200", description = "Тег успешно добавлен"),
     })
     @PostMapping("/tag")
-    public ResponseEntity<?> addTag(@RequestParam long elementId, @RequestParam long tagId, Principal principal) {
-        try {
-            if (attributesService.addTag(elementId, tagId, principal.getName())) {
-                return new ResponseEntity<>(HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
-        } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_TAG), HttpStatus.NOT_FOUND);
-        } catch (IncorrectStatusException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
-                    HttpStatus.GONE);
-        }
+    public void addTag(@RequestParam long elementId, @RequestParam long tagId, Principal principal)
+            throws NoSuchTagException, ForbiddenException, IncorrectElementStatusException, NoSuchKanbanElementException {
+        attributesService.addTag(elementId, tagId, principal.getName());
     }
 
     @Operation(summary = "Удаление тега из элемента")
@@ -408,18 +310,8 @@ public class KanbanElementController {
             @ApiResponse(responseCode = "200", description = "Тег успешно удалён"),
     })
     @DeleteMapping("/tag")
-    public ResponseEntity<?> removeTag(@RequestParam long elementId, @RequestParam long tagId, Principal principal) {
-        try {
-            if (attributesService.removeTag(elementId, tagId, principal.getName())) {
-                return new ResponseEntity<>(HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
-        } catch (IncorrectStatusException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
-                    HttpStatus.GONE);
-        }
+    public void removeTag(@RequestParam long elementId, @RequestParam long tagId, Principal principal)
+            throws IncorrectElementStatusException, NoSuchKanbanElementException, ForbiddenException {
+        attributesService.removeTag(elementId, tagId, principal.getName());
     }
 }

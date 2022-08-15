@@ -8,7 +8,7 @@ import javax.validation.constraints.Min;
 
 @Validated
 @Getter
-@Schema(description = "Запрос на передвижение елемента канбана")
+@Schema(description = "Запрос на передвижение элемента канбана")
 public class TransportElementRequest {
     @Schema(required = true, description = "Идентификатор передвигаемого элемента")
     private long id;
@@ -16,6 +16,6 @@ public class TransportElementRequest {
     @Min(value = 0, message = "INDEX_MUST_BE_MORE_0")
     private int toIndex;
     @Min(value = 0, message = "INDEX_MUST_BE_MORE_0")
-    @Schema(description = "Индентификатор целевой колонки элемента")
+    @Schema(description = "Идентификатор целевой колонки элемента")
     private int toColumn;
 }
