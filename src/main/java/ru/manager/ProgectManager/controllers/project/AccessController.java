@@ -74,8 +74,7 @@ public class AccessController {
         if (accessProjectService.createAccessForUser(token, principal.getName())) {
             return new ResponseEntity<>(HttpStatus.OK);
         } else {
-            return new ResponseEntity<>(
-                    new ErrorResponse(Errors.PROJECT_ACCESS_TOKEN_IS_DEPRECATED),
+            return new ResponseEntity<>(new ErrorResponse(Errors.PROJECT_ACCESS_TOKEN_IS_DEPRECATED),
                     HttpStatus.FORBIDDEN);
         }
     }
