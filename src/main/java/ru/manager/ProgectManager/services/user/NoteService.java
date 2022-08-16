@@ -2,24 +2,27 @@ package ru.manager.ProgectManager.services.user;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.manager.ProgectManager.entitys.user.Note;
 import ru.manager.ProgectManager.entitys.user.User;
+import ru.manager.ProgectManager.exception.user.NoSuchUserException;
 import ru.manager.ProgectManager.repositories.NoteRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
 
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class NoteService {
     private final UserRepository userRepository;
     private final NoteRepository noteRepository;
 
-    public boolean setNote(String noteText, long targetUserId, String ownerLogin) {
+    @Transactional
+    public boolean setNote(String noteText, long targetUserId, String ownerLogin) throws NoSuchUserException {
         User ownerNote = userRepository.findByUsername(ownerLogin);
         if (!userRepository.existsById(targetUserId))
-            throw new NoSuchElementException();
+            throw new NoSuchUserException();
         if(ownerNote.getUserId() != targetUserId) {
             ownerNote.getNotes().parallelStream()
                     .filter(note -> note.getUserId() == targetUserId)
@@ -40,6 +43,7 @@ public class NoteService {
         }
     }
 
+    @Transactional
     public boolean deleteNote(long targetUserId, String ownerLogin) {
         User owner = userRepository.findByUsername(ownerLogin);
         Optional<Note> note = noteRepository.findByUserId(targetUserId);

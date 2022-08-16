@@ -15,16 +15,15 @@ import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.user.NoteRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.enums.Errors;
+import ru.manager.ProgectManager.exception.user.NoSuchUserException;
 import ru.manager.ProgectManager.services.user.NoteService;
 
 import javax.validation.Valid;
 import java.security.Principal;
-import java.util.NoSuchElementException;
 
-//todo
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/users/user")
+@RequestMapping("/users/user/note")
 @Tag(name = "Заметки о пользователях")
 public class NoteController {
     private final NoteService noteService;
@@ -39,21 +38,17 @@ public class NoteController {
             @ApiResponse(responseCode = "404", description = "Указанного пользователя не существует"),
             @ApiResponse(responseCode = "409", description = "Нельзя присваивать заметку самому себе")
     })
-    @PostMapping("/note")
+    @PostMapping
     public ResponseEntity<?> postNote(@RequestBody @Valid NoteRequest noteRequest, BindingResult bindingResult,
-                                      Principal principal) {
+                                      Principal principal) throws NoSuchUserException {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.TEXT_MUST_BE_CONTAINS_VISIBLE_SYMBOL),
                     HttpStatus.BAD_REQUEST);
         } else {
-            try {
-                if (noteService.setNote(noteRequest.getText(), noteRequest.getTargetUserId(), principal.getName())) {
-                    return new ResponseEntity<>(HttpStatus.OK);
-                } else {
-                    return new ResponseEntity<>(HttpStatus.CONFLICT);
-                }
-            } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            if (noteService.setNote(noteRequest.getText(), noteRequest.getTargetUserId(), principal.getName())) {
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.CONFLICT);
             }
         }
     }
@@ -63,9 +58,9 @@ public class NoteController {
             @ApiResponse(responseCode = "200", description = "Заметка успешно удалена"),
             @ApiResponse(responseCode = "404", description = "Требуемой заметки не существует")
     })
-    @DeleteMapping("/note")
+    @DeleteMapping
     public ResponseEntity<?> deleteNote(@RequestParam @Parameter(description = "Идентификатор пользователя, " +
-            "к которому приклеплёна удаляемая записка") long id, Principal principal) {
+            "к которому прикреплена удаляемая записка") long id, Principal principal) {
         if (noteService.deleteNote(id, principal.getName())) {
             return new ResponseEntity<>(HttpStatus.OK);
         } else {
