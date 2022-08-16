@@ -16,11 +16,10 @@ import ru.manager.ProgectManager.DTO.request.PhotoDTO;
 import ru.manager.ProgectManager.DTO.request.ProjectDataRequest;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.IdResponse;
-import ru.manager.ProgectManager.DTO.response.kanban.KanbanListResponse;
+import ru.manager.ProgectManager.DTO.response.kanban.KanbanMainDataResponse;
 import ru.manager.ProgectManager.DTO.response.project.ProjectResponseWithFlag;
 import ru.manager.ProgectManager.DTO.response.user.PublicMainUserDataResponse;
 import ru.manager.ProgectManager.DTO.response.user.UserDataWithProjectRoleResponse;
-import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.ForbiddenException;
@@ -28,13 +27,10 @@ import ru.manager.ProgectManager.exception.project.NoSuchProjectException;
 import ru.manager.ProgectManager.services.kanban.KanbanService;
 import ru.manager.ProgectManager.services.project.ProjectRoleService;
 import ru.manager.ProgectManager.services.project.ProjectService;
-import ru.manager.ProgectManager.services.user.UserService;
 
 import javax.validation.Valid;
 import java.io.IOException;
 import java.security.Principal;
-import java.util.Optional;
-import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
@@ -43,7 +39,6 @@ import java.util.Set;
 public class ProjectController {
     private final ProjectService projectService;
     private final KanbanService kanbanService;
-    private final UserService userService;
     private final ProjectRoleService roleService;
 
     @Operation(summary = "Создание проекта")
@@ -100,10 +95,11 @@ public class ProjectController {
     })
     @PutMapping("/project")
     public ResponseEntity<?> setData(@RequestParam long id, @RequestBody @Valid ProjectDataRequest request,
-                                     BindingResult bindingResult, Principal principal) throws ForbiddenException, NoSuchProjectException {
+                                     BindingResult bindingResult, Principal principal)
+            throws ForbiddenException, NoSuchProjectException {
         if (bindingResult.hasErrors()) {
-            return new ResponseEntity<>(
-                    new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
+                    HttpStatus.BAD_REQUEST);
         } else {
             projectService.setData(id, request, principal.getName());
             return new ResponseEntity<>(HttpStatus.OK);
@@ -140,19 +136,14 @@ public class ProjectController {
             @ApiResponse(responseCode = "200",
                     description = "Список канбан досок в данном проекте, доступных текщему пользователю", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = KanbanListResponse.class))
+                            schema = @Schema(implementation = KanbanMainDataResponse[].class))
             })
     })
     @GetMapping("/project/kanbans")
-    public ResponseEntity<?> allKanbanOfThisUser(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
-                                                 Principal principal) {
-        String login = principal.getName();
-        Optional<Set<Kanban>> kanbans = kanbanService.findAllKanban(id, login);
-        if (kanbans.isPresent()) {
-            return ResponseEntity.ok(new KanbanListResponse(kanbans.get(), userService.findZoneIdForThisUser(login)));
-        } else {
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-        }
+    public KanbanMainDataResponse[] allKanbanOfThisUser(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
+                                                        Principal principal)
+            throws ForbiddenException, NoSuchProjectException {
+        return kanbanService.findAllKanban(id, principal.getName());
     }
 
     @Operation(summary = "Поиск канбанов по имени в указанном проекте",
@@ -166,20 +157,14 @@ public class ProjectController {
             @ApiResponse(responseCode = "200",
                     description = "Список канбан досок в данном проекте, найденных по данному названию", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = KanbanListResponse.class))
+                            schema = @Schema(implementation = KanbanMainDataResponse[].class))
             })
     })
     @GetMapping("/project/kanbans_by_name")
-    public ResponseEntity<?> allKanbanOfThisUser(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
-                                                 @RequestParam String name, Principal principal) {
-        String login = principal.getName();
-        Optional<Set<Kanban>> kanbans = kanbanService.findKanbansByName(id, name, login);
-        if (kanbans.isPresent()) {
-            return ResponseEntity.ok(new KanbanListResponse(kanbans.get(), userService.findZoneIdForThisUser(login)));
-        } else {
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-        }
-
+    public KanbanMainDataResponse[] allKanbanOfThisUser(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
+                                                        @RequestParam String name, Principal principal)
+            throws ForbiddenException, NoSuchProjectException {
+        return kanbanService.findKanbansByName(id, name, principal.getName());
     }
 
     @Operation(summary = "Получение списка участников проекта")
@@ -196,7 +181,8 @@ public class ProjectController {
     })
     @GetMapping("/project/users")
     public UserDataWithProjectRoleResponse[] allParticipants(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
-                                                           Principal principal) throws ForbiddenException, NoSuchProjectException {
+                                                             Principal principal)
+            throws ForbiddenException, NoSuchProjectException {
         return projectService.findAllMembers(id, principal.getName()).toArray(UserDataWithProjectRoleResponse[]::new);
     }
 
@@ -214,8 +200,8 @@ public class ProjectController {
     })
     @GetMapping("/project/users/find")
     public UserDataWithProjectRoleResponse[] findMembers(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
-                                            @RequestParam @Parameter(description = "Имя или почта пользователя") String name,
-                                            Principal principal) throws ForbiddenException, NoSuchProjectException {
+                                                         @RequestParam @Parameter(description = "Имя или почта пользователя") String name,
+                                                         Principal principal) throws ForbiddenException, NoSuchProjectException {
         return projectService.findMembersByNicknameOrEmail(id, name, principal.getName())
                 .toArray(UserDataWithProjectRoleResponse[]::new);
     }

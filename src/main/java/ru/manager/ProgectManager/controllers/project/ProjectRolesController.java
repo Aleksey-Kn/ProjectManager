@@ -33,7 +33,6 @@ import javax.validation.Valid;
 import java.security.Principal;
 import java.util.Optional;
 
-//todo
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users/roles")

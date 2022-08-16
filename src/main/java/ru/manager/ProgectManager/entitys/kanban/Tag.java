@@ -1,6 +1,5 @@
 package ru.manager.ProgectManager.entitys.kanban;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,12 +18,10 @@ public class Tag {
     private String text;
     private String color;
 
-    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "kanban_id")
     private Kanban kanban;
 
-    @JsonIgnore
     @ManyToMany(mappedBy = "tags")
     private Set<KanbanElement> kanbanElementSet;
 

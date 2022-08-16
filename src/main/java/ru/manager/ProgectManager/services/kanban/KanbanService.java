@@ -2,9 +2,14 @@ package ru.manager.ProgectManager.services.kanban;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import ru.manager.ProgectManager.DTO.request.kanban.TagRequest;
+import ru.manager.ProgectManager.DTO.response.IdResponse;
+import ru.manager.ProgectManager.DTO.response.kanban.KanbanContentResponse;
+import ru.manager.ProgectManager.DTO.response.kanban.KanbanMainDataResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanMembers;
+import ru.manager.ProgectManager.DTO.response.kanban.TagResponse;
 import ru.manager.ProgectManager.DTO.response.user.PublicMainUserDataResponse;
 import ru.manager.ProgectManager.components.PhotoCompressor;
 import ru.manager.ProgectManager.entitys.Project;
@@ -16,14 +21,19 @@ import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.ResourceType;
 import ru.manager.ProgectManager.enums.Size;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
+import ru.manager.ProgectManager.exception.ForbiddenException;
+import ru.manager.ProgectManager.exception.kanban.NoSuchKanbanException;
+import ru.manager.ProgectManager.exception.kanban.NoSuchTagException;
+import ru.manager.ProgectManager.exception.project.NoSuchProjectException;
 import ru.manager.ProgectManager.repositories.*;
+import ru.manager.ProgectManager.services.project.AccessProjectService;
 import ru.manager.ProgectManager.services.user.VisitMarkUpdater;
 
 import java.io.IOException;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class KanbanService {
@@ -36,8 +46,12 @@ public class KanbanService {
     private final VisitMarkUpdater visitMarkUpdater;
     private final PhotoCompressor compressor;
 
-    public Optional<Kanban> createKanban(long projectId, String name, String userLogin) {
-        Project project = projectRepository.findById(projectId).orElseThrow();
+    private final AccessProjectService accessProjectService;
+
+    @Transactional
+    public IdResponse createKanban(long projectId, String name, String userLogin)
+            throws ForbiddenException, NoSuchProjectException {
+        Project project = projectRepository.findById(projectId).orElseThrow(NoSuchProjectException::new);
         if (canEditResource(project, userRepository.findByUsername(userLogin))) {
             Kanban kanban = new Kanban();
             kanban.setProject(project);
@@ -46,20 +60,20 @@ public class KanbanService {
 
             kanban = kanbanRepository.save(kanban);
             projectRepository.save(project);
-            return Optional.of(kanban);
-        }
-        return Optional.empty();
+            return new IdResponse(kanban.getId());
+        } else throw new ForbiddenException();
     }
 
-    public boolean setImage(long kanbanId, MultipartFile image, String userLogin) throws IOException {
-        Kanban kanban = kanbanRepository.findById(kanbanId).orElseThrow();
+    @Transactional
+    public void setImage(long kanbanId, MultipartFile image, String userLogin)
+            throws IOException, NoSuchKanbanException, ForbiddenException {
+        Kanban kanban = kanbanRepository.findById(kanbanId).orElseThrow(NoSuchKanbanException::new);
         User user = userRepository.findByUsername(userLogin);
-        if(canEditKanban(kanban, user)) {
+        if (canEditKanban(kanban, user)) {
             kanban.setPhoto(compressor.compress(image, Size.LARGE));
             kanbanRepository.save(kanban);
-            return true;
         } else {
-            return false;
+            throw new ForbiddenException();
         }
     }
 
@@ -67,8 +81,9 @@ public class KanbanService {
         return kanbanRepository.findById(id).orElseThrow().getPhoto();
     }
 
-    public boolean removeKanban(long id, String userLogin) {
-        Kanban kanban = kanbanRepository.findById(id).orElseThrow();
+    @Transactional
+    public void removeKanban(long id, String userLogin) throws NoSuchKanbanException, ForbiddenException {
+        Kanban kanban = kanbanRepository.findById(id).orElseThrow(NoSuchKanbanException::new);
         Project project = kanban.getProject();
         User user = userRepository.findByUsername(userLogin);
         if (canEditResource(project, user) && canEditKanban(kanban, user)) {
@@ -84,79 +99,90 @@ public class KanbanService {
 
             project.getKanbans().remove(kanban);
             projectRepository.save(project);
-            return true;
-        }
-        return false;
+        } else throw new ForbiddenException();
     }
 
-    public boolean rename(long id, String name, String userLogin) {
-        Kanban kanban = kanbanRepository.findById(id).orElseThrow();
+    @Transactional
+    public void rename(long id, String name, String userLogin) throws NoSuchKanbanException, ForbiddenException {
+        Kanban kanban = kanbanRepository.findById(id).orElseThrow(NoSuchKanbanException::new);
         User user = userRepository.findByUsername(userLogin);
         if (canEditKanban(kanban, user)) {
             kanban.setName(name.trim());
             kanbanRepository.save(kanban);
             visitMarkUpdater.redactVisitMark(kanban);
-            return true;
         } else {
-            return false;
+            throw new ForbiddenException();
         }
     }
 
-    public Optional<Kanban> findKanban(long id, String userLogin) {
-        Kanban kanban = kanbanRepository.findById(id).orElseThrow();
+    public KanbanContentResponse findKanban(long id, String userLogin, int pageIndex, int rowCount)
+            throws NoSuchKanbanException, ForbiddenException {
+        Kanban kanban = kanbanRepository.findById(id).orElseThrow(NoSuchKanbanException::new);
         User user = userRepository.findByUsername(userLogin);
         if (canSeeKanban(kanban, user)) {
             visitMarkUpdater.updateVisitMarks(user, kanban);
-            return Optional.of(kanban);
+            return new KanbanContentResponse(kanban, pageIndex, rowCount,
+                    accessProjectService.canEditKanban(id, userLogin));
         } else {
-            return Optional.empty();
+            throw new ForbiddenException();
         }
     }
 
-    public Optional<Set<Kanban>> findAllKanban(long id, String userLogin) {
-        Project project = projectRepository.findById(id).orElseThrow();
+    public KanbanMainDataResponse[] findAllKanban(long id, String userLogin)
+            throws ForbiddenException, NoSuchProjectException {
+        Project project = projectRepository.findById(id).orElseThrow(NoSuchProjectException::new);
         User user = userRepository.findByUsername(userLogin);
         Optional<UserWithProjectConnector> connector = user.getUserWithProjectConnectors().stream()
                 .filter(c -> c.getProject().equals(project))
                 .findAny();
         if (connector.isPresent()) {
+            int zoneId = user.getZoneId();
             if (connector.get().getRoleType() == TypeRoleProject.CUSTOM_ROLE) {
-                return Optional.of(connector.get().getCustomProjectRole().getCustomRoleWithKanbanConnectors().parallelStream()
+                return connector.get().getCustomProjectRole().getCustomRoleWithKanbanConnectors().parallelStream()
                         .map(CustomRoleWithKanbanConnector::getKanban)
-                        .collect(Collectors.toSet()));
+                        .map(kanban -> new KanbanMainDataResponse(kanban, zoneId))
+                        .toArray(KanbanMainDataResponse[]::new);
             } else {
-                return Optional.of(project.getKanbans());
+                return project.getKanbans().parallelStream()
+                        .map(kanban -> new KanbanMainDataResponse(kanban, zoneId))
+                        .toArray(KanbanMainDataResponse[]::new);
             }
         } else {
-            return Optional.empty();
+            throw new ForbiddenException();
         }
     }
 
-    public Optional<Set<Kanban>> findKanbansByName(long id, String inputName, String userLogin) {
+    public KanbanMainDataResponse[] findKanbansByName(long id, String inputName, String userLogin)
+            throws NoSuchProjectException, ForbiddenException {
         String name = inputName.trim().toLowerCase();
-        Project project = projectRepository.findById(id).orElseThrow();
+        Project project = projectRepository.findById(id).orElseThrow(NoSuchProjectException::new);
         User user = userRepository.findByUsername(userLogin);
         Optional<UserWithProjectConnector> connector = user.getUserWithProjectConnectors().stream()
                 .filter(c -> c.getProject().equals(project))
                 .findAny();
         if (connector.isPresent()) {
+            int zoneId = user.getZoneId();
             if (connector.get().getRoleType() == TypeRoleProject.CUSTOM_ROLE) {
-                return Optional.of(connector.get().getCustomProjectRole().getCustomRoleWithKanbanConnectors().parallelStream()
+                return connector.get().getCustomProjectRole().getCustomRoleWithKanbanConnectors().parallelStream()
                         .map(CustomRoleWithKanbanConnector::getKanban)
                         .filter(k -> k.getName().toLowerCase().contains(name))
-                        .collect(Collectors.toSet()));
+                        .map(kanban -> new KanbanMainDataResponse(kanban, zoneId))
+                        .toArray(KanbanMainDataResponse[]::new);
             } else {
-                return Optional.of(project.getKanbans().stream()
+                return project.getKanbans().stream()
                         .filter(k -> k.getName().toLowerCase().contains(name))
-                        .collect(Collectors.toSet()));
+                        .map(kanban -> new KanbanMainDataResponse(kanban, zoneId))
+                        .toArray(KanbanMainDataResponse[]::new);
             }
         } else {
-            return Optional.empty();
+            throw new ForbiddenException();
         }
     }
 
-    public Optional<Tag> addTag(long id, TagRequest request, String userLogin) {
-        Kanban kanban = kanbanRepository.findById(id).orElseThrow();
+    @Transactional
+    public IdResponse addTag(long id, TagRequest request, String userLogin)
+            throws ForbiddenException, NoSuchKanbanException {
+        Kanban kanban = kanbanRepository.findById(id).orElseThrow(NoSuchKanbanException::new);
         User user = userRepository.findByUsername(userLogin);
         if (canEditKanban(kanban, user)) {
             Tag tag = new Tag();
@@ -166,14 +192,15 @@ public class KanbanService {
             tag = tagRepository.save(tag);
             kanban.getAvailableTags().add(tag);
             kanbanRepository.save(kanban);
-            return Optional.of(tag);
+            return new IdResponse(tag.getId());
         } else {
-            return Optional.empty();
+            throw new ForbiddenException();
         }
     }
 
-    public boolean removeTag(long id, String userLogin) {
-        Tag tag = tagRepository.findById(id).orElseThrow();
+    @Transactional
+    public void removeTag(long id, String userLogin) throws NoSuchTagException, ForbiddenException {
+        Tag tag = tagRepository.findById(id).orElseThrow(NoSuchTagException::new);
         Kanban kanban = tag.getKanban();
         User user = userRepository.findByUsername(userLogin);
         if (canEditKanban(kanban, user)) {
@@ -183,39 +210,39 @@ public class KanbanService {
                     .forEach(e -> e.getTags().remove(tag));
             tagRepository.delete(tag);
             kanbanRepository.save(kanban);
-            return true;
         } else {
-            return false;
+            throw new ForbiddenException();
         }
     }
 
-    public boolean editTag(long id, TagRequest request, String userLogin) {
-        Tag tag = tagRepository.findById(id).orElseThrow();
+    @Transactional
+    public void editTag(long id, TagRequest request, String userLogin) throws NoSuchTagException, ForbiddenException {
+        Tag tag = tagRepository.findById(id).orElseThrow(NoSuchTagException::new);
         Kanban kanban = tag.getKanban();
         User user = userRepository.findByUsername(userLogin);
         if (canEditKanban(kanban, user)) {
             tag.setText(request.getText());
             tag.setColor(request.getColor());
             tagRepository.save(tag);
-            return true;
         } else {
-            return false;
+            throw new ForbiddenException();
         }
     }
 
-    public Optional<Set<Tag>> findAllAvailableTags(long kanbanId, String userLogin) {
-        Kanban kanban = kanbanRepository.findById(kanbanId).orElseThrow();
+    public TagResponse[] findAllAvailableTags(long kanbanId, String userLogin)
+            throws NoSuchKanbanException, ForbiddenException {
+        Kanban kanban = kanbanRepository.findById(kanbanId).orElseThrow(NoSuchKanbanException::new);
         User user = userRepository.findByUsername(userLogin);
         if (canSeeKanban(kanban, user)) {
-            return Optional.of(kanban.getAvailableTags());
+            return kanban.getAvailableTags().parallelStream().map(TagResponse::new).toArray(TagResponse[]::new);
         } else {
-            return Optional.empty();
+            throw new ForbiddenException();
         }
     }
 
-    public Optional<KanbanMembers> members(long id, String userLoin) {
+    public KanbanMembers members(long id, String userLoin) throws NoSuchKanbanException, ForbiddenException {
         User user = userRepository.findByUsername(userLoin);
-        Kanban kanban = kanbanRepository.findById(id).orElseThrow();
+        Kanban kanban = kanbanRepository.findById(id).orElseThrow(NoSuchKanbanException::new);
         if (canSeeKanban(kanban, user)) {
             KanbanMembers kanbanMembers = new KanbanMembers();
             kanbanMembers.setBrowsingMembers(kanban.getProject().getConnectors().parallelStream()
@@ -229,9 +256,9 @@ public class KanbanService {
                     .filter(u -> canEditKanban(kanban, u))
                     .map(u -> new PublicMainUserDataResponse(u, user.getZoneId()))
                     .collect(Collectors.toList()));
-            return Optional.of(kanbanMembers);
+            return kanbanMembers;
         } else {
-            return Optional.empty();
+            throw new ForbiddenException();
         }
     }
 

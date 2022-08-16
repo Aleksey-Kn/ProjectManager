@@ -89,7 +89,7 @@ public class WorkTrackController {
                     }),
             @ApiResponse(responseCode = "200", description = "Время работы успешно удалено")
     })
-    @DeleteMapping()
+    @DeleteMapping
     public ResponseEntity<?> removeWorkTrack(@RequestParam @Parameter(description = "Идентификатор удаляемого времени работы")
                                                      long id, Principal principal) {
         try {
