@@ -9,12 +9,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import ru.manager.ProgectManager.DTO.UserDetailsDTO;
 import ru.manager.ProgectManager.DTO.response.user.HasNewResponse;
 import ru.manager.ProgectManager.DTO.response.user.notification.NotificationsResponseList;
-import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.services.user.NotificationService;
-import ru.manager.ProgectManager.services.user.UserService;
 
 import java.security.Principal;
 
@@ -23,7 +20,6 @@ import java.security.Principal;
 @RequestMapping("/users/user/notification")
 @Tag(name = "Уведомления")
 public class NotificationController {
-    private final UserService userService;
     private final NotificationService notificationService;
 
     @Operation(summary = "Получение информации о наличии непрочитанных уведомлений")
@@ -44,9 +40,7 @@ public class NotificationController {
     @GetMapping("/read")
     public NotificationsResponseList findAllNotifications(Principal principal) {
         String login = principal.getName();
-        UserDetailsDTO user = userService.findUserDetailsByUsername(login);
-        NotificationsResponseList notificationsResponseList =
-                new NotificationsResponseList(user.getNotifications(), user.getZoneId());
+        NotificationsResponseList notificationsResponseList = notificationService.findNotifications(login);
         notificationService.readNotification(login);
         return notificationsResponseList;
     }

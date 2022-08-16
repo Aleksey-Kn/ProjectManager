@@ -2,7 +2,9 @@ package ru.manager.ProgectManager.services.user;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.manager.ProgectManager.DTO.request.user.AuthDto;
+import ru.manager.ProgectManager.DTO.response.user.notification.NotificationsResponseList;
 import ru.manager.ProgectManager.components.LocalisedMessages;
 import ru.manager.ProgectManager.entitys.user.Notification;
 import ru.manager.ProgectManager.entitys.user.User;
@@ -14,6 +16,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.function.Predicate;
 
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class NotificationService {
@@ -21,6 +24,7 @@ public class NotificationService {
     private final UserRepository userRepository;
     private final LocalisedMessages localisedMessages;
 
+    @Transactional
     public void addNotificationAboutAuthorisation(AuthDto authDto, User forUser) {
         Notification notification = new Notification();
         notification.setNewNotification(true);
@@ -32,6 +36,7 @@ public class NotificationService {
         userRepository.save(forUser);
     }
 
+    @Transactional
     public void addNotificationAboutDeleteFromProject(String projectName, User forUser) {
         Notification notification = new Notification();
         notification.setNewNotification(true);
@@ -42,6 +47,7 @@ public class NotificationService {
         userRepository.save(forUser);
     }
 
+    @Transactional
     public void addNotificationAboutInvitationToProject(String token, String projectName, String url, User forUser) {
         Notification notification = new Notification();
         notification.setNewNotification(true);
@@ -53,6 +59,7 @@ public class NotificationService {
         userRepository.save(forUser);
     }
 
+    @Transactional
     public void readNotification(String userLogin) {
         User user = userRepository.findByUsername(userLogin);
         user.getNotifications().forEach(notification -> {
@@ -68,6 +75,11 @@ public class NotificationService {
                     user.getNotifications().remove(notification);
                     notificationRepository.delete(notification);
                 });
+    }
+
+    public NotificationsResponseList findNotifications(String userLogin) {
+        User user = userRepository.findByUsername(userLogin);
+        return new NotificationsResponseList(user.getNotifications(), user.getZoneId());
     }
 
     public boolean hasNewNotification(String userLogin) {
