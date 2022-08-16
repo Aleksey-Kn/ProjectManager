@@ -1,13 +1,12 @@
 package ru.manager.ProgectManager.services.project;
 
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import ru.manager.ProgectManager.DTO.request.ProjectDataRequest;
 import ru.manager.ProgectManager.DTO.response.project.ProjectResponseWithFlag;
 import ru.manager.ProgectManager.DTO.response.user.UserDataWithProjectRoleResponse;
 import ru.manager.ProgectManager.base.ProjectManagerTestBase;
-import ru.manager.ProgectManager.exception.ForbiddenException;
-import ru.manager.ProgectManager.exception.project.NoSuchProjectException;
 import ru.manager.ProgectManager.support.TestDataBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -17,14 +16,14 @@ class ProjectServiceTest extends ProjectManagerTestBase {
     ProjectService projectService;
 
     @Test
-    void findProject() throws ForbiddenException, NoSuchProjectException {
+    @SneakyThrows
+    void findProject() {
         String login = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow();
         long id = projectService.addProject(TestDataBuilder.buildProjectDataRequest(), login).getId();
 
         final var response = projectService.findProject(id, login);
         final var expected = TestDataBuilder.buildProjectResponseWithFlag(id);
-        assertThat(response)
-                .isEqualTo(expected);
+        assertThat(response).isEqualTo(expected);
     }
 
     @Test
@@ -37,7 +36,8 @@ class ProjectServiceTest extends ProjectManagerTestBase {
     }
 
     @Test
-    void setData() throws ForbiddenException, NoSuchProjectException {
+    @SneakyThrows
+    void setData() {
         String login = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow();
         long id = projectService.addProject(TestDataBuilder.buildProjectDataRequest(), login).getId();
         ProjectDataRequest updatedData = TestDataBuilder.buildProjectDataRequest();
@@ -48,7 +48,8 @@ class ProjectServiceTest extends ProjectManagerTestBase {
     }
 
     @Test
-    void deleteProject() throws ForbiddenException, NoSuchProjectException {
+    @SneakyThrows
+    void deleteProject() {
         String login = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow();
         long id = projectService.addProject(TestDataBuilder.buildProjectDataRequest(), login).getId();
 
@@ -58,7 +59,8 @@ class ProjectServiceTest extends ProjectManagerTestBase {
     }
 
     @Test
-    void findAllMembers() throws ForbiddenException, NoSuchProjectException {
+    @SneakyThrows
+    void findAllMembers() {
         String first = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow();
         long id = projectService.addProject(TestDataBuilder.buildProjectDataRequest(), first).getId();
 
@@ -68,7 +70,8 @@ class ProjectServiceTest extends ProjectManagerTestBase {
     }
 
     @Test
-    void findMembersByNicknameOrEmail() throws ForbiddenException, NoSuchProjectException {
+    @SneakyThrows
+    void findMembersByNicknameOrEmail() {
         String first = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow();
         long id = projectService.addProject(TestDataBuilder.buildProjectDataRequest(), first).getId();
 
@@ -78,7 +81,8 @@ class ProjectServiceTest extends ProjectManagerTestBase {
     }
 
     @Test
-    void canCreateOrDeleteResources() throws NoSuchProjectException {
+    @SneakyThrows
+    void canCreateOrDeleteResources() {
         String login = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow();
         long id = projectService.addProject(TestDataBuilder.buildProjectDataRequest(), login).getId();
 

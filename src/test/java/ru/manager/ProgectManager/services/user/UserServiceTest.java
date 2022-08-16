@@ -1,5 +1,6 @@
 package ru.manager.ProgectManager.services.user;
 
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import ru.manager.ProgectManager.DTO.UserDetailsDTO;
@@ -14,12 +15,7 @@ import ru.manager.ProgectManager.entitys.user.ApproveActionToken;
 import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.ActionType;
 import ru.manager.ProgectManager.enums.Locale;
-import ru.manager.ProgectManager.exception.ForbiddenException;
-import ru.manager.ProgectManager.exception.project.NoSuchProjectException;
-import ru.manager.ProgectManager.exception.user.AccountIsLockedException;
-import ru.manager.ProgectManager.exception.user.AccountIsNotEnabledException;
 import ru.manager.ProgectManager.exception.user.IncorrectLoginOrPasswordException;
-import ru.manager.ProgectManager.exception.user.NoSuchUserException;
 import ru.manager.ProgectManager.repositories.ApproveActionTokenRepository;
 import ru.manager.ProgectManager.services.project.ProjectService;
 import ru.manager.ProgectManager.support.TestDataBuilder;
@@ -109,7 +105,8 @@ class UserServiceTest extends ProjectManagerTestBase {
     }
 
     @Test
-    void findById() throws NoSuchUserException {
+    @SneakyThrows
+    void findById() {
         final RegisterUserDTO registerUserDTO = TestDataBuilder.buildMasterUserDto();
         final String login = userService.saveUser(registerUserDTO).orElseThrow();
         final long id = userRepository.findByUsername(login).getUserId();
@@ -118,7 +115,8 @@ class UserServiceTest extends ProjectManagerTestBase {
     }
 
     @Test
-    void login() throws IncorrectLoginOrPasswordException, AccountIsNotEnabledException, AccountIsLockedException {
+    @SneakyThrows
+    void login() {
         final var registerUserDTO = TestDataBuilder.buildMasterUserDto();
         userService.saveUser(registerUserDTO);
         jdbcTemplate.update("update project_manager.user set enabled = 1");
@@ -135,7 +133,8 @@ class UserServiceTest extends ProjectManagerTestBase {
     }
 
     @Test
-    void updatePass() throws IncorrectLoginOrPasswordException {
+    @SneakyThrows
+    void updatePass() {
         final String login = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow();
         userService.updatePass("1234", "0000", login);
         assertThatThrownBy(() -> userService.login(TestDataBuilder.buildAuthDto()))
@@ -194,7 +193,8 @@ class UserServiceTest extends ProjectManagerTestBase {
     }
 
     @Test
-    void lastVisits() throws ForbiddenException, NoSuchProjectException {
+    @SneakyThrows
+    void lastVisits() {
         final String login = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow();
         final var project = TestDataBuilder.buildProjectDataRequest();
         final var projectId = projectService.addProject(project, login).getId();
