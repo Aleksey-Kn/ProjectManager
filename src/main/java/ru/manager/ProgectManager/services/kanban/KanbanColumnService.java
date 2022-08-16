@@ -2,9 +2,12 @@ package ru.manager.ProgectManager.services.kanban;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.manager.ProgectManager.DTO.request.kanban.KanbanColumnRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.SortColumnRequest;
 import ru.manager.ProgectManager.DTO.request.kanban.TransportColumnRequest;
+import ru.manager.ProgectManager.DTO.response.IdResponse;
+import ru.manager.ProgectManager.DTO.response.kanban.KanbanColumnResponse;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithKanbanConnector;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.entitys.kanban.KanbanColumn;
@@ -13,14 +16,17 @@ import ru.manager.ProgectManager.entitys.kanban.TimeRemover;
 import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.SortType;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
+import ru.manager.ProgectManager.exception.ForbiddenException;
+import ru.manager.ProgectManager.exception.kanban.NoSuchColumnException;
+import ru.manager.ProgectManager.exception.kanban.NoSuchKanbanException;
 import ru.manager.ProgectManager.repositories.*;
 
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Optional;
 import java.util.Set;
 
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class KanbanColumnService {
@@ -30,29 +36,31 @@ public class KanbanColumnService {
     private final KanbanElementRepository elementRepository;
     private final TimeRemoverRepository timeRemoverRepository;
 
-    public Optional<KanbanColumn> findKanbanColumn(long id, String userLogin){
+    public KanbanColumnResponse findKanbanColumn(long id, String userLogin, int pageIndex, int rowCount)
+            throws NoSuchColumnException, ForbiddenException {
         User user = userRepository.findByUsername(userLogin);
-        KanbanColumn column = columnRepository.findById(id).orElseThrow();
+        KanbanColumn column = columnRepository.findById(id).orElseThrow(NoSuchColumnException::new);
         Kanban kanban = column.getKanban();
         if(kanban.getProject().getConnectors().stream().anyMatch(c -> c.getUser().equals(user)
                 && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
                 || c.getCustomProjectRole().getCustomRoleWithKanbanConnectors().stream()
                 .anyMatch(kanbanConnector -> kanbanConnector.getKanban().equals(kanban))))){
-            return Optional.of(column);
+            return new KanbanColumnResponse(column, pageIndex, rowCount, user.getZoneId());
         } else{
-            return Optional.empty();
+            throw new ForbiddenException();
         }
     }
 
-    public boolean transportColumn(TransportColumnRequest request, String userLogin) {
+    @Transactional
+    public boolean transportColumn(TransportColumnRequest request, String userLogin) throws NoSuchColumnException, ForbiddenException {
         User user = userRepository.findByUsername(userLogin);
-        KanbanColumn column = columnRepository.findById(request.getId()).orElseThrow();
+        KanbanColumn column = columnRepository.findById(request.getId()).orElseThrow(NoSuchColumnException::new);
         Kanban kanban = column.getKanban();
         int from = column.getSerialNumber();
         if (canEditKanban(kanban, user)) {
             Set<KanbanColumn> allColumns = column.getKanban().getKanbanColumns();
             if (request.getTo() >= allColumns.size())
-                throw new IllegalArgumentException();
+                return false;
             if (request.getTo() > from) {
                 allColumns.stream()
                         .filter(kanbanColumn -> kanbanColumn.getSerialNumber() > from)
@@ -68,24 +76,24 @@ public class KanbanColumnService {
 
             columnRepository.saveAll(allColumns);
             return true;
-        }
-        return false;
+        } else throw new ForbiddenException();
     }
 
-    public Optional<KanbanColumn> renameColumn(long id, String name, String userLogin) {
+    @Transactional
+    public void renameColumn(long id, String name, String userLogin) throws ForbiddenException, NoSuchColumnException {
         User user = userRepository.findByUsername(userLogin);
-        KanbanColumn kanbanColumn = columnRepository.findById(id).orElseThrow();
+        KanbanColumn kanbanColumn = columnRepository.findById(id).orElseThrow(NoSuchColumnException::new);
         Kanban kanban = kanbanColumn.getKanban();
         if (canEditKanban(kanban, user)) {
             kanbanColumn.setName(name.trim());
-            return Optional.of(columnRepository.save(kanbanColumn));
-        }
-        return Optional.empty();
+            columnRepository.save(kanbanColumn);
+        } else throw new ForbiddenException();
     }
 
-    public boolean deleteColumn(long id, String userLogin) {
+    @Transactional
+    public void deleteColumn(long id, String userLogin) throws NoSuchColumnException, ForbiddenException {
         User user = userRepository.findByUsername(userLogin);
-        KanbanColumn column = columnRepository.findById(id).orElseThrow();
+        KanbanColumn column = columnRepository.findById(id).orElseThrow(NoSuchColumnException::new);
         Kanban kanban = column.getKanban();
         if (canEditKanban(kanban, user)) {
             kanban.getKanbanColumns().stream()
@@ -94,14 +102,14 @@ public class KanbanColumnService {
             kanban.getKanbanColumns().remove(column);
             columnRepository.delete(column);
             kanbanRepository.save(kanban);
-            return true;
-        }
-        return false;
+        } else throw new ForbiddenException();
     }
 
-    public Optional<KanbanColumn> addColumn(KanbanColumnRequest request, String userLogin) {
+    @Transactional
+    public IdResponse addColumn(KanbanColumnRequest request, String userLogin)
+            throws ForbiddenException, NoSuchKanbanException {
         User user = userRepository.findByUsername(userLogin);
-        Kanban kanban = kanbanRepository.findById(request.getKanbanId()).orElseThrow();
+        Kanban kanban = kanbanRepository.findById(request.getKanbanId()).orElseThrow(NoSuchKanbanException::new);
         if (canEditKanban(kanban, user)) {
             KanbanColumn kanbanColumn = new KanbanColumn();
             kanbanColumn.setName(request.getName().trim());
@@ -115,14 +123,16 @@ public class KanbanColumnService {
             kanban.getKanbanColumns().add(kanbanColumn);
             KanbanColumn result = columnRepository.save(kanbanColumn);
             kanbanRepository.save(kanban);
-            return Optional.of(result);
-        }
-        return Optional.empty();
+            return new IdResponse(result.getId());
+        } else throw new ForbiddenException();
     }
 
-    public Optional<KanbanColumn> sortColumn(SortColumnRequest sortColumnRequest, String userLogin) {
+    @Transactional
+    public KanbanColumnResponse sortColumn(SortColumnRequest sortColumnRequest, String userLogin,
+                                           int pageIndex, int rowCount) throws ForbiddenException, NoSuchColumnException {
         User user = userRepository.findByUsername(userLogin);
-        KanbanColumn column = columnRepository.findById(sortColumnRequest.getId()).orElseThrow();
+        KanbanColumn column = columnRepository.findById(sortColumnRequest.getId())
+                .orElseThrow(NoSuchColumnException::new);
         Kanban kanban = column.getKanban();
         if (canEditKanban(kanban, user)) {
             Comparator<KanbanElement> comparator;
@@ -141,14 +151,15 @@ public class KanbanColumnService {
                 elements[i].setSerialNumber(i);
             }
             elementRepository.saveAll(Set.of(elements));
-            return Optional.of(column);
+            return new KanbanColumnResponse(column, pageIndex, rowCount, user.getZoneId());
         } else {
-            return Optional.empty();
+            throw new ForbiddenException();
         }
     }
 
-    public boolean setDelayDeleter(long id, int delay, String userLogin) {
-        KanbanColumn column = columnRepository.findById(id).orElseThrow();
+    @Transactional
+    public void setDelayDeleter(long id, int delay, String userLogin) throws ForbiddenException, NoSuchColumnException {
+        KanbanColumn column = columnRepository.findById(id).orElseThrow(NoSuchColumnException::new);
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = column.getKanban();
         if (canEditKanban(kanban, user)) {
@@ -158,22 +169,21 @@ public class KanbanColumnService {
                 timeRemover.setTimeToDelete(LocalDate.now().plusDays(delay).toEpochDay());
                 timeRemoverRepository.save(timeRemover);
             });
-            return true;
         } else {
-            return false;
+            throw new ForbiddenException();
         }
     }
 
-    public boolean removeDelayDeleter(long id, String userLogin) {
-        KanbanColumn column = columnRepository.findById(id).orElseThrow();
+    @Transactional
+    public void removeDelayDeleter(long id, String userLogin) throws NoSuchColumnException, ForbiddenException {
+        KanbanColumn column = columnRepository.findById(id).orElseThrow(NoSuchColumnException::new);
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = column.getKanban();
         if (canEditKanban(kanban, user)) {
             column.setDelayedDays(0);
             column.getElements().stream().map(KanbanElement::getId).forEach(timeRemoverRepository::deleteById);
-            return true;
         } else {
-            return false;
+            throw new ForbiddenException();
         }
     }
 

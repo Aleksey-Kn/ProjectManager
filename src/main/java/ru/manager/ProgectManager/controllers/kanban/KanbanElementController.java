@@ -63,7 +63,7 @@ public class KanbanElementController {
                             schema = @Schema(implementation = KanbanElementContentResponse.class))
             })
     })
-    @GetMapping()
+    @GetMapping
     public KanbanElementContentResponse getContent(@RequestParam long elementId, Principal principal)
             throws ForbiddenException, NoSuchKanbanElementException {
         return kanbanElementService.getContentFromElement(elementId, principal.getName());
@@ -88,7 +88,7 @@ public class KanbanElementController {
     @PostMapping
     public ResponseEntity<?> addElement(@RequestBody @Valid CreateKanbanElementRequest request,
                                         BindingResult bindingResult, Principal principal)
-            throws ForbiddenException, NoSuchColumn {
+            throws ForbiddenException, NoSuchColumnException {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {

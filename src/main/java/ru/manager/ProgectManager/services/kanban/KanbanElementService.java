@@ -16,7 +16,7 @@ import ru.manager.ProgectManager.enums.SearchElementType;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.ForbiddenException;
 import ru.manager.ProgectManager.exception.kanban.IncorrectElementStatusException;
-import ru.manager.ProgectManager.exception.kanban.NoSuchColumn;
+import ru.manager.ProgectManager.exception.kanban.NoSuchColumnException;
 import ru.manager.ProgectManager.exception.kanban.NoSuchKanbanElementException;
 import ru.manager.ProgectManager.exception.kanban.NoSuchKanbanException;
 import ru.manager.ProgectManager.exception.runtime.NoSuchResourceException;
@@ -43,8 +43,8 @@ public class KanbanElementService {
 
     @Transactional
     public IdResponse addElement(CreateKanbanElementRequest request, String userLogin)
-            throws ForbiddenException, NoSuchColumn {
-        KanbanColumn column = columnRepository.findById(request.getColumnId()).orElseThrow(NoSuchColumn::new);
+            throws ForbiddenException, NoSuchColumnException {
+        KanbanColumn column = columnRepository.findById(request.getColumnId()).orElseThrow(NoSuchColumnException::new);
         User user = userRepository.findByUsername(userLogin);
         Kanban kanban = column.getKanban();
         if (canEditKanban(kanban, user)) {

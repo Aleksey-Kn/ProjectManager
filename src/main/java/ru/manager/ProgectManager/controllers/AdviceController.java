@@ -70,7 +70,7 @@ public class AdviceController {
         return new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT);
     }
 
-    @ExceptionHandler(NoSuchColumn.class)
+    @ExceptionHandler(NoSuchColumnException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse noSuchColumnExceptionHandler() {
         return new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN);

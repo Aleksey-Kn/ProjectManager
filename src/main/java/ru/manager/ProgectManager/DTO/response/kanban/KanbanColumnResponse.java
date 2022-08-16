@@ -26,14 +26,12 @@ public class KanbanColumnResponse {
         id = kanbanColumn.getId();
         serialNumber = kanbanColumn.getSerialNumber();
         name = kanbanColumn.getName();
-        kanbanElements = (kanbanColumn.getElements() == null
-                ? List.of()
-                : kanbanColumn.getElements().stream()
+        kanbanElements = kanbanColumn.getElements().stream()
                 .filter(e -> e.getStatus() == ElementStatus.ALIVE)
                 .sorted(Comparator.comparing(KanbanElement::getSerialNumber))
                 .map(element -> new KanbanElementMainDataResponse(element, zoneId))
                 .skip(pageIndex)
                 .limit(count)
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList());
     }
 }

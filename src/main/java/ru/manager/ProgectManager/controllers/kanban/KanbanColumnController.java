@@ -21,17 +21,15 @@ import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanColumnResponse;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
-import ru.manager.ProgectManager.entitys.kanban.KanbanColumn;
 import ru.manager.ProgectManager.enums.Errors;
+import ru.manager.ProgectManager.exception.ForbiddenException;
+import ru.manager.ProgectManager.exception.kanban.NoSuchColumnException;
+import ru.manager.ProgectManager.exception.kanban.NoSuchKanbanException;
 import ru.manager.ProgectManager.services.kanban.KanbanColumnService;
-import ru.manager.ProgectManager.services.user.UserService;
 
 import javax.validation.Valid;
 import java.security.Principal;
-import java.util.NoSuchElementException;
-import java.util.Optional;
 
-//TODO
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users/kanban/column")
@@ -39,7 +37,6 @@ import java.util.Optional;
 public class KanbanColumnController {
     private final KanbanColumnService kanbanColumnService;
     private final ErrorResponseEntityConfigurator entityConfigurator;
-    private final UserService userService;
 
     @Operation(summary = "Добавление колонки")
     @ApiResponses(value = {
@@ -57,22 +54,14 @@ public class KanbanColumnController {
                             schema = @Schema(implementation = IdResponse.class))
             })
     })
-    @PostMapping()
+    @PostMapping
     public ResponseEntity<?> addColumn(@RequestBody @Valid KanbanColumnRequest kanbanColumnRequest,
-                                       BindingResult bindingResult, Principal principal) {
+                                       BindingResult bindingResult, Principal principal)
+            throws ForbiddenException, NoSuchKanbanException {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
-        }
-        try {
-            String login = principal.getName();
-            Optional<KanbanColumn> column = kanbanColumnService.addColumn(kanbanColumnRequest, login);
-            if (column.isPresent()) {
-                return ResponseEntity.ok(new IdResponse(column.get().getId()));
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.NOT_FOUND);
+        } else {
+            return ResponseEntity.ok(kanbanColumnService.addColumn(kanbanColumnRequest, principal.getName()));
         }
     }
 
@@ -88,21 +77,11 @@ public class KanbanColumnController {
                             schema = @Schema(implementation = KanbanColumnResponse.class))
             })
     })
-    @GetMapping()
-    public ResponseEntity<?> findColumn(@RequestParam @Parameter(description = "Идентификатор колонки") long id,
-                                        @RequestParam int pageIndex, @RequestParam int rowCount, Principal principal) {
-        try {
-            String login = principal.getName();
-            Optional<KanbanColumn> kanbanColumn = kanbanColumnService.findKanbanColumn(id, login);
-            if (kanbanColumn.isPresent()) {
-                return ResponseEntity.ok(new KanbanColumnResponse(kanbanColumn.get(), pageIndex, rowCount,
-                        userService.findZoneIdForThisUser(login)));
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.NOT_FOUND);
-        }
+    @GetMapping
+    public KanbanColumnResponse findColumn(@RequestParam @Parameter(description = "Идентификатор колонки") long id,
+                                           @RequestParam int pageIndex, @RequestParam int rowCount, Principal principal)
+            throws ForbiddenException, NoSuchColumnException {
+        return kanbanColumnService.findKanbanColumn(id, principal.getName(), pageIndex, rowCount);
     }
 
     @Operation(summary = "Изменение колонки", description = "Изменение названия колонки")
@@ -116,25 +95,17 @@ public class KanbanColumnController {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
-            @ApiResponse(responseCode = "200", description = "Название упешно изменено")
+            @ApiResponse(responseCode = "200", description = "Название успешно изменено")
     })
     @PutMapping()
     public ResponseEntity<?> renameColumn(@RequestParam long id, @RequestBody @Valid NameRequest name,
-                                          BindingResult bindingResult, Principal principal) {
+                                          BindingResult bindingResult, Principal principal)
+            throws ForbiddenException, NoSuchColumnException {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
-            try {
-                String login = principal.getName();
-                Optional<KanbanColumn> column = kanbanColumnService.renameColumn(id, name.getName(), login);
-                if (column.isPresent()) {
-                    return new ResponseEntity<>(HttpStatus.OK);
-                } else {
-                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-                }
-            } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.NOT_FOUND);
-            }
+            kanbanColumnService.renameColumn(id, name.getName(), principal.getName());
+            return new ResponseEntity<>(HttpStatus.OK);
         }
     }
 
@@ -147,18 +118,10 @@ public class KanbanColumnController {
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному ресурсу"),
             @ApiResponse(responseCode = "200", description = "Колонка успешно удалена")
     })
-    @DeleteMapping()
-    public ResponseEntity<?> removeColumn(@RequestParam long id, Principal principal) {
-        try {
-            String login = principal.getName();
-            if (kanbanColumnService.deleteColumn(id, login)) {
-                return new ResponseEntity<>(HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.NOT_FOUND);
-        }
+    @DeleteMapping
+    public void removeColumn(@RequestParam long id, Principal principal)
+            throws ForbiddenException, NoSuchColumnException {
+        kanbanColumnService.deleteColumn(id, principal.getName());
     }
 
     @Operation(summary = "Перемещение столбца канбана",
@@ -178,20 +141,14 @@ public class KanbanColumnController {
     })
     @PutMapping("/transport")
     public ResponseEntity<?> transportColumn(@RequestBody @Valid TransportColumnRequest transportColumnRequest,
-                                             BindingResult bindingResult, Principal principal) {
+                                             BindingResult bindingResult, Principal principal)
+            throws ForbiddenException, NoSuchColumnException {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
-            String login = principal.getName();
-            try {
-                if (kanbanColumnService.transportColumn(transportColumnRequest, login)) {
-                    return new ResponseEntity<>(HttpStatus.OK);
-                }
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN),
-                        HttpStatus.NOT_FOUND);
-            } catch (IllegalArgumentException e) {
+            if (kanbanColumnService.transportColumn(transportColumnRequest, principal.getName())) {
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else {
                 return new ResponseEntity<>(new ErrorResponse(Errors.INDEX_MORE_COLLECTION_SIZE),
                         HttpStatus.BAD_REQUEST);
             }
@@ -205,27 +162,17 @@ public class KanbanColumnController {
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к данному ресурсу"),
-            @ApiResponse(responseCode = "200", description = "Отсортирванная по указанному ключу колонка", content = {
+            @ApiResponse(responseCode = "200", description = "Отсортированная по указанному ключу колонка", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = KanbanColumnResponse.class))
             })
     })
     @PostMapping("/sort")
-    public ResponseEntity<?> sortColumn(@RequestBody SortColumnRequest sortColumnRequest, @RequestParam int pageIndex,
-                                        @RequestParam int rowCount, Principal principal) {
-        try {
-            String login = principal.getName();
-            Optional<KanbanColumn> kanbanColumn = kanbanColumnService
-                    .sortColumn(sortColumnRequest, login);
-            if (kanbanColumn.isPresent()) {
-                return ResponseEntity.ok(new KanbanColumnResponse(kanbanColumn.get(), pageIndex, rowCount,
-                        userService.findZoneIdForThisUser(login)));
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.NOT_FOUND);
-        }
+    public KanbanColumnResponse sortColumn(@RequestBody SortColumnRequest sortColumnRequest,
+                                           @RequestParam int pageIndex,
+                                           @RequestParam int rowCount, Principal principal)
+            throws ForbiddenException, NoSuchColumnException {
+        return kanbanColumnService.sortColumn(sortColumnRequest, principal.getName(), pageIndex, rowCount);
     }
 
     @Operation(summary = "Установка интервала очитки столбца в днях")
@@ -235,7 +182,7 @@ public class KanbanColumnController {
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
             @ApiResponse(responseCode = "400",
-                    description = "Передынный интервал очистки является отрицательным числом", content = {
+                    description = "Переданный интервал очистки является отрицательным числом", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             }),
@@ -244,19 +191,12 @@ public class KanbanColumnController {
     })
     @PostMapping("/delay")
     public ResponseEntity<?> setDelayRemover(@RequestBody @Valid DelayRemoveRequest request, BindingResult bindingResult,
-                                             Principal principal) {
+                                             Principal principal) throws ForbiddenException, NoSuchColumnException {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.COUNT_MUST_BE_MORE_1), HttpStatus.BAD_REQUEST);
         } else {
-            try {
-                if (kanbanColumnService.setDelayDeleter(request.getId(), request.getDelay(), principal.getName())) {
-                    return new ResponseEntity<>(HttpStatus.OK);
-                } else {
-                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-                }
-            } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.NOT_FOUND);
-            }
+            kanbanColumnService.setDelayDeleter(request.getId(), request.getDelay(), principal.getName());
+            return new ResponseEntity<>(HttpStatus.OK);
         }
     }
 
@@ -270,16 +210,9 @@ public class KanbanColumnController {
             @ApiResponse(responseCode = "200", description = "Отключение автоматической очистки столбца прошло успешно")
     })
     @DeleteMapping("/delay")
-    public ResponseEntity<?> deleteDelayRemover(@RequestParam @Parameter(description = "Идентификатор колонки") long id,
-                                                Principal principal) {
-        try {
-            if (kanbanColumnService.removeDelayDeleter(id, principal.getName())) {
-                return new ResponseEntity<>(HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_COLUMN), HttpStatus.NOT_FOUND);
-        }
+    public void deleteDelayRemover(
+            @RequestParam @Parameter(description = "Идентификатор колонки") long id, Principal principal)
+            throws ForbiddenException, NoSuchColumnException {
+        kanbanColumnService.removeDelayDeleter(id, principal.getName());
     }
 }
