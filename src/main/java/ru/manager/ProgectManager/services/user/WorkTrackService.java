@@ -2,6 +2,7 @@ package ru.manager.ProgectManager.services.user;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.manager.ProgectManager.DTO.request.user.CreateWorkTrackRequest;
 import ru.manager.ProgectManager.DTO.response.workTrack.AllWorkUserInfo;
 import ru.manager.ProgectManager.DTO.response.workTrack.ElementWithWorkResponse;
@@ -14,7 +15,11 @@ import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.entitys.user.WorkTrack;
 import ru.manager.ProgectManager.enums.ElementStatus;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
-import ru.manager.ProgectManager.exception.runtime.IncorrectStatusException;
+import ru.manager.ProgectManager.exception.ForbiddenException;
+import ru.manager.ProgectManager.exception.kanban.IncorrectElementStatusException;
+import ru.manager.ProgectManager.exception.kanban.NoSuchKanbanElementException;
+import ru.manager.ProgectManager.exception.project.NoSuchProjectException;
+import ru.manager.ProgectManager.exception.user.NoSuchUserException;
 import ru.manager.ProgectManager.repositories.KanbanElementRepository;
 import ru.manager.ProgectManager.repositories.ProjectRepository;
 import ru.manager.ProgectManager.repositories.UserRepository;
@@ -26,10 +31,10 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class WorkTrackService {
@@ -38,9 +43,12 @@ public class WorkTrackService {
     private final KanbanElementRepository elementRepository;
     private final ProjectRepository projectRepository;
 
-    public boolean addWorkTrack(CreateWorkTrackRequest request, String userLogin) {
+    @Transactional
+    public void addWorkTrack(CreateWorkTrackRequest request, String userLogin)
+            throws NoSuchKanbanElementException, IncorrectElementStatusException, ForbiddenException {
         User user = userRepository.findByUsername(userLogin);
-        KanbanElement element = elementRepository.findById(request.getTaskId()).orElseThrow();
+        KanbanElement element = elementRepository.findById(request.getTaskId())
+                .orElseThrow(NoSuchKanbanElementException::new);
         Kanban kanban = element.getKanbanColumn().getKanban();
         if (kanban.getProject().getConnectors().parallelStream().anyMatch(c -> c.getUser().equals(user)
                 && (c.getRoleType() != TypeRoleProject.CUSTOM_ROLE
@@ -63,50 +71,57 @@ public class WorkTrackService {
             element.setTimeOfUpdate(getEpochSeconds());
             element.setLastRedactor(user);
             elementRepository.save(element);
-            return true;
         } else {
-            return false;
+            throw new ForbiddenException();
         }
     }
 
-    public boolean removeWorkTrack(long trackId, String userLogin) {
+    @Transactional
+    public boolean removeWorkTrack(long trackId, String userLogin)
+            throws IncorrectElementStatusException, NoSuchKanbanElementException, ForbiddenException {
         User user = userRepository.findByUsername(userLogin);
-        WorkTrack workTrack = workTrackRepository.findById(trackId).orElseThrow();
-        if (workTrack.getOwner().equals(user)) {
-            checkElement(workTrack.getTask());
-            workTrack.getTask().setTimeOfUpdate(getEpochSeconds());
-            workTrack.getTask().setLastRedactor(user);
+        Optional<WorkTrack> workTrack = workTrackRepository.findById(trackId);
+        if (workTrack.isPresent()) {
+            if (workTrack.get().getOwner().equals(user)) {
+                checkElement(workTrack.get().getTask());
+                workTrack.get().getTask().setTimeOfUpdate(getEpochSeconds());
+                workTrack.get().getTask().setLastRedactor(user);
 
-            user.getWorkTrackSet().remove(workTrack);
-            userRepository.save(user);
-            workTrack.getTask().getWorkTrackSet().remove(workTrack);
-            elementRepository.save(workTrack.getTask());
-            workTrackRepository.delete(workTrack);
-            return true;
-        } else {
-            return false;
-        }
+                user.getWorkTrackSet().remove(workTrack.get());
+                userRepository.save(user);
+                workTrack.get().getTask().getWorkTrackSet().remove(workTrack.get());
+                elementRepository.save(workTrack.get().getTask());
+                workTrackRepository.delete(workTrack.get());
+                return true;
+            } else {
+                throw new ForbiddenException();
+            }
+        } else return false;
     }
 
-    public Optional<AllWorkUserInfo> findWorkTrackMyself(String from, String to, long projectId, String userLogin) {
+    public AllWorkUserInfo findWorkTrackMyself(String from, String to, long projectId, String userLogin)
+            throws ForbiddenException, NoSuchProjectException {
         User user = userRepository.findByUsername(userLogin);
-        Project project = projectRepository.findById(projectId).orElseThrow();
-        if(project.getConnectors().parallelStream().anyMatch(c -> c.getUser().equals(user))) {
-            return Optional.of(findWorkTrack(LocalDate.parse(from), LocalDate.parse(to), project, user));
+        Project project = projectRepository.findById(projectId).orElseThrow(NoSuchProjectException::new);
+        if (project.getConnectors().parallelStream().anyMatch(c -> c.getUser().equals(user))) {
+            return findWorkTrack(LocalDate.parse(from), LocalDate.parse(to), project, user);
         } else {
-            return Optional.empty();
+            throw new ForbiddenException();
         }
     }
 
-    public Optional<AllWorkUserInfo> findOtherWorkTrackAsAdmin(String from, String to, long projectId, long targetUserId,
-                                                               String adminLogin) {
+    public AllWorkUserInfo findOtherWorkTrackAsAdmin(String from, String to, long projectId, long targetUserId,
+                                                               String adminLogin)
+            throws NoSuchProjectException, ForbiddenException, NoSuchUserException {
         User admin = userRepository.findByUsername(adminLogin);
-        Project project = projectRepository.findById(projectId).orElseThrow();
-        if(project.getConnectors().parallelStream().anyMatch(c -> c.getUser().equals(admin))) {
-            return Optional.of(findWorkTrack(LocalDate.parse(from), LocalDate.parse(to), project,
-                    userRepository.findById(targetUserId).orElseThrow(IllegalArgumentException::new)));
+        Project project = projectRepository.findById(projectId).orElseThrow(NoSuchProjectException::new);
+        if (project.getConnectors().parallelStream()
+                .filter(c -> c.getRoleType() == TypeRoleProject.ADMIN)
+                .anyMatch(c -> c.getUser().equals(admin))) {
+            return findWorkTrack(LocalDate.parse(from), LocalDate.parse(to), project,
+                    userRepository.findById(targetUserId).orElseThrow(NoSuchUserException::new));
         } else {
-            return Optional.empty();
+            throw new ForbiddenException();
         }
     }
 
@@ -147,11 +162,12 @@ public class WorkTrackService {
         return info;
     }
 
-    private void checkElement(KanbanElement element) {
+    private void checkElement(KanbanElement element)
+            throws NoSuchKanbanElementException, IncorrectElementStatusException {
         if (element.getStatus() == ElementStatus.UTILISE)
-            throw new IncorrectStatusException();
+            throw new IncorrectElementStatusException();
         if (element.getStatus() == ElementStatus.DELETED)
-            throw new NoSuchElementException();
+            throw new NoSuchKanbanElementException();
     }
 
     private long getEpochSeconds() {

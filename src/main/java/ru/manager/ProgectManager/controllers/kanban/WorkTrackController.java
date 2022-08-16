@@ -17,15 +17,16 @@ import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.workTrack.AllWorkUserInfo;
 import ru.manager.ProgectManager.components.ErrorResponseEntityConfigurator;
 import ru.manager.ProgectManager.enums.Errors;
-import ru.manager.ProgectManager.exception.runtime.IncorrectStatusException;
+import ru.manager.ProgectManager.exception.ForbiddenException;
+import ru.manager.ProgectManager.exception.kanban.IncorrectElementStatusException;
+import ru.manager.ProgectManager.exception.kanban.NoSuchKanbanElementException;
+import ru.manager.ProgectManager.exception.project.NoSuchProjectException;
+import ru.manager.ProgectManager.exception.user.NoSuchUserException;
 import ru.manager.ProgectManager.services.user.WorkTrackService;
 
 import javax.validation.Valid;
 import java.security.Principal;
-import java.util.NoSuchElementException;
-import java.util.Optional;
 
-//todo
 @RestController
 @RequestMapping("/users/kanban/element/work")
 @RequiredArgsConstructor
@@ -53,24 +54,15 @@ public class WorkTrackController {
                     }),
             @ApiResponse(responseCode = "200", description = "Время работы успешно добавлено")
     })
-    @PostMapping()
+    @PostMapping
     public ResponseEntity<?> addWorkTrack(@RequestBody @Valid CreateWorkTrackRequest request,
-                                          BindingResult bindingResult, Principal principal) {
+                                          BindingResult bindingResult, Principal principal)
+            throws ForbiddenException, IncorrectElementStatusException, NoSuchKanbanElementException {
         if (bindingResult.hasErrors()) {
             return entityConfigurator.createErrorResponse(bindingResult);
         } else {
-            try {
-                if (workTrackService.addWorkTrack(request, principal.getName())) {
-                    return new ResponseEntity<>(HttpStatus.OK);
-                } else {
-                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-                }
-            } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
-            } catch (IncorrectStatusException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
-                        HttpStatus.GONE);
-            }
+            workTrackService.addWorkTrack(request, principal.getName());
+            return new ResponseEntity<>(HttpStatus.OK);
         }
     }
 
@@ -91,18 +83,12 @@ public class WorkTrackController {
     })
     @DeleteMapping
     public ResponseEntity<?> removeWorkTrack(@RequestParam @Parameter(description = "Идентификатор удаляемого времени работы")
-                                                     long id, Principal principal) {
-        try {
-            if (workTrackService.removeWorkTrack(id, principal.getName())) {
-                return new ResponseEntity<>(HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_ELEMENT), HttpStatus.NOT_FOUND);
-        } catch (IncorrectStatusException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.INCORRECT_STATUS_ELEMENT_FOR_THIS_ACTION),
-                    HttpStatus.GONE);
+                                             long id, Principal principal)
+            throws ForbiddenException, IncorrectElementStatusException, NoSuchKanbanElementException {
+        if (workTrackService.removeWorkTrack(id, principal.getName())) {
+            return new ResponseEntity<>(HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_WORK_TRACK), HttpStatus.NOT_FOUND);
         }
     }
 
@@ -119,24 +105,14 @@ public class WorkTrackController {
                             schema = @Schema(implementation = AllWorkUserInfo.class))
             })
     })
-    @GetMapping()
-    public ResponseEntity<?> findWorkTracks(@RequestParam String fromDate, @RequestParam String toDate,
-                                            @RequestParam long projectId, @RequestParam long userId,
-                                            Principal principal) {
-        try {
-            Optional<AllWorkUserInfo> response = (userId == 0
-                    ? workTrackService.findWorkTrackMyself(fromDate, toDate, projectId, principal.getName())
-                    : workTrackService.findOtherWorkTrackAsAdmin(fromDate, toDate, projectId, userId,
-                    principal.getName()));
-            if (response.isPresent()) {
-                return ResponseEntity.ok(response.get());
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
-        } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER), HttpStatus.NOT_FOUND);
-        }
+    @GetMapping
+    public AllWorkUserInfo findWorkTracks(@RequestParam String fromDate, @RequestParam String toDate,
+                                          @RequestParam long projectId, @RequestParam long userId,
+                                          Principal principal)
+            throws ForbiddenException, NoSuchProjectException, NoSuchUserException {
+        return userId == 0
+                ? workTrackService.findWorkTrackMyself(fromDate, toDate, projectId, principal.getName())
+                : workTrackService.findOtherWorkTrackAsAdmin(fromDate, toDate, projectId, userId,
+                principal.getName());
     }
 }
