@@ -18,10 +18,9 @@ import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.IdResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanListResponse;
 import ru.manager.ProgectManager.DTO.response.project.ProjectResponseWithFlag;
-import ru.manager.ProgectManager.DTO.response.user.MainUserDataListResponse;
+import ru.manager.ProgectManager.DTO.response.user.PublicMainUserDataResponse;
 import ru.manager.ProgectManager.DTO.response.user.UserDataWithProjectRoleResponse;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
-import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.Errors;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
 import ru.manager.ProgectManager.exception.ForbiddenException;
@@ -125,11 +124,9 @@ public class ProjectController {
             @ApiResponse(responseCode = "200", description = "Картинка сжата и сохранена")
     })
     @PostMapping("/project/photo")
-    public ResponseEntity<Void> setPhoto(@RequestParam long id, @ModelAttribute PhotoDTO photoDTO, Principal principal)
+    public void setPhoto(@RequestParam long id, @ModelAttribute PhotoDTO photoDTO, Principal principal)
             throws IOException, ForbiddenException, NoSuchProjectException {
         projectService.setPhoto(id, photoDTO.getFile(), principal.getName());
-        return new ResponseEntity<>(HttpStatus.OK);
-
     }
 
     @Operation(summary = "Получение списка канбанов проекта",
@@ -232,24 +229,16 @@ public class ProjectController {
             @ApiResponse(responseCode = "403", description = "Пользователь не имеет доступа к указанному проекту"),
             @ApiResponse(responseCode = "200", description = "Список участников проекта с указанной ролью", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = MainUserDataListResponse.class))
+                            schema = @Schema(implementation = PublicMainUserDataResponse[].class))
             })
     })
     @GetMapping("/project/users/role")
-    public ResponseEntity<?> findParticipantsOnRole(@RequestParam long projectId, @RequestParam TypeRoleProject type,
-                                                    @RequestParam(required = false) long roleId,
-                                                    @RequestParam
-                                                    @Parameter(description = "Никнейм или почта искомого пользователя")
-                                                    String name,
-                                                    Principal principal) {
-        String login = principal.getName();
-        int zoneId = userService.findZoneIdForThisUser(login);
-        Optional<Set<User>> response = roleService.findUsersOnRole(type, roleId, projectId, name, login);
-        if (response.isPresent()) {
-            return ResponseEntity.ok(new MainUserDataListResponse(response.get(), zoneId));
-        } else {
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-        }
+    public PublicMainUserDataResponse[] findParticipantsOnRole(@RequestParam long projectId, @RequestParam TypeRoleProject type,
+                                                               @RequestParam(required = false) long roleId,
+                                                               @RequestParam @Parameter(description = "Никнейм или почта искомого пользователя") String name,
+                                                               Principal principal)
+            throws ForbiddenException, NoSuchProjectException {
+        return roleService.findUsersOnRole(type, roleId, projectId, name, principal.getName());
     }
 
     @Operation(summary = "Удаление проекта")
@@ -262,8 +251,7 @@ public class ProjectController {
             @ApiResponse(responseCode = "200", description = "Удаление прошло успешно")
     })
     @DeleteMapping("/project")
-    public ResponseEntity<?> deleteProject(@RequestParam long id, Principal principal) throws ForbiddenException, NoSuchProjectException {
+    public void deleteProject(@RequestParam long id, Principal principal) throws ForbiddenException, NoSuchProjectException {
         projectService.deleteProject(id, principal.getName());
-        return new ResponseEntity<>(HttpStatus.OK);
     }
 }

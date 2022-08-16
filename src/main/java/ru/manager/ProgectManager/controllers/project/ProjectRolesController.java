@@ -19,17 +19,19 @@ import ru.manager.ProgectManager.DTO.request.accessProject.EditUserRoleRequest;
 import ru.manager.ProgectManager.DTO.request.accessProject.PutConnectForResourceInRole;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
 import ru.manager.ProgectManager.DTO.response.IdResponse;
-import ru.manager.ProgectManager.DTO.response.accessProject.CustomProjectRoleResponseList;
-import ru.manager.ProgectManager.entitys.accessProject.CustomProjectRole;
+import ru.manager.ProgectManager.DTO.response.accessProject.CustomProjectRoleResponse;
 import ru.manager.ProgectManager.enums.Errors;
-import ru.manager.ProgectManager.exception.runtime.NoSuchResourceException;
+import ru.manager.ProgectManager.exception.ForbiddenException;
+import ru.manager.ProgectManager.exception.documents.NoSuchPageException;
+import ru.manager.ProgectManager.exception.kanban.NoSuchKanbanException;
+import ru.manager.ProgectManager.exception.project.NoSuchCustomRoleException;
+import ru.manager.ProgectManager.exception.project.NoSuchProjectException;
+import ru.manager.ProgectManager.exception.user.NoSuchUserException;
 import ru.manager.ProgectManager.services.project.ProjectRoleService;
 
 import javax.validation.Valid;
 import java.security.Principal;
-import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.Set;
 
 //todo
 @RestController
@@ -44,29 +46,19 @@ public class ProjectRolesController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Список кастомных ролей", content = {
                     @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = CustomProjectRoleResponseList.class))
+                            schema = @Schema(implementation = CustomProjectRoleResponse[].class))
             }),
             @ApiResponse(responseCode = "403",
-                    description = "Пользователь не имеет достаточных прав доступа для совершения даннного действия"),
+                    description = "Пользователь не имеет достаточных прав доступа для совершения данного действия"),
             @ApiResponse(responseCode = "404", description = "Указанного проекта не существует", content = {
                     @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))
             })
     })
-    @GetMapping()
-    public ResponseEntity<?> findAllCustomRole(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
-                                               Principal principal) {
-        try {
-            Optional<Set<CustomProjectRole>> roles = projectRoleService
-                    .findAllCustomProjectRole(id, principal.getName());
-            if (roles.isPresent()) {
-                return ResponseEntity.ok(new CustomProjectRoleResponseList(roles.get()));
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
-        }
+    @GetMapping
+    public CustomProjectRoleResponse[] findAllCustomRole(@RequestParam @Parameter(description = "Идентификатор проекта") long id,
+                                                         Principal principal) throws ForbiddenException, NoSuchProjectException {
+        return projectRoleService.findAllCustomProjectRole(id, principal.getName());
     }
 
     @Operation(summary = "Добавление новой роли в проект")
@@ -76,12 +68,12 @@ public class ProjectRolesController {
                             schema = @Schema(implementation = IdResponse.class))
             }),
             @ApiResponse(responseCode = "403",
-                    description = "Пользователь не имеет достаточных прав доступа для совершения даннного действия"),
+                    description = "Пользователь не имеет достаточных прав доступа для совершения данного действия"),
             @ApiResponse(responseCode = "404", description = "Указанного проекта или канбана, или документа не существует",
                     content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class))
-            }),
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
             @ApiResponse(responseCode = "400", description = "Название роли должно содержать видимые символы",
                     content = {
                             @Content(mediaType = "application/json",
@@ -91,28 +83,16 @@ public class ProjectRolesController {
     })
     @PostMapping
     public ResponseEntity<?> addRole(@RequestBody @Valid CreateCustomRoleRequest request, BindingResult bindingResult,
-                                     Principal principal) {
+                                     Principal principal)
+            throws ForbiddenException, NoSuchProjectException, NoSuchPageException, NoSuchKanbanException {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
                     HttpStatus.BAD_REQUEST);
         } else {
-            try {
-                Optional<CustomProjectRole> customProjectRole =
-                        projectRoleService.createCustomRole(request, principal.getName());
-                if (customProjectRole.isPresent()) {
-                    return new ResponseEntity<>(new IdResponse(customProjectRole.get().getId()), HttpStatus.OK);
-                } else {
-                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-                }
-            } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
-            } catch (NoSuchResourceException e) {
-                if(e.getMessage().charAt(0) == 'K') {
-                    return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.NOT_FOUND);
-                } else {
-                    return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PAGE), HttpStatus.NOT_FOUND);
-                }
-            } catch (IllegalArgumentException e) {
+            Optional<IdResponse> customProjectRole = projectRoleService.createCustomRole(request, principal.getName());
+            if (customProjectRole.isPresent()) {
+                return ResponseEntity.ok(customProjectRole.get());
+            } else {
                 return new ResponseEntity<>(HttpStatus.CONFLICT);
             }
         }
@@ -129,16 +109,9 @@ public class ProjectRolesController {
             })
     })
     @DeleteMapping()
-    public ResponseEntity<?> deleteRole(@RequestParam long id, Principal principal) {
-        try {
-            if (projectRoleService.deleteCustomRole(id, principal.getName())) {
-                return new ResponseEntity<>(HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
-        }
+    public void deleteRole(@RequestParam long id, Principal principal)
+            throws ForbiddenException, NoSuchProjectException {
+        projectRoleService.deleteCustomRole(id, principal.getName());
     }
 
     @Operation(summary = "Изменение роли участиника проекта")
@@ -159,25 +132,14 @@ public class ProjectRolesController {
     })
     @PutMapping("/edit_user_role")
     public ResponseEntity<?> editUserRole(@RequestBody @Valid EditUserRoleRequest request, BindingResult bindingResult,
-                                          Principal principal) {
+                                          Principal principal)
+            throws NoSuchCustomRoleException, ForbiddenException, NoSuchProjectException, NoSuchUserException {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
                     HttpStatus.BAD_REQUEST);
         } else {
-            try {
-                if (projectRoleService.editUserRole(request, principal.getName())) {
-                    return new ResponseEntity<>(HttpStatus.OK);
-                } else {
-                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-                }
-            } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PROJECT), HttpStatus.NOT_FOUND);
-            } catch (NoSuchResourceException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_USER), HttpStatus.NOT_FOUND);
-            } catch (IllegalArgumentException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CUSTOM_ROLE),
-                        HttpStatus.NOT_FOUND);
-            }
+            projectRoleService.editUserRole(request, principal.getName());
+            return new ResponseEntity<>(HttpStatus.OK);
         }
     }
 
@@ -198,21 +160,15 @@ public class ProjectRolesController {
     })
     @PutMapping("/rename")
     public ResponseEntity<?> rename(@RequestParam long id, @RequestBody @Valid NameRequest nameRequest,
-                                    BindingResult bindingResult, Principal principal) {
+                                    BindingResult bindingResult, Principal principal)
+            throws NoSuchCustomRoleException, ForbiddenException {
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.NAME_MUST_BE_CONTAINS_VISIBLE_SYMBOLS),
                     HttpStatus.BAD_REQUEST);
         } else {
-            try {
-                if (projectRoleService.rename(id, nameRequest.getName(), principal.getName())) {
-                    return new ResponseEntity<>(HttpStatus.OK);
-                } else {
-                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-                }
-            } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CUSTOM_ROLE),
-                        HttpStatus.NOT_FOUND);
-            } catch (IllegalArgumentException e) {
+            if (projectRoleService.rename(id, nameRequest.getName(), principal.getName())) {
+                return new ResponseEntity<>(HttpStatus.OK);
+            } else {
                 return new ResponseEntity<>(HttpStatus.CONFLICT);
             }
         }
@@ -230,18 +186,10 @@ public class ProjectRolesController {
             })
     })
     @PutMapping("/can_edit")
-    public ResponseEntity<?> editCanCreateOrDeletePrivilege(@RequestParam long id,
-                                                            @RequestParam boolean canCreateOrDelete, Principal principal) {
-        try {
-            if (projectRoleService.putCanEditResource(id, canCreateOrDelete, principal.getName())) {
-                return new ResponseEntity<>(HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-            }
-        } catch (NoSuchElementException e) {
-            return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CUSTOM_ROLE),
-                    HttpStatus.NOT_FOUND);
-        }
+    public void editCanCreateOrDeletePrivilege(@RequestParam long id,
+                                               @RequestParam boolean canCreateOrDelete, Principal principal)
+            throws NoSuchCustomRoleException, ForbiddenException {
+        projectRoleService.putCanEditResource(id, canCreateOrDelete, principal.getName());
     }
 
     @Operation(summary = "Установка доступа к канбанам участников данной роли",
@@ -250,9 +198,9 @@ public class ProjectRolesController {
             @ApiResponse(responseCode = "200", description = "Доступ предоставлен"),
             @ApiResponse(responseCode = "400", description = "Список предоставляемых ресурсов не должен отсутствовать",
                     content = {
-                    @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class))
-            }),
+                            @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ErrorResponse.class))
+                    }),
             @ApiResponse(responseCode = "403",
                     description = "Пользователь не является администратором проекта, к которому относится данная роль"),
             @ApiResponse(responseCode = "404", description = "Указанной роли или канбана не существует", content = {
@@ -262,22 +210,13 @@ public class ProjectRolesController {
     })
     @PostMapping("/connection/kanban")
     public ResponseEntity<?> editKanbanConnection(@RequestBody @Valid PutConnectForResourceInRole putConnections,
-                                                  BindingResult bindingResult, Principal principal) {
-        if(bindingResult.hasErrors()) {
+                                                  BindingResult bindingResult, Principal principal)
+            throws NoSuchCustomRoleException, ForbiddenException, NoSuchKanbanException {
+        if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.FIELD_MUST_BE_NOT_NULL), HttpStatus.BAD_REQUEST);
         } else {
-            try {
-                if (projectRoleService.putKanbanConnections(putConnections, principal.getName())) {
-                    return new ResponseEntity<>(HttpStatus.OK);
-                } else {
-                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-                }
-            } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CUSTOM_ROLE),
-                        HttpStatus.NOT_FOUND);
-            } catch (NoSuchResourceException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_KANBAN), HttpStatus.NOT_FOUND);
-            }
+            projectRoleService.putKanbanConnections(putConnections, principal.getName());
+            return new ResponseEntity<>(HttpStatus.OK);
         }
     }
 
@@ -299,22 +238,13 @@ public class ProjectRolesController {
     })
     @PostMapping("/connection/page")
     public ResponseEntity<?> editPageConnection(@RequestBody @Valid PutConnectForResourceInRole putConnections,
-                                                  BindingResult bindingResult, Principal principal) {
-        if(bindingResult.hasErrors()) {
+                                                BindingResult bindingResult, Principal principal)
+            throws NoSuchCustomRoleException, ForbiddenException, NoSuchPageException {
+        if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.FIELD_MUST_BE_NOT_NULL), HttpStatus.BAD_REQUEST);
         } else {
-            try {
-                if (projectRoleService.putPageConnections(putConnections, principal.getName())) {
-                    return new ResponseEntity<>(HttpStatus.OK);
-                } else {
-                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-                }
-            } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CUSTOM_ROLE),
-                        HttpStatus.NOT_FOUND);
-            } catch (NoSuchResourceException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_PAGE), HttpStatus.NOT_FOUND);
-            }
+            projectRoleService.putPageConnections(putConnections, principal.getName());
+            return new ResponseEntity<>(HttpStatus.OK);
         }
     }
 
@@ -335,20 +265,13 @@ public class ProjectRolesController {
     })
     @DeleteMapping("/connection/kanban")
     public ResponseEntity<?> deleteKanbanConnection(@RequestBody @Valid DeleteConnectForResourceFromRole deleteConnect,
-                                                  BindingResult bindingResult, Principal principal) {
-        if(bindingResult.hasErrors()) {
+                                                    BindingResult bindingResult, Principal principal)
+            throws NoSuchCustomRoleException, ForbiddenException {
+        if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.FIELD_MUST_BE_NOT_NULL), HttpStatus.BAD_REQUEST);
         } else {
-            try {
-                if (projectRoleService.deleteKanbanConnectors(deleteConnect, principal.getName())) {
-                    return new ResponseEntity<>(HttpStatus.OK);
-                } else {
-                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-                }
-            } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CUSTOM_ROLE),
-                        HttpStatus.NOT_FOUND);
-            }
+            projectRoleService.deleteKanbanConnectors(deleteConnect, principal.getName());
+            return new ResponseEntity<>(HttpStatus.OK);
         }
     }
 
@@ -369,20 +292,13 @@ public class ProjectRolesController {
     })
     @DeleteMapping("/connection/page")
     public ResponseEntity<?> deletePageConnection(@RequestBody @Valid DeleteConnectForResourceFromRole deleteConnect,
-                                                  BindingResult bindingResult, Principal principal) {
-        if(bindingResult.hasErrors()) {
+                                                  BindingResult bindingResult, Principal principal)
+            throws NoSuchCustomRoleException, ForbiddenException {
+        if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(new ErrorResponse(Errors.FIELD_MUST_BE_NOT_NULL), HttpStatus.BAD_REQUEST);
         } else {
-            try {
-                if (projectRoleService.deletePageConnectors(deleteConnect, principal.getName())) {
-                    return new ResponseEntity<>(HttpStatus.OK);
-                } else {
-                    return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-                }
-            } catch (NoSuchElementException e) {
-                return new ResponseEntity<>(new ErrorResponse(Errors.NO_SUCH_SPECIFIED_CUSTOM_ROLE),
-                        HttpStatus.NOT_FOUND);
-            }
+            projectRoleService.deletePageConnectors(deleteConnect, principal.getName());
+            return new ResponseEntity<>(HttpStatus.OK);
         }
     }
 }

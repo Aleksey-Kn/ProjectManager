@@ -4,6 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.manager.ProgectManager.DTO.request.accessProject.*;
+import ru.manager.ProgectManager.DTO.response.IdResponse;
+import ru.manager.ProgectManager.DTO.response.accessProject.CustomProjectRoleResponse;
+import ru.manager.ProgectManager.DTO.response.user.PublicMainUserDataResponse;
 import ru.manager.ProgectManager.entitys.Project;
 import ru.manager.ProgectManager.entitys.accessProject.CustomProjectRole;
 import ru.manager.ProgectManager.entitys.accessProject.CustomRoleWithDocumentConnector;
@@ -13,15 +16,20 @@ import ru.manager.ProgectManager.entitys.documents.Page;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.TypeRoleProject;
-import ru.manager.ProgectManager.exception.runtime.NoSuchResourceException;
+import ru.manager.ProgectManager.exception.ForbiddenException;
+import ru.manager.ProgectManager.exception.documents.NoSuchPageException;
+import ru.manager.ProgectManager.exception.kanban.NoSuchKanbanException;
+import ru.manager.ProgectManager.exception.project.NoSuchCustomRoleException;
+import ru.manager.ProgectManager.exception.project.NoSuchProjectException;
+import ru.manager.ProgectManager.exception.user.NoSuchUserException;
 import ru.manager.ProgectManager.repositories.*;
 
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class ProjectRoleService {
@@ -33,56 +41,61 @@ public class ProjectRoleService {
     private final AccessProjectRepository accessProjectRepository;
     private final UserWithProjectConnectorRepository projectConnectorRepository;
 
-    public Optional<CustomProjectRole> createCustomRole(CreateCustomRoleRequest request, String userLogin) {
+    @Transactional
+    public Optional<IdResponse> createCustomRole(CreateCustomRoleRequest request, String userLogin)
+            throws ForbiddenException, NoSuchProjectException, NoSuchKanbanException, NoSuchPageException {
         User user = userRepository.findByUsername(userLogin);
-        Project project = projectRepository.findById(request.getProjectId()).orElseThrow();
+        Project project = projectRepository.findById(request.getProjectId()).orElseThrow(NoSuchProjectException::new);
         if (isAdmin(project, user)) {
             if (containsRoleNameInProject(project, request.getName()))
-                throw new IllegalArgumentException();
+                return Optional.empty();
 
             CustomProjectRole customProjectRole = new CustomProjectRole();
             customProjectRole.setProject(project);
             customProjectRole.setName(request.getName().trim());
             customProjectRole.setCanEditResources(request.isCanEditResource());
             CustomProjectRole savedRole = customProjectRoleRepository.save(customProjectRole);
-            request.getKanbanConnectorRequests().forEach(kr -> {
+            for (var kr : request.getKanbanConnectorRequests()) {
                 CustomRoleWithKanbanConnector customRoleWithKanbanConnector = new CustomRoleWithKanbanConnector();
                 customRoleWithKanbanConnector.setCanEdit(kr.isCanEdit());
                 customRoleWithKanbanConnector.setKanban(project.getKanbans().parallelStream()
                         .filter(k -> k.getId() == kr.getId())
-                        .findAny().orElseThrow(() -> new NoSuchResourceException("Kanban: " + kr.getId())));
+                        .findAny().orElseThrow(NoSuchKanbanException::new));
                 customRoleWithKanbanConnector.setCustomProjectRole(savedRole);
                 kanbanConnectorRepository.save(customRoleWithKanbanConnector);
-            });
-            request.getDocumentConnectorRequest().forEach(dr -> {
+            }
+            for (var dr : request.getDocumentConnectorRequest()) {
                 CustomRoleWithDocumentConnector customRoleWithDocumentConnector = new CustomRoleWithDocumentConnector();
                 customRoleWithDocumentConnector.setCanEdit(dr.isCanEdit());
                 customRoleWithDocumentConnector.setId(dr.getId());
                 customRoleWithDocumentConnector.setPage(project.getPages().parallelStream()
                         .filter(p -> p.getRoot() == null)
                         .filter(p -> p.getId() == dr.getId())
-                        .findAny().orElseThrow(() -> new NoSuchResourceException("Page: " + dr.getId())));
+                        .findAny().orElseThrow(NoSuchPageException::new));
                 customRoleWithDocumentConnector.setCustomProjectRole(savedRole);
                 documentConnectorRepository.save(customRoleWithDocumentConnector);
-            });
-            return Optional.of(savedRole);
-        }
-        return Optional.empty();
+            }
+            return Optional.of(new IdResponse(savedRole.getId()));
+        } else throw new ForbiddenException();
     }
 
-    public Optional<Set<CustomProjectRole>> findAllCustomProjectRole(long projectId, String userLogin) {
+    public CustomProjectRoleResponse[] findAllCustomProjectRole(long projectId, String userLogin)
+            throws ForbiddenException, NoSuchProjectException {
         User user = userRepository.findByUsername(userLogin);
-        Project project = projectRepository.findById(projectId).orElseThrow();
+        Project project = projectRepository.findById(projectId).orElseThrow(NoSuchProjectException::new);
         if (isAdmin(project, user)) {
-            return Optional.of(project.getAvailableRole());
+            return project.getAvailableRole().parallelStream()
+                    .map(CustomProjectRoleResponse::new)
+                    .toArray(CustomProjectRoleResponse[]::new);
         } else {
-            return Optional.empty();
+            throw new ForbiddenException();
         }
     }
 
-    public boolean deleteCustomRole(long roleId, String userLogin) {
+    @Transactional
+    public void deleteCustomRole(long roleId, String userLogin) throws ForbiddenException, NoSuchProjectException {
         User user = userRepository.findByUsername(userLogin);
-        CustomProjectRole role = customProjectRoleRepository.findById(roleId).orElseThrow();
+        CustomProjectRole role = customProjectRoleRepository.findById(roleId).orElseThrow(NoSuchProjectException::new);
         Project project = role.getProject();
         if (isAdmin(project, user)) {
             project.getConnectors().parallelStream()
@@ -97,42 +110,45 @@ public class ProjectRoleService {
                     .filter(accessProject -> accessProject.getProjectRole().equals(role))
                     .forEach(accessProjectRepository::delete); // удаление пригласительных ссылок, которые выдавали данную роль
             customProjectRoleRepository.delete(role);
-            return true;
         } else {
-            return false;
-        }
-    }
-
-    public boolean rename(long id, String name, String userLogin) {
-        User user = userRepository.findByUsername(userLogin);
-        CustomProjectRole customProjectRole = customProjectRoleRepository.findById(id).orElseThrow();
-        Project project = customProjectRole.getProject();
-        if (isAdmin(project, user)) {
-            if (containsRoleNameInProject(project, name))
-                throw new IllegalArgumentException();
-            customProjectRole.setName(name);
-            customProjectRoleRepository.save(customProjectRole);
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public boolean putCanEditResource(long id, boolean canEdit, String userLogin) {
-        User user = userRepository.findByUsername(userLogin);
-        CustomProjectRole customProjectRole = customProjectRoleRepository.findById(id).orElseThrow();
-        if (isAdmin(customProjectRole.getProject(), user)) {
-            customProjectRole.setCanEditResources(canEdit);
-            customProjectRoleRepository.save(customProjectRole);
-            return true;
-        } else {
-            return false;
+            throw new ForbiddenException();
         }
     }
 
     @Transactional
-    public boolean putKanbanConnections(PutConnectForResourceInRole request, String userLogin) {
-        CustomProjectRole customProjectRole = customProjectRoleRepository.findById(request.getRoleId()).orElseThrow();
+    public boolean rename(long id, String name, String userLogin) throws ForbiddenException, NoSuchCustomRoleException {
+        User user = userRepository.findByUsername(userLogin);
+        CustomProjectRole customProjectRole = customProjectRoleRepository.findById(id)
+                .orElseThrow(NoSuchCustomRoleException::new);
+        Project project = customProjectRole.getProject();
+        if (isAdmin(project, user)) {
+            if (containsRoleNameInProject(project, name))
+                return false;
+            customProjectRole.setName(name);
+            customProjectRoleRepository.save(customProjectRole);
+            return true;
+        } else {
+            throw new ForbiddenException();
+        }
+    }
+
+    @Transactional
+    public void putCanEditResource(long id, boolean canEdit, String userLogin) throws ForbiddenException, NoSuchCustomRoleException {
+        User user = userRepository.findByUsername(userLogin);
+        CustomProjectRole customProjectRole = customProjectRoleRepository.findById(id)
+                .orElseThrow(NoSuchCustomRoleException::new);
+        if (isAdmin(customProjectRole.getProject(), user)) {
+            customProjectRole.setCanEditResources(canEdit);
+            customProjectRoleRepository.save(customProjectRole);
+        } else {
+            throw new ForbiddenException();
+        }
+    }
+
+    @Transactional
+    public void putKanbanConnections(PutConnectForResourceInRole request, String userLogin) throws NoSuchCustomRoleException, NoSuchKanbanException, ForbiddenException {
+        CustomProjectRole customProjectRole = customProjectRoleRepository.findById(request.getRoleId())
+                .orElseThrow(NoSuchCustomRoleException::new);
         User user = userRepository.findByUsername(userLogin);
         Project project = customProjectRole.getProject();
         if (isAdmin(project, user)) {
@@ -151,27 +167,27 @@ public class ProjectRoleService {
                                 c.setCanEdit(rc.isCanEdit());
                                 kanbanConnectorRepository.save(c);
                             })); // коннекторы, присутствующие в роли
-            request.getResourceConnector().stream()
-                    .filter(Predicate.not(containConnectorWithThisId))
-                    .forEach(rc -> {
-                        CustomRoleWithKanbanConnector connector = new CustomRoleWithKanbanConnector();
-                        connector.setKanban(project.getKanbans().parallelStream()
-                                .filter(k -> k.getId() == rc.getId())
-                                .findAny()
-                                .orElseThrow(NoSuchResourceException::new));
-                        connector.setCanEdit(rc.isCanEdit());
-                        connector.setCustomProjectRole(customProjectRole);
-                        kanbanConnectorRepository.save(connector);
-                    });// коннекторы, ранее не присутствовавшие в роли
-            return true;
+            for (var rc : request.getResourceConnector().stream()
+                    .filter(Predicate.not(containConnectorWithThisId)).collect(Collectors.toSet())) {
+                CustomRoleWithKanbanConnector connector = new CustomRoleWithKanbanConnector();
+                connector.setKanban(project.getKanbans().parallelStream()
+                        .filter(k -> k.getId() == rc.getId())
+                        .findAny()
+                        .orElseThrow(NoSuchKanbanException::new));
+                connector.setCanEdit(rc.isCanEdit());
+                connector.setCustomProjectRole(customProjectRole);
+                kanbanConnectorRepository.save(connector);
+            }// коннекторы, ранее не присутствовавшие в роли
         } else {
-            return false;
+            throw new ForbiddenException();
         }
     }
 
     @Transactional
-    public boolean putPageConnections(PutConnectForResourceInRole request, String userLogin) {
-        CustomProjectRole customProjectRole = customProjectRoleRepository.findById(request.getRoleId()).orElseThrow();
+    public void putPageConnections(PutConnectForResourceInRole request, String userLogin)
+            throws ForbiddenException, NoSuchPageException, NoSuchCustomRoleException {
+        CustomProjectRole customProjectRole = customProjectRoleRepository.findById(request.getRoleId())
+                .orElseThrow(NoSuchCustomRoleException::new);
         User user = userRepository.findByUsername(userLogin);
         Project project = customProjectRole.getProject();
         if (isAdmin(project, user)) {
@@ -190,27 +206,28 @@ public class ProjectRoleService {
                                 c.setCanEdit(rc.isCanEdit());
                                 documentConnectorRepository.save(c);
                             })); // коннекторы, присутствующие в роли
-            request.getResourceConnector().stream()
-                    .filter(Predicate.not(containConnectorWithThisId))
-                    .forEach(rc -> {
-                        CustomRoleWithDocumentConnector connector = new CustomRoleWithDocumentConnector();
-                        connector.setPage(project.getPages().parallelStream()
-                                .filter(page -> page.getRoot() == null) // только корневые страницы
-                                .filter(p -> p.getId() == rc.getId())
-                                .findAny()
-                                .orElseThrow(NoSuchResourceException::new));
-                        connector.setCanEdit(rc.isCanEdit());
-                        connector.setCustomProjectRole(customProjectRole);
-                        documentConnectorRepository.save(connector);
-                    });// коннекторы, ранее не присутствовавшие в роли
-            return true;
+            for (var rc : request.getResourceConnector().stream()
+                    .filter(Predicate.not(containConnectorWithThisId)).collect(Collectors.toSet())) {
+                CustomRoleWithDocumentConnector connector = new CustomRoleWithDocumentConnector();
+                connector.setPage(project.getPages().parallelStream()
+                        .filter(page -> page.getRoot() == null) // только корневые страницы
+                        .filter(p -> p.getId() == rc.getId())
+                        .findAny()
+                        .orElseThrow(NoSuchPageException::new));
+                connector.setCanEdit(rc.isCanEdit());
+                connector.setCustomProjectRole(customProjectRole);
+                documentConnectorRepository.save(connector);
+            } // коннекторы, ранее не присутствовавшие в роли
         } else {
-            return false;
+            throw new ForbiddenException();
         }
     }
 
-    public boolean deleteKanbanConnectors(DeleteConnectForResourceFromRole request, String userLogin) {
-        CustomProjectRole customProjectRole = customProjectRoleRepository.findById(request.getRoleId()).orElseThrow();
+    @Transactional
+    public void deleteKanbanConnectors(DeleteConnectForResourceFromRole request, String userLogin)
+            throws NoSuchCustomRoleException, ForbiddenException {
+        CustomProjectRole customProjectRole = customProjectRoleRepository.findById(request.getRoleId())
+                .orElseThrow(NoSuchCustomRoleException::new);
         User user = userRepository.findByUsername(userLogin);
         Project project = customProjectRole.getProject();
         if (isAdmin(project, user)) {
@@ -218,14 +235,16 @@ public class ProjectRoleService {
                     .filter(connector -> connector.getKanban().getId() == id)
                     .findAny()
                     .ifPresent(kanbanConnectorRepository::delete));
-            return true;
         } else {
-            return false;
+            throw new ForbiddenException();
         }
     }
 
-    public boolean deletePageConnectors(DeleteConnectForResourceFromRole request, String userLogin) {
-        CustomProjectRole customProjectRole = customProjectRoleRepository.findById(request.getRoleId()).orElseThrow();
+    @Transactional
+    public void deletePageConnectors(DeleteConnectForResourceFromRole request, String userLogin)
+            throws NoSuchCustomRoleException, ForbiddenException {
+        CustomProjectRole customProjectRole = customProjectRoleRepository.findById(request.getRoleId())
+                .orElseThrow(NoSuchCustomRoleException::new);
         User user = userRepository.findByUsername(userLogin);
         Project project = customProjectRole.getProject();
         if (isAdmin(project, user)) {
@@ -233,64 +252,67 @@ public class ProjectRoleService {
                     .filter(connector -> connector.getPage().getId() == id)
                     .findAny()
                     .ifPresent(documentConnectorRepository::delete));
-            return true;
         } else {
-            return false;
+            throw new ForbiddenException();
         }
     }
 
-    public boolean editUserRole(EditUserRoleRequest request, String adminLogin) {
+    @Transactional
+    public void editUserRole(EditUserRoleRequest request, String adminLogin)
+            throws NoSuchProjectException, NoSuchUserException, ForbiddenException, NoSuchCustomRoleException {
         User admin = userRepository.findByUsername(adminLogin);
-        Project project = projectRepository.findById(request.getProjectId()).orElseThrow();
+        Project project = projectRepository.findById(request.getProjectId()).orElseThrow(NoSuchProjectException::new);
         if (isAdmin(project, admin)) {
-            User targetUser = userRepository.findById(request.getUserId()).orElseThrow(NoSuchResourceException::new);
+            User targetUser = userRepository.findById(request.getUserId()).orElseThrow(NoSuchUserException::new);
             UserWithProjectConnector connector = targetUser.getUserWithProjectConnectors().stream()
                     .filter(c -> c.getProject().equals(project))
                     .findAny()
-                    .orElseThrow(() -> new NoSuchResourceException("Project connect with user: " + request.getUserId()));
+                    .orElseThrow(NoSuchUserException::new);
             connector.setRoleType(request.getTypeRoleProject());
             if (request.getTypeRoleProject() == TypeRoleProject.CUSTOM_ROLE) {
                 connector.setCustomProjectRole(project.getAvailableRole().parallelStream()
                         .filter(role -> role.getId() == request.getRoleId())
-                        .findAny().orElseThrow(IllegalArgumentException::new));
+                        .findAny().orElseThrow(NoSuchCustomRoleException::new));
             } else {
                 connector.setCustomProjectRole(null);
             }
             projectConnectorRepository.save(connector);
-            return true;
-        }
-        return false;
+        } else throw new ForbiddenException();
     }
 
-    public Optional<Set<User>> findUsersOnRole(TypeRoleProject type, long roleId, long projectId, String userData,
-                                               String userLogin) { // user data - nickname or email
+    public PublicMainUserDataResponse[] findUsersOnRole(TypeRoleProject type, long roleId, long projectId, String userData,
+                                               String userLogin) throws NoSuchProjectException, ForbiddenException { // user data - nickname or email
         String data = userData.trim().toLowerCase();
         User admin = userRepository.findByUsername(userLogin);
-        Project project = projectRepository.findById(projectId).orElseThrow();
+        Project project = projectRepository.findById(projectId).orElseThrow(NoSuchProjectException::new);
         if (project.getConnectors().stream().map(UserWithProjectConnector::getUser).anyMatch(u -> u.equals(admin))) {
-            return Optional.of(switch (type) {
+            int zoneId = admin.getZoneId();
+            return switch (type) {
                 case ADMIN -> project.getConnectors().parallelStream()
                         .filter(connector -> connector.getRoleType() == TypeRoleProject.ADMIN)
                         .map(UserWithProjectConnector::getUser)
                         .filter(user -> user.getNickname().toLowerCase().contains(data)
                                 || user.getEmail().toLowerCase().contains(data))
-                        .collect(Collectors.toSet());
+                        .map(user -> new PublicMainUserDataResponse(user, zoneId))
+                        .toArray(PublicMainUserDataResponse[]::new);
                 case STANDARD_USER -> project.getConnectors().parallelStream()
                         .filter(connector -> connector.getRoleType() == TypeRoleProject.STANDARD_USER)
                         .map(UserWithProjectConnector::getUser)
                         .filter(user -> user.getNickname().toLowerCase().contains(data)
                                 || user.getEmail().toLowerCase().contains(data))
-                        .collect(Collectors.toSet());
+                        .map(user -> new PublicMainUserDataResponse(user, zoneId))
+                        .toArray(PublicMainUserDataResponse[]::new);
                 case CUSTOM_ROLE -> project.getConnectors().parallelStream()
                         .filter(connector -> connector.getRoleType() == TypeRoleProject.CUSTOM_ROLE)
                         .filter(connector -> connector.getCustomProjectRole().getId() == roleId)
                         .map(UserWithProjectConnector::getUser)
                         .filter(user -> user.getNickname().toLowerCase().contains(data)
                                 || user.getEmail().toLowerCase().contains(data))
-                        .collect(Collectors.toSet());
-            });
+                        .map(user -> new PublicMainUserDataResponse(user, zoneId))
+                        .toArray(PublicMainUserDataResponse[]::new);
+            };
         } else {
-            return Optional.empty();
+            throw new ForbiddenException();
         }
     }
 
