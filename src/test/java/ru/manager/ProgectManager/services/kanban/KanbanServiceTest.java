@@ -5,6 +5,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import ru.manager.ProgectManager.DTO.response.kanban.KanbanMainDataResponse;
+import ru.manager.ProgectManager.DTO.response.kanban.TagResponse;
 import ru.manager.ProgectManager.base.ProjectManagerTestBase;
 import ru.manager.ProgectManager.exception.ForbiddenException;
 import ru.manager.ProgectManager.exception.kanban.NoSuchKanbanException;
@@ -39,12 +41,7 @@ class KanbanServiceTest extends ProjectManagerTestBase {
     @SneakyThrows
     @Test
     void createKanban() {
-        final long id = kanbanService.createKanban(projectId, "Board", login).getId();
-        assertThat(kanbanService.findKanban(id, login, 0, 10)).satisfies(v -> {
-            assertThat(v.getName()).isEqualTo("Board");
-            assertThat(v.getKanbanColumns()).isEmpty();
-            assertThat(v.isCanEdit()).isTrue();
-        });
+        assertThat(kanbanService.createKanban(projectId, "Board", login).getId()).isPositive();
     }
 
     @Test
@@ -65,19 +62,39 @@ class KanbanServiceTest extends ProjectManagerTestBase {
     }
 
     @Test
+    @SneakyThrows
     void findKanban() {
+        final long id = kanbanService.createKanban(projectId, "Board", login).getId();
+        assertThat(kanbanService.findKanban(id, login, 0, 10))
+                .isEqualTo(TestDataBuilder.buildKanbanContentResponse(id));
     }
 
     @Test
+    @SneakyThrows
     void findAllKanban() {
+        kanbanService.createKanban(projectId, "Board", login);
+        kanbanService.createKanban(projectId, "Kanban", login);
+        assertThat(kanbanService.findAllKanban(projectId, login)).extracting(KanbanMainDataResponse::getName)
+                .containsOnly("Board", "Kanban");
     }
 
     @Test
+    @SneakyThrows
     void findKanbansByName() {
+        final long id = kanbanService.createKanban(projectId, "Board", login).getId();
+        kanbanService.createKanban(projectId, "Kanban", login);
+        assertThat(kanbanService.findKanbansByName(projectId, "bo", login))
+                .extracting(KanbanMainDataResponse::getId)
+                .containsOnly(id);
     }
 
     @Test
+    @SneakyThrows
     void addTag() {
+        final long id = kanbanService.createKanban(projectId, "Board", login).getId();
+        kanbanService.addTag(id, TestDataBuilder.buildTagRequest(), login);
+        assertThat(kanbanService.findAllAvailableTags(id, login)).extracting(TagResponse::getText)
+                .containsOnly("Text");
     }
 
     @Test

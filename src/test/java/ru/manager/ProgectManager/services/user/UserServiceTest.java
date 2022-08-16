@@ -8,11 +8,9 @@ import ru.manager.ProgectManager.DTO.request.user.LocaleRequest;
 import ru.manager.ProgectManager.DTO.request.user.RegisterUserDTO;
 import ru.manager.ProgectManager.DTO.response.project.ProjectResponse;
 import ru.manager.ProgectManager.DTO.response.user.MyselfUserDataResponse;
-import ru.manager.ProgectManager.DTO.response.user.PublicAllDataResponse;
 import ru.manager.ProgectManager.DTO.response.user.VisitMarkResponse;
 import ru.manager.ProgectManager.base.ProjectManagerTestBase;
 import ru.manager.ProgectManager.entitys.user.ApproveActionToken;
-import ru.manager.ProgectManager.entitys.user.User;
 import ru.manager.ProgectManager.enums.ActionType;
 import ru.manager.ProgectManager.enums.Locale;
 import ru.manager.ProgectManager.exception.user.IncorrectLoginOrPasswordException;
@@ -110,7 +108,7 @@ class UserServiceTest extends ProjectManagerTestBase {
         final RegisterUserDTO registerUserDTO = TestDataBuilder.buildMasterUserDto();
         final String login = userService.saveUser(registerUserDTO).orElseThrow();
         final long id = userRepository.findByUsername(login).getUserId();
-        assertThat(userService.findById(id, login)).extracting(PublicAllDataResponse::getNickname)
+        assertThat(userService.findById(id, login).getNickname())
                 .isEqualTo(registerUserDTO.getNickname());
     }
 
@@ -127,8 +125,7 @@ class UserServiceTest extends ProjectManagerTestBase {
     void renameUser() {
         final String login = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow();
         userService.renameUser(login, "Bulba");
-        assertThat(userService.findMyselfUserDataResponseByUsername(login))
-                .extracting(MyselfUserDataResponse::getNickname)
+        assertThat(userService.findMyselfUserDataResponseByUsername(login).getNickname())
                 .isEqualTo("Bulba");
     }
 
@@ -145,7 +142,7 @@ class UserServiceTest extends ProjectManagerTestBase {
     void updateLocale() {
         final String login = userService.saveUser(TestDataBuilder.buildMasterUserDto()).orElseThrow();
         userService.updateLocale(new LocaleRequest(Locale.ru), login);
-        assertInTransaction(() -> assertThat(userRepository.findByUsername(login)).extracting(User::getLocale)
+        assertInTransaction(() -> assertThat(userRepository.findByUsername(login).getLocale())
                 .isEqualTo(Locale.ru));
     }
 

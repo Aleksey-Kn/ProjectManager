@@ -1,10 +1,14 @@
 package ru.manager.ProgectManager.support;
 
 import ru.manager.ProgectManager.DTO.request.ProjectDataRequest;
+import ru.manager.ProgectManager.DTO.request.kanban.TagRequest;
 import ru.manager.ProgectManager.DTO.request.user.AuthDto;
 import ru.manager.ProgectManager.DTO.request.user.RegisterUserDTO;
+import ru.manager.ProgectManager.DTO.response.kanban.KanbanContentResponse;
 import ru.manager.ProgectManager.DTO.response.project.ProjectResponseWithFlag;
 import ru.manager.ProgectManager.enums.Locale;
+
+import java.util.List;
 
 public class TestDataBuilder {
     public static RegisterUserDTO buildMasterUserDto() {
@@ -47,5 +51,17 @@ public class TestDataBuilder {
     public static AuthDto buildAuthDto() {
         return AuthDto.builder().browser("Chrome").city("Novosibirsk").ip("10.10.10.10").country("Russia")
                 .login("masterUser").password("1234").zoneId("+7").build();
+    }
+
+    public static KanbanContentResponse buildKanbanContentResponse(long id) {
+        return KanbanContentResponse.builder().id(id).kanbanColumns(List.of()).name("Board").canEdit(true).build();
+    }
+
+    public static TagRequest.TagRequestBuilder<?, ?> prepareTagRequest() {
+        return TagRequest.builder().color("red");
+    }
+
+    public static TagRequest buildTagRequest() {
+        return prepareTagRequest().text("Text").build();
     }
 }

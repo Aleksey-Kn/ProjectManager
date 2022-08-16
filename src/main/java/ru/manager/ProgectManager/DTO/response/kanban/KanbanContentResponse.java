@@ -1,7 +1,9 @@
 package ru.manager.ProgectManager.DTO.response.kanban;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.experimental.SuperBuilder;
 import ru.manager.ProgectManager.entitys.kanban.Kanban;
 import ru.manager.ProgectManager.entitys.kanban.KanbanColumn;
 
@@ -10,6 +12,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Getter
+@EqualsAndHashCode
+@SuperBuilder
 @Schema(description = "Информация о канбане и его содержимом")
 public class KanbanContentResponse {
     @Schema(description = "Название канбана")
