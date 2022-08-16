@@ -24,7 +24,6 @@ import ru.manager.ProgectManager.repositories.ApproveActionTokenRepository;
 import ru.manager.ProgectManager.services.project.ProjectService;
 import ru.manager.ProgectManager.support.TestDataBuilder;
 
-import javax.mail.internet.MimeMessage;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
@@ -32,7 +31,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserServiceTest extends ProjectManagerTestBase {
-
     @Autowired
     ApproveActionTokenRepository approveActionTokenRepository;
 
@@ -70,9 +68,6 @@ class UserServiceTest extends ProjectManagerTestBase {
         final var registerDto = TestDataBuilder.buildMasterUserDto();
         final String login = userService.saveUser(registerDto).orElseThrow();
         assertThat(userService.attemptDropPass(login, "url")).isTrue();
-        assertThat(GREEN_MAIL.getReceivedMessagesForDomain(registerDto.getEmail()))
-                .extracting(MimeMessage::getSubject)
-                .contains(localisedMessages.buildSubjectForResetPassword(Locale.en));
     }
 
     @Test
@@ -128,9 +123,6 @@ class UserServiceTest extends ProjectManagerTestBase {
         userService.saveUser(registerUserDTO);
         jdbcTemplate.update("update project_manager.user set enabled = 1");
         assertThat(userService.login(TestDataBuilder.buildAuthDto())).isEqualTo(registerUserDTO.getLogin());
-        assertThat(GREEN_MAIL.getReceivedMessagesForDomain(registerUserDTO.getEmail()))
-                .extracting(MimeMessage::getSubject)
-                .contains(localisedMessages.buildSubjectAboutAuthorisation(Locale.en));
     }
 
     @Test
