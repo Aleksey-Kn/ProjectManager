@@ -81,6 +81,7 @@ public class ProjectRolesController {
             @ApiResponse(responseCode = "409", description = "Роль с таким названием уже существует в проекте")
     })
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<?> addRole(@RequestBody @Valid CreateCustomRoleRequest request, BindingResult bindingResult,
                                      Principal principal)
             throws ForbiddenException, NoSuchProjectException, NoSuchPageException, NoSuchKanbanException {

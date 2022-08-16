@@ -53,6 +53,7 @@ public class ProjectController {
             })
     })
     @PostMapping("/project")
+    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<?> addProject(@RequestBody @Valid ProjectDataRequest request, BindingResult bindingResult,
                                         Principal principal) {
         if (bindingResult.hasErrors()) {

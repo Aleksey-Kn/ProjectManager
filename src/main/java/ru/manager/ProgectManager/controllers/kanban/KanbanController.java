@@ -58,6 +58,7 @@ public class KanbanController {
             })
     })
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<?> createKanban(@RequestParam long projectId, @RequestBody @Valid NameRequest name,
                                           BindingResult bindingResult, Principal principal)
             throws ForbiddenException, NoSuchProjectException {
@@ -198,6 +199,7 @@ public class KanbanController {
             })
     })
     @PostMapping("/tag")
+    @ResponseStatus(HttpStatus.CREATED)
     public IdResponse addTag(@RequestParam @Parameter(description = "Идентификатор канбана") long id,
                              @RequestBody TagRequest request, Principal principal)
             throws ForbiddenException, NoSuchKanbanException {

@@ -69,7 +69,7 @@ public class AccessController {
             }),
             @ApiResponse(responseCode = "200", description = "Подключение к проекту произошло успешно")
     })
-    @GetMapping()
+    @GetMapping
     public ResponseEntity<?> getAccess(@RequestParam String token, Principal principal) throws AccessTokenInvalidException {
         if (accessProjectService.createAccessForUser(token, principal.getName())) {
             return new ResponseEntity<>(HttpStatus.OK);

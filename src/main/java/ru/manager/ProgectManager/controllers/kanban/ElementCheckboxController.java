@@ -55,7 +55,8 @@ public class ElementCheckboxController {
                                     schema = @Schema(implementation = ErrorResponse.class))
                     })
     })
-    @PostMapping()
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<?> addCheckbox(@RequestBody @Valid CheckboxRequest request, BindingResult bindingResult,
                                          Principal principal)
             throws ForbiddenException, IncorrectElementStatusException, NoSuchKanbanElementException {
@@ -82,7 +83,7 @@ public class ElementCheckboxController {
                                     schema = @Schema(implementation = ErrorResponse.class))
                     })
     })
-    @DeleteMapping()
+    @DeleteMapping
     public void removeCheckbox(@RequestParam @Parameter(description = "Идентификатор чекбокса") long id,
                                             Principal principal)
             throws ForbiddenException, IncorrectElementStatusException, NoSuchKanbanElementException, NoSuchCheckboxException {

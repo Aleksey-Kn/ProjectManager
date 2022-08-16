@@ -82,7 +82,7 @@ public class UserController {
                     }),
             @ApiResponse(responseCode = "200", description = "Имя пользователя успешно изменено")
     })
-    @PutMapping()
+    @PutMapping
     public ResponseEntity<?> rename(@RequestBody @Valid NameRequest request, BindingResult bindingResult,
                                     Principal principal) {
         if (bindingResult.hasErrors()) {

@@ -86,6 +86,7 @@ public class KanbanElementController {
             })
     })
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<?> addElement(@RequestBody @Valid CreateKanbanElementRequest request,
                                         BindingResult bindingResult, Principal principal)
             throws ForbiddenException, NoSuchColumnException {
@@ -231,7 +232,7 @@ public class KanbanElementController {
                             schema = @Schema(implementation = ErrorResponse.class))
             })
     })
-    @DeleteMapping()
+    @DeleteMapping
     public void removeElement(@RequestParam long id, Principal principal)
             throws ForbiddenException, IncorrectElementStatusException, NoSuchKanbanElementException {
         kanbanElementService.utilizeElementFromUser(id, principal.getName());

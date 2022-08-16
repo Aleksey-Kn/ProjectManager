@@ -94,6 +94,7 @@ public class AuthController {
             @ApiResponse(responseCode = "200", description = "Пользователь успешно зарегистрирован")
     })
     @PostMapping("/register")
+    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterUserDTO registerUserDTO, BindingResult bindingResult) {
         if (!bindingResult.hasErrors()) {
             if (userService.saveUser(registerUserDTO).isPresent()) {

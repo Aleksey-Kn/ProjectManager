@@ -56,6 +56,7 @@ public class DocumentController {
             })
     })
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<?> addPage(@RequestBody @Valid CreatePageRequest request, BindingResult bindingResult,
                                      Principal principal) throws ForbiddenException, NoSuchProjectException {
         if (bindingResult.hasErrors()) {

@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.manager.ProgectManager.DTO.request.PhotoDTO;
 import ru.manager.ProgectManager.DTO.response.ErrorResponse;
@@ -50,7 +51,8 @@ public class KanbanElementAttachmentController {
                             schema = @Schema(implementation = ErrorResponse.class))
             })
     })
-    @PostMapping()
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public IdResponse addAttachment(@RequestParam long id, @ModelAttribute PhotoDTO photoDTO,
                                     Principal principal)
             throws ForbiddenException, IncorrectElementStatusException, NoSuchKanbanElementException, IOException {
@@ -69,7 +71,7 @@ public class KanbanElementAttachmentController {
                             schema = @Schema(implementation = KanbanAttachment.class))
             })
     })
-    @GetMapping()
+    @GetMapping
     public AttachAllDataResponse getAttachment(@RequestParam long id, Principal principal)
             throws ForbiddenException, NoSuchKanbanElementException, NoSuchAttachmentException {
         return attributesService.getAttachment(id, principal.getName());
@@ -89,7 +91,7 @@ public class KanbanElementAttachmentController {
                             schema = @Schema(implementation = ErrorResponse.class))
             })
     })
-    @DeleteMapping()
+    @DeleteMapping
     public void deleteAttachment(@RequestParam long id, Principal principal)
             throws ForbiddenException, IncorrectElementStatusException, NoSuchKanbanElementException, NoSuchAttachmentException {
         attributesService.deleteAttachment(id, principal.getName());

@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -53,7 +54,8 @@ public class KanbanElementCommentController {
                             schema = @Schema(implementation = ErrorResponse.class))
             })
     })
-    @PostMapping()
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<?> addComment(@RequestBody @Valid KanbanCommentRequest request, BindingResult bindingResult,
                                         Principal principal)
             throws IncorrectElementStatusException, NoSuchKanbanElementException, ForbiddenException {
@@ -86,7 +88,7 @@ public class KanbanElementCommentController {
                             schema = @Schema(implementation = ErrorResponse.class))
             })
     })
-    @PutMapping()
+    @PutMapping
     public ResponseEntity<?> updateComment(@RequestBody @Valid KanbanCommentRequest request, BindingResult bindingResult,
                                            Principal principal)
             throws IncorrectElementStatusException, NoSuchKanbanElementException, ForbiddenException, NoSuchCommentException {
@@ -111,7 +113,7 @@ public class KanbanElementCommentController {
                             schema = @Schema(implementation = ErrorResponse.class))
             })
     })
-    @DeleteMapping()
+    @DeleteMapping
     public void removeComment(@RequestParam long id, Principal principal)
             throws IncorrectElementStatusException, NoSuchKanbanElementException, ForbiddenException, NoSuchCommentException {
             attributesService.deleteComment(id, principal.getName());

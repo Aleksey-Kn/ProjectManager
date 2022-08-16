@@ -55,6 +55,7 @@ public class KanbanColumnController {
             })
     })
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<?> addColumn(@RequestBody @Valid KanbanColumnRequest kanbanColumnRequest,
                                        BindingResult bindingResult, Principal principal)
             throws ForbiddenException, NoSuchKanbanException {
@@ -97,7 +98,7 @@ public class KanbanColumnController {
             }),
             @ApiResponse(responseCode = "200", description = "Название успешно изменено")
     })
-    @PutMapping()
+    @PutMapping
     public ResponseEntity<?> renameColumn(@RequestParam long id, @RequestBody @Valid NameRequest name,
                                           BindingResult bindingResult, Principal principal)
             throws ForbiddenException, NoSuchColumnException {

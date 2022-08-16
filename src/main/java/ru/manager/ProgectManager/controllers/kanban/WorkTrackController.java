@@ -55,6 +55,7 @@ public class WorkTrackController {
             @ApiResponse(responseCode = "200", description = "Время работы успешно добавлено")
     })
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<?> addWorkTrack(@RequestBody @Valid CreateWorkTrackRequest request,
                                           BindingResult bindingResult, Principal principal)
             throws ForbiddenException, IncorrectElementStatusException, NoSuchKanbanElementException {
