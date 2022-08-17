@@ -15,7 +15,7 @@ public class TestDataBuilder {
         return prepareUser().login("masterUser").email("masterUser@mail.ru").nickname("MasterOfTheGym").build();
     }
 
-    private static RegisterUserDTO.RegisterUserDTOBuilder<?, ?> prepareUser() {
+    public static RegisterUserDTO.RegisterUserDTOBuilder<?, ?> prepareUser() {
         return RegisterUserDTO.builder().locale(Locale.en).zoneId("+7").password("1234").url("url");
     }
 
