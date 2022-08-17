@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import ru.manager.ProgectManager.DTO.response.kanban.KanbanMainDataResponse;
 import ru.manager.ProgectManager.DTO.response.kanban.TagResponse;
+import ru.manager.ProgectManager.DTO.response.user.PublicMainUserDataResponse;
 import ru.manager.ProgectManager.base.ProjectManagerTestBase;
 import ru.manager.ProgectManager.exception.ForbiddenException;
 import ru.manager.ProgectManager.exception.kanban.NoSuchKanbanException;
@@ -98,18 +99,45 @@ class KanbanServiceTest extends ProjectManagerTestBase {
     }
 
     @Test
+    @SneakyThrows
     void removeTag() {
+        final long kanbanId = kanbanService.createKanban(projectId, "Board", login).getId();
+        final long tagId = kanbanService.addTag(kanbanId, TestDataBuilder.buildTagRequest(), login).getId();
+        kanbanService.removeTag(tagId, login);
+        assertThat(kanbanService.findAllAvailableTags(kanbanId, login)).isEmpty();
     }
 
     @Test
+    @SneakyThrows
     void editTag() {
+        final long kanbanId = kanbanService.createKanban(projectId, "Board", login).getId();
+        final long tagId = kanbanService.addTag(kanbanId, TestDataBuilder.buildTagRequest(), login).getId();
+        kanbanService.editTag(tagId, TestDataBuilder.prepareTagRequest().text("Other").build(), login);
+        assertThat(kanbanService.findAllAvailableTags(kanbanId, login)).extracting(TagResponse::getText)
+                .containsOnly("Other");
     }
 
     @Test
+    @SneakyThrows
     void findAllAvailableTags() {
+        final long kanbanId = kanbanService.createKanban(projectId, "Board", login).getId();
+        final long firstTagId = kanbanService.addTag(kanbanId, TestDataBuilder.buildTagRequest(), login).getId();
+        final long secondTagId = kanbanService.addTag(kanbanId,
+                TestDataBuilder.prepareTagRequest().text("Second").build(), login).getId();
+        assertThat(kanbanService.findAllAvailableTags(kanbanId, login)).satisfies(c -> {
+            assertThat(c).extracting(TagResponse::getId).containsOnly(firstTagId, secondTagId);
+            assertThat(c).extracting(TagResponse::getText).containsOnly("Second", "Text");
+        });
     }
 
     @Test
+    @SneakyThrows
     void members() {
+        final long kanbanId = kanbanService.createKanban(projectId, "Board", login).getId();
+        assertThat(kanbanService.members(kanbanId, login)).satisfies(c -> {
+            assertThat(c.getChangingMembers()).extracting(PublicMainUserDataResponse::getNickname)
+                    .containsOnly("MasterOfTheGym");
+            assertThat(c.getBrowsingMembers()).isEmpty();
+        });
     }
 }
